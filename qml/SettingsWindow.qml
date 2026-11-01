@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
-import QtQuick.Shapes
 import QtQuick.Window
 
 // Lumo's settings: a sidebar of pages, each page a stack of grouped cards.
@@ -46,26 +45,6 @@ Window {
     }
 
     // ------------------------------------------------------------ building blocks
-
-    component Icon: Shape {
-        id: icon
-        property string path
-        property color tint: Ui.dim
-        property real size: 18
-        property real stroke: 1.8
-        implicitWidth: size
-        implicitHeight: size
-        preferredRendererType: Shape.CurveRenderer
-        ShapePath {
-            strokeColor: icon.tint
-            strokeWidth: icon.stroke
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            scale: Qt.size(icon.size / 24, icon.size / 24)
-            PathSvg { path: icon.path }
-        }
-    }
 
     component Toggle: Item {
         id: t
@@ -565,6 +544,20 @@ Window {
                             Keycap { text: "I" }
                         }
                         SettingRow {
+                            title: qsTr("Allow the top request")
+                            description: qsTr("Approves a plan too.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "Y" }
+                        }
+                        SettingRow {
+                            title: qsTr("Deny the top request")
+                            description: qsTr("Sends a plan back to keep planning.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "D" }
+                        }
+                        SettingRow {
                             title: qsTr("Dictate")
                             description: dictation.keyMode === "evdev" ? qsTr("Hold, speak, let go. Tap twice for hands-free.") : qsTr("Set on the Dictation page.")
                             Keycap { text: dictation.keyLabel || qsTr("None") }
@@ -953,26 +946,6 @@ Window {
                     }
                 }
             }
-        }
-    }
-
-    component Keycap: Rectangle {
-        id: key
-        property string text
-        implicitWidth: Math.max(28, keyLabel.implicitWidth + 16)
-        implicitHeight: 26
-        radius: 6
-        color: Ui.card
-        border.color: settings.groupLine
-        Rectangle { anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter; width: parent.width - 2; height: 2; radius: 1; color: "#0A0A0C" }
-        Text {
-            id: keyLabel
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: -1
-            text: key.text
-            color: Ui.text
-            font.pixelSize: Ui.small + 1
-            font.weight: Font.DemiBold
         }
     }
 }

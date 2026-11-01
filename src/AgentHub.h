@@ -51,6 +51,10 @@ public:
     Q_INVOKABLE void keepPlanning(const QString &requestId, const QString &feedback);
     // answers: {questionText: label | [labels]}
     Q_INVOKABLE void answer(const QString &requestId, const QVariantMap &answers);
+    // The global shortcuts: answer the request at the top, if a key can answer it
+    // (a permission, or a plan: allow = approve, deny = keep planning).
+    Q_INVOKABLE void allowTop();
+    Q_INVOKABLE void denyTop();
     // Leaves the decision to the agent's own terminal prompt.
     Q_INVOKABLE void replyInTerminal(const QString &requestId);
     Q_INVOKABLE void dismissSession(const QString &sessionId);

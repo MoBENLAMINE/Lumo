@@ -510,6 +510,22 @@ void AgentHub::answer(const QString &requestId, const QVariantMap &answers) {
                                      {QStringLiteral("updatedInput"), updated}}));
 }
 
+void AgentHub::allowTop() {
+    if (!m_requests.count()) return;
+    const QVariantMap top = m_requests.row(0);
+    const QString kind = top.value(QStringLiteral("kind")).toString();
+    if (kind == QLatin1String("permission") || kind == QLatin1String("plan")) allow(top.value(QStringLiteral("requestId")).toString());
+}
+
+void AgentHub::denyTop() {
+    if (!m_requests.count()) return;
+    const QVariantMap top = m_requests.row(0);
+    const QString kind = top.value(QStringLiteral("kind")).toString();
+    const QString id = top.value(QStringLiteral("requestId")).toString();
+    if (kind == QLatin1String("permission")) deny(id);
+    else if (kind == QLatin1String("plan")) keepPlanning(id, {});
+}
+
 void AgentHub::replyInTerminal(const QString &requestId) {
     if (!m_pending.contains(requestId)) return;
     release(requestId, {});

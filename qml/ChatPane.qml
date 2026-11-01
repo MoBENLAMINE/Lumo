@@ -46,7 +46,7 @@ Item {
             }
             PillButton {
                 visible: chat.provider === "notion"
-                text: chat.notionEdits ? qsTr("✎ Can edit") : qsTr("👁 Read-only")
+                text: chat.notionEdits ? qsTr("Can edit") : qsTr("Read-only")
                 implicitHeight: 24
                 checked: chat.notionEdits
                 tint: Ui.warn
@@ -55,7 +55,15 @@ Item {
             }
             PillButton {
                 id: modelButton
-                text: (chat.model || qsTr("no model")) + "  ▾"
+                text: (chat.model || qsTr("no model")) + "     "
+                Icon {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 12
+                    path: Ui.icons.chevronDown
+                    tint: Ui.dim
+                }
                 implicitHeight: 24
                 textColor: Ui.dim
                 onClicked: { chat.refreshModels(); modelMenu.open() }
@@ -65,15 +73,15 @@ Item {
                     x: modelButton.width - width
                     width: 200
                     padding: 4
-                    background: Rectangle { color: Ui.cardHover; radius: 10; border.color: Ui.line }
+                    background: Rectangle { color: "#1B1B20"; radius: 10; border.color: Ui.line }
                     contentItem: Column {
                         Repeater {
                             model: chat.models
                             Rectangle {
                                 required property string modelData
                                 width: 192; height: 28; radius: 6
-                                color: mh.hovered ? Ui.line : "transparent"
-                                HoverHandler { id: mh }
+                                color: chat.model === modelData ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.14) : mh.hovered ? Ui.cardHover : "transparent"
+                                HoverHandler { id: mh; cursorShape: Qt.PointingHandCursor }
                                 Text { x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData; color: chat.model === modelData ? Ui.accent : Ui.text; font.pixelSize: Ui.body }
                                 TapHandler { onTapped: { chat.model = modelData; modelMenu.close() } }
                             }
@@ -119,7 +127,7 @@ Item {
                     visible: msg.step
                     spacing: 6
                     x: 6
-                    Text { text: "↳"; color: Ui.faint; font.pixelSize: Ui.small }
+                    Icon { anchors.verticalCenter: parent.verticalCenter; path: Ui.icons.chevronRight; tint: Ui.faint; size: 12 }
                     Text { text: msg.text; color: Ui.dim; font.pixelSize: Ui.small; font.italic: true }
                 }
                 InstinctButton {
@@ -199,13 +207,25 @@ Item {
             visible: chat.attachments.length > 0
             Repeater {
                 model: chat.attachments
-                PillButton {
+                Rectangle {
+                    id: chip
                     required property string modelData
                     required property int index
-                    implicitHeight: 22
-                    text: "📎 " + modelData.split("/").pop() + "  ✕"
-                    textColor: Ui.dim
-                    onClicked: chat.detach(index)
+                    implicitWidth: chipRow.implicitWidth + 18
+                    implicitHeight: 24
+                    radius: 12
+                    color: chipHover.hovered ? Ui.cardHover : Ui.card
+                    border.color: Ui.line
+                    Row {
+                        id: chipRow
+                        anchors.centerIn: parent
+                        spacing: 6
+                        Icon { anchors.verticalCenter: parent.verticalCenter; path: Ui.icons.paperclip; size: 13; tint: Ui.dim }
+                        Text { anchors.verticalCenter: parent.verticalCenter; text: chip.modelData.split("/").pop(); color: Ui.text; font.pixelSize: Ui.small }
+                        Icon { anchors.verticalCenter: parent.verticalCenter; path: Ui.icons.close; size: 11; tint: chipHover.hovered ? Ui.text : Ui.faint }
+                    }
+                    HoverHandler { id: chipHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler { onTapped: chat.detach(chip.index) }
                 }
             }
         }
@@ -249,12 +269,12 @@ Item {
                 scale: sendTap.pressed ? 0.9 : 1
                 Behavior on scale { NumberAnimation { duration: 80 } }
                 Behavior on color { ColorAnimation { duration: 150 } }
-                Text {
+                Icon {
                     anchors.centerIn: parent
-                    text: chat.busy ? "■" : "↑"
-                    color: chat.busy ? Ui.text : "#0A0A0C"
-                    font.pixelSize: chat.busy ? 11 : 16
-                    font.weight: Font.Bold
+                    path: chat.busy ? Ui.icons.stop : Ui.icons.send
+                    tint: chat.busy ? Ui.text : "#0A0A0C"
+                    size: chat.busy ? 13 : 16
+                    stroke: 2.2
                 }
                 TapHandler {
                     id: sendTap

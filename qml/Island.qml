@@ -338,13 +338,13 @@ Window {
                             }
                         }
                     }
-                    Text {
+                    Icon {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: win.mood === "happy"
-                        text: "✓"
-                        color: Ui.good
-                        font.pixelSize: Ui.title
-                        font.weight: Font.Bold
+                        path: Ui.icons.check
+                        tint: Ui.good
+                        size: 16
+                        stroke: 2.4
                     }
                 }
             }
@@ -473,7 +473,8 @@ Window {
                             Layout.fillWidth: true
                             Text {
                                 text: hub.requests.count ? qsTr("Lumo needs you") : hub.workingCount ? (hub.workingCount === 1 ? qsTr("1 agent working") : qsTr("%1 agents working").arg(hub.workingCount)) : qsTr("All quiet")
-                                color: Ui.text
+                                color: hub.requests.count ? Ui.warn : Ui.text
+                                Behavior on color { ColorAnimation { duration: 200 } }
                                 font.pixelSize: Ui.title
                                 font.weight: Font.DemiBold
                             }
@@ -493,10 +494,12 @@ Window {
                             radius: 15
                             color: Ui.card
                             Rectangle { // sliding highlight
+                                id: tabHighlight
+                                property Item target: null
                                 y: 3; height: 24; radius: 12
                                 color: Ui.line
-                                x: win.tab === "agents" ? agentsTab.x + 3 : chatTab.x + 3
-                                width: win.tab === "agents" ? agentsTab.width : chatTab.width
+                                x: target ? target.x + 3 : 3
+                                width: target ? target.width : 0
                                 Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                                 Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                             }
@@ -504,21 +507,48 @@ Window {
                                 id: tabs
                                 x: 3
                                 anchors.verticalCenter: parent.verticalCenter
-                                Text {
-                                    id: agentsTab
-                                    text: qsTr("Agents") + (hub.sessions.count ? "  " + hub.sessions.count : "")
-                                    color: win.tab === "agents" ? Ui.text : Ui.dim
-                                    font.pixelSize: Ui.body
-                                    leftPadding: 12; rightPadding: 12; topPadding: 5; bottomPadding: 5
-                                    TapHandler { onTapped: win.tab = "agents" }
-                                }
-                                Text {
-                                    id: chatTab
-                                    text: qsTr("Chat")
-                                    color: win.tab === "chat" ? Ui.text : Ui.dim
-                                    font.pixelSize: Ui.body
-                                    leftPadding: 12; rightPadding: 12; topPadding: 5; bottomPadding: 5
-                                    TapHandler { onTapped: win.tab = "chat" }
+                                Repeater {
+                                    model: [{ id: "agents", label: qsTr("Agents") }, { id: "chat", label: qsTr("Chat") }]
+                                    Item {
+                                        id: tabItem
+                                        required property var modelData
+                                        readonly property bool current: win.tab === modelData.id
+                                        readonly property int count: modelData.id === "agents" ? hub.sessions.count : 0
+                                        width: tabRow.implicitWidth + 24
+                                        height: 24
+                                        onCurrentChanged: if (current) tabHighlight.target = tabItem
+                                        Component.onCompleted: if (current) tabHighlight.target = tabItem
+                                        Row {
+                                            id: tabRow
+                                            anchors.centerIn: parent
+                                            spacing: 6
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: tabItem.modelData.label
+                                                color: tabItem.current || tabHover.hovered ? Ui.text : Ui.dim
+                                                font.pixelSize: Ui.body
+                                                font.weight: tabItem.current ? Font.DemiBold : Font.Normal
+                                            }
+                                            Rectangle {
+                                                visible: tabItem.count > 0
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: Math.max(18, countText.implicitWidth + 10)
+                                                height: 16
+                                                radius: 8
+                                                color: tabItem.current ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.25) : Ui.line
+                                                Text {
+                                                    id: countText
+                                                    anchors.centerIn: parent
+                                                    text: tabItem.count
+                                                    color: tabItem.current ? Ui.accent : Ui.dim
+                                                    font.pixelSize: 10
+                                                    font.weight: Font.DemiBold
+                                                }
+                                            }
+                                        }
+                                        HoverHandler { id: tabHover; cursorShape: Qt.PointingHandCursor }
+                                        TapHandler { onTapped: win.tab = tabItem.modelData.id }
+                                    }
                                 }
                             }
                         }
@@ -531,56 +561,30 @@ Window {
                             UsageRing { size: 28; label: "7d"; percent: hub.sevenDay; resetsAt: hub.sevenDayReset }
                         }
 
-                        Rectangle {
-                            width: 30; height: 30; radius: 15
-                            color: eyeHover.hovered ? Ui.cardHover : Ui.card
-                            Text {
-                                anchors.centerIn: parent
-                                text: shell.alwaysShow ? "👁" : "🙈"
-                                font.pixelSize: 14
+                        Row {
+                            spacing: 6
+                            IconButton {
+                                icon: shell.alwaysShow ? Ui.icons.eye : Ui.icons.eyeOff
+                                tip: shell.alwaysShow ? qsTr("Hide when idle") : qsTr("Always show")
+                                onClicked: shell.alwaysShow = !shell.alwaysShow
                             }
-                            HoverHandler { id: eyeHover }
-                            TapHandler { onTapped: shell.alwaysShow = !shell.alwaysShow }
-                            Rectangle { // tooltip
-                                visible: eyeHover.hovered
-                                z: 10
-                                anchors.top: parent.bottom
-                                anchors.topMargin: 6
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                width: eyeTip.implicitWidth + 16; height: eyeTip.implicitHeight + 10
-                                radius: 6; color: Ui.cardHover; border.color: Ui.line
-                                Text {
-                                    id: eyeTip
-                                    anchors.centerIn: parent
-                                    color: Ui.text; font.pixelSize: Ui.small
-                                    text: shell.alwaysShow ? qsTr("Hide when idle") : qsTr("Always show")
-                                }
+                            IconButton {
+                                visible: dictation.enabled
+                                icon: Ui.icons.mic
+                                tip: qsTr("Dictate")
+                                onClicked: { win.closeIsland(); dictation.toggle() }
                             }
-                        }
-                        Rectangle {
-                            visible: dictation.enabled
-                            width: 30; height: 30; radius: 15
-                            color: micHover.hovered ? Ui.cardHover : Ui.card
-                            Text { anchors.centerIn: parent; text: "🎙"; font.pixelSize: 14 }
-                            HoverHandler { id: micHover }
-                            TapHandler { onTapped: { win.closeIsland(); dictation.toggle() } }
-                        }
-                        Column {
-                            spacing: 2
-                            Text {
-                                text: sounds.muted ? "🔇" : "🔊"
-                                font.pixelSize: 13
-                                opacity: muteHover.hovered ? 1 : 0.6
-                                HoverHandler { id: muteHover }
-                                TapHandler { onTapped: sounds.muted = !sounds.muted }
+                            IconButton {
+                                icon: sounds.muted ? Ui.icons.volumeOff : Ui.icons.volume
+                                tip: sounds.muted ? qsTr("Sounds off") : qsTr("Sounds on")
+                                active: sounds.muted
+                                activeTint: Ui.faint
+                                onClicked: sounds.muted = !sounds.muted
                             }
-                            Text {
-                                text: "⚙"
-                                color: Ui.dim
-                                font.pixelSize: 15
-                                opacity: gearHover.hovered ? 1 : 0.6
-                                HoverHandler { id: gearHover }
-                                TapHandler { onTapped: shell.settingsRequested() }
+                            IconButton {
+                                icon: Ui.icons.gear
+                                tip: qsTr("Settings")
+                                onClicked: shell.settingsRequested()
                             }
                         }
                     }
@@ -616,11 +620,12 @@ Window {
                                     Item {
                                         width: parent.width; height: 20
                                         Text { text: qsTr("Wardrobe — rest on an outfit to try it on"); color: Ui.text; font.pixelSize: Ui.body; font.weight: Font.DemiBold }
-                                        Text {
+                                        IconButton {
                                             anchors.right: parent.right
-                                            text: "✕"; color: wardClose.hovered ? Ui.text : Ui.faint; font.pixelSize: 12
-                                            HoverHandler { id: wardClose; cursorShape: Qt.PointingHandCursor }
-                                            TapHandler { onTapped: win.showWardrobe = false }
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 24; iconSize: 13; filled: false
+                                            icon: Ui.icons.close
+                                            onClicked: win.showWardrobe = false
                                         }
                                     }
                                     Wardrobe {

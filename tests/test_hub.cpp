@@ -167,6 +167,45 @@ private slots:
         QCOMPARE(m_hub->requests()->count(), 0);
     }
 
+    // Meta+Alt+Y / Meta+Alt+D act on the top request, and only on one a key can answer.
+    void shortcutAllowsThePermission() {
+        const auto out = run(QStringLiteral("PermissionRequest"), bash(QStringLiteral("k1")), [&](const QString &) { m_hub->allowTop(); });
+        QCOMPARE(decision(out).value(QStringLiteral("behavior")).toString(), QStringLiteral("allow"));
+        QCOMPARE(m_hub->requests()->count(), 0);
+    }
+
+    void shortcutSendsThePlanBack() {
+        QJsonObject p = bash(QStringLiteral("k2"));
+        p.insert(QStringLiteral("tool_name"), QStringLiteral("ExitPlanMode"));
+        p.insert(QStringLiteral("tool_input"), QJsonObject{{QStringLiteral("plan"), QStringLiteral("1. Do it")}});
+        const auto out = run(QStringLiteral("PermissionRequest"), p, [&](const QString &) { m_hub->denyTop(); });
+        QCOMPARE(decision(out).value(QStringLiteral("behavior")).toString(), QStringLiteral("deny"));
+        QVERIFY(decision(out).value(QStringLiteral("message")).toString().contains(QStringLiteral("keep planning")));
+    }
+
+    void shortcutLeavesQuestionsAlone() {
+        QJsonObject p = bash(QStringLiteral("k3"));
+        p.insert(QStringLiteral("tool_name"), QStringLiteral("AskUserQuestion"));
+        p.insert(QStringLiteral("tool_input"),
+                 QJsonObject{{QStringLiteral("questions"),
+                              QJsonArray{QJsonObject{{QStringLiteral("question"), QStringLiteral("Which?")},
+                                                     {QStringLiteral("options"), QJsonArray{QJsonObject{{QStringLiteral("label"), QStringLiteral("A")}}}}}}}});
+        QByteArray raw;
+        run(QStringLiteral("PermissionRequest"), p, [&](const QString &id) {
+            m_hub->allowTop();
+            m_hub->denyTop();
+            QCOMPARE(m_hub->requests()->count(), 1); // a question needs a choice, not a key
+            m_hub->replyInTerminal(id);
+        }, &raw);
+        QVERIFY(raw.trimmed().isEmpty());
+    }
+
+    void shortcutWithNothingPendingDoesNothing() {
+        m_hub->allowTop();
+        m_hub->denyTop();
+        QCOMPARE(m_hub->requests()->count(), 0);
+    }
+
     void pidsAreForgotten() {
         QProcess hook;
         hook.start(hookPath(), {QStringLiteral("SessionStart")});

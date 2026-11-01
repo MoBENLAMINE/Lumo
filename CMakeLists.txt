@@ -60,7 +60,7 @@ set_target_properties(lumo PROPERTIES
     BUILD_RPATH ${SHERPA_DIR}/lib
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
-set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton)
+set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).

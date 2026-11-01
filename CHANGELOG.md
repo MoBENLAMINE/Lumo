@@ -12,6 +12,13 @@
 - Muting the speakers for dictation works whatever the desktop's language, and no longer blocks the island.
 - Session process chains and old daily word counts no longer pile up.
 
+### Added
+- <kbd>Meta+Alt+Y</kbd> allows and <kbd>Meta+Alt+D</kbd> denies the request at the top of the island, from anywhere
+  (approve / keep planning for a plan). Rebind them in System Settings → Shortcuts → Lumo.
+- A redesigned Settings window: a sidebar with icons, grouped cards, restyled controls, Notion in the chat options.
+- Island polish: one icon set instead of emoji, tooltips on the toolbar, a tab control with counts, request cards
+  that show what kind of request they are, choice markers on questions, and keycap hints for the new shortcuts.
+
 ### Changed
 - The hook and the app share their timeouts and limits through `hook/protocol.h`.
 - The sherpa-onnx download is checked against a pinned SHA-256.
