@@ -54,6 +54,7 @@ qt_add_executable(lumo
     src/Music.cpp src/Music.h
 )
 target_include_directories(lumo PRIVATE hook)
+target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
     BUILD_RPATH ${SHERPA_DIR}/lib

@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
     QApplication::setApplicationName(QStringLiteral("lumo"));
     QApplication::setApplicationDisplayName(QStringLiteral("Lumo"));
     QApplication::setDesktopFileName(QStringLiteral("io.github.mobenlamine.lumo"));
+    QApplication::setApplicationVersion(QStringLiteral(LUMO_VERSION));
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
 
