@@ -8,8 +8,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "protocol.h"
+
 namespace {
-constexpr qint64 kMaxPayload = 8 * 1024 * 1024;
+constexpr qint64 kMaxPayload = LUMO_MAX_PAYLOAD;
 constexpr int kReadTimeoutMs = 5000;
 }
 

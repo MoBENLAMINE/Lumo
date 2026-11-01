@@ -7,9 +7,13 @@
 #include <QRegularExpression>
 
 #include "Diff.h"
+#include "protocol.h"
 
 namespace {
-constexpr int kDecisionTimeoutMs = 105'000; // the hook gives up at 110 s
+constexpr int kDecisionTimeoutMs = LUMO_APP_DECISION_MS; // the hook gives up a little later
+static_assert(kDecisionTimeoutMs < LUMO_DECISION_MS, "the app must answer before the hook gives up");
+// A notice (an agent Lumo can't answer for) stays up this long, or until dismissed.
+constexpr int kNoticeMs = 8000;
 constexpr qint64 kForgetAfterMs = 20 * 60 * 1000;
 constexpr qint64 kHappyMs = 6000;
 constexpr int kMaxSteps = 40;
@@ -400,7 +404,9 @@ void AgentHub::addRequest(const QString &sid, const QString &agent, const QJsonO
     }
 
     const int si = m_sessions.indexOf(sid);
-    m_pending.insert(id, Pending{socket, in, p.value(QStringLiteral("permission_suggestions")).toArray(), sid, agent});
+    // A notice's hook doesn't wait for an answer: let it go now.
+    if (!decides) socket->disconnectFromServer();
+    m_pending.insert(id, Pending{decides ? socket : nullptr, in, p.value(QStringLiteral("permission_suggestions")).toArray(), sid, agent});
     m_requests.upsert({{QStringLiteral("requestId"), id},
                        {QStringLiteral("sessionId"), sid},
                        {QStringLiteral("agent"), agent},
@@ -414,11 +420,13 @@ void AgentHub::addRequest(const QString &sid, const QString &agent, const QJsonO
                        {QStringLiteral("canAlways"), agent.isEmpty() && !p.value(QStringLiteral("permission_suggestions")).toArray().isEmpty()},
                        {QStringLiteral("createdAt"), now()}});
 
-    // The hook died: the agent got its answer in the terminal, or gave up.
-    connect(socket, &QLocalSocket::disconnected, this, [this, id] {
-        if (m_pending.contains(id)) release(id, {});
-    });
-    QTimer::singleShot(kDecisionTimeoutMs, this, [this, id] { replyInTerminal(id); });
+    if (decides) {
+        // The hook died: the agent got its answer in the terminal, or gave up.
+        connect(socket, &QLocalSocket::disconnected, this, [this, id] {
+            if (m_pending.contains(id)) release(id, {});
+        });
+    }
+    QTimer::singleShot(decides ? kDecisionTimeoutMs : kNoticeMs, this, [this, id] { replyInTerminal(id); });
     emit attention();
 }
 
@@ -509,6 +517,7 @@ void AgentHub::replyInTerminal(const QString &requestId) {
 
 void AgentHub::dismissSession(const QString &sessionId) {
     m_sessions.remove(sessionId);
+    m_pids.remove(sessionId);
     emit stateChanged();
 }
 
@@ -543,7 +552,15 @@ void AgentHub::prune() {
             t - r.value(QStringLiteral("updatedAt")).toLongLong() > kForgetAfterMs)
             stale << r.value(QStringLiteral("sessionId")).toString();
     }
-    for (const auto &id : stale) m_sessions.remove(id);
+    for (const auto &id : stale) {
+        m_sessions.remove(id);
+        m_pids.remove(id);
+    }
+    // Process chains of sessions that never showed up as a row (status-line only…).
+    for (auto it = m_pids.begin(); it != m_pids.end();) {
+        if (m_sessions.indexOf(it.key()) < 0) it = m_pids.erase(it);
+        else ++it;
+    }
     // Moods like "happy" expire with time alone.
     emit stateChanged();
 }

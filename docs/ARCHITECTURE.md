@@ -44,6 +44,11 @@ Only `PermissionRequest` waits for an answer (110 s at most). The app writes bac
 answer, or a timeout all mean silence, and Claude Code asks in its terminal as usual. Fire-and-forget events never hold
 the agent more than a few milliseconds.
 
+The timeouts on both sides live in `hook/protocol.h`, which the relay and the app both include. The app gives up 5 s
+before the hook does, and the hook timeout written into `settings.json` is 10 s longer than the hook's wait. Agents
+whose `PermissionRequest` Lumo can't answer (anything but Claude Code and Codex) get a *notice*: their hook leaves at
+once, and the card stays up for 8 s or until it is dismissed.
+
 ## The island
 
 A wlr-layer-shell surface (LayerShellQt) on the overlay layer, anchored to the top edge. The window is tall and

@@ -150,6 +150,34 @@ private slots:
         QVERIFY(QTest::qWaitFor([&] { return m_hub->requests()->count() == 0; }, 3000));
     }
 
+    // Agents that can't take a decision from Lumo (Gemini…) only notify: the
+    // hook is gone at once, and the card must still stay up for a while.
+    void noticeOutlivesTheHook() {
+        QProcess hook;
+        hook.start(hookPath(), {QStringLiteral("--agent"), QStringLiteral("gemini"), QStringLiteral("PermissionRequest")});
+        hook.write(QJsonDocument(bash(QStringLiteral("g1"))).toJson(QJsonDocument::Compact));
+        hook.closeWriteChannel();
+        QVERIFY(hook.waitForFinished(2000));
+        QVERIFY(QTest::qWaitFor([&] { return m_hub->requests()->count() == 1; }, 3000));
+        QTest::qWait(500);
+        QCOMPARE(m_hub->requests()->count(), 1);
+        QCOMPARE(m_hub->requests()->row(0).value(QStringLiteral("kind")).toString(), QStringLiteral("notice"));
+        // Dismissing it is the same call as "answer in the terminal".
+        m_hub->replyInTerminal(m_hub->requests()->row(0).value(QStringLiteral("requestId")).toString());
+        QCOMPARE(m_hub->requests()->count(), 0);
+    }
+
+    void pidsAreForgotten() {
+        QProcess hook;
+        hook.start(hookPath(), {QStringLiteral("SessionStart")});
+        hook.write(R"({"session_id":"p1","hook_event_name":"SessionStart","cwd":"/tmp/p"})");
+        hook.closeWriteChannel();
+        QVERIFY(QTest::qWaitFor([&] { return !m_hub->sessionPids(QStringLiteral("p1")).isEmpty(); }, 3000));
+        m_hub->dismissSession(QStringLiteral("p1"));
+        QVERIFY(m_hub->sessionPids(QStringLiteral("p1")).isEmpty());
+        hook.waitForFinished();
+    }
+
     void sessionFlow() {
         const QString cwd = QStringLiteral("/home/me/Projets/coucou");
         auto ev = [&](const QString &name, QJsonObject extra) {

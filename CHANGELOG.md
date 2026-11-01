@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Connecting to Claude Code no longer rewrites a `settings.json` that isn't valid JSON (which used to drop everything
+  but Lumo's hooks); Lumo now asks you to fix the file first. Two applies in the same second each get their own backup.
+- Lumo no longer renews your Claude login itself. Renewing rotates the refresh token and could sign Claude Code out;
+  plan usage now uses the login only while it is valid, and the status line otherwise.
+- Permission notices from agents Lumo can't answer for (Gemini CLI, Cursor…) no longer vanish the moment they appear.
+- Updating `lumo-hook` swaps it in atomically, so a hook starting at that moment never finds it missing.
+- Muting the speakers for dictation works whatever the desktop's language, and no longer blocks the island.
+- Session process chains and old daily word counts no longer pile up.
+
+### Changed
+- The hook and the app share their timeouts and limits through `hook/protocol.h`.
+- The sherpa-onnx download is checked against a pinned SHA-256.
+- Tests can be turned off with `-DLUMO_BUILD_TESTS=OFF`; new installer tests; the music test now runs (and skips
+  without a session bus). CI runs every test, adds an ASan + UBSan job and an advisory `qmllint`.
+
 ## 0.1.0 — 2026-11-01
 
 First release.
