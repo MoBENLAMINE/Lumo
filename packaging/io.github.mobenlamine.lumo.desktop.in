@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lumo
+Comment=A tiny companion for your AI coding agents, at the top of your screen
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/lumo
+Icon=io.github.mobenlamine.lumo
+Categories=Development;Utility;
+StartupNotify=false
