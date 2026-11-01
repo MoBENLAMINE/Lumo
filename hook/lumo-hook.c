@@ -26,10 +26,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "protocol.h"
+
 #define CONNECT_MS 300
 #define SEND_MS 2000
-#define DECISION_MS 110000
-#define MAX_PAYLOAD (8 * 1024 * 1024)
+#define DECISION_MS LUMO_DECISION_MS
+#define MAX_PAYLOAD LUMO_MAX_PAYLOAD
 #define MAX_REPLY (1024 * 1024)
 
 static long now_ms(void) {
@@ -245,14 +247,19 @@ int main(int argc, char **argv) {
         /* Plan limits for the usage gauge; only sent when present. */
         if (memmem(raw, len, "\"rate_limits\"", 13)) free(talk(agent, "StatusLine", raw, len, 0));
         previous_statusline(raw, len);
+        free(raw);
         return 0;
     }
 
     int waits = !strcmp(event, "PermissionRequest") && (!*agent || !strcmp(agent, "codex"));
     char *reply = talk(agent, event, raw, len, waits ? DECISION_MS : 0);
+    free(raw);
     if (reply && reply[0] == '{') {
         fputs(reply, stdout);
         if (reply[strlen(reply) - 1] != '\n') fputc('\n', stdout);
     }
+    free(reply);
+    /* The decision must reach the agent even if something goes wrong on the way out. */
+    fflush(stdout);
     return 0;
 }

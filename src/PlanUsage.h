@@ -8,8 +8,8 @@
 // Your Claude plan's 5-hour and weekly usage, straight from Anthropic, for
 // every way you use Claude (claude.ai, the apps, Claude Code). It uses the
 // login Claude Code keeps in ~/.claude/.credentials.json — no API key — and
-// renews it shortly before it lapses, saving the new pair back so Claude Code
-// stays signed in. Only Anthropic's own login and usage endpoints are called.
+// only reads it: renewing an expired login is left to Claude Code itself.
+// Only Anthropic's own usage endpoint is called.
 class PlanUsage : public QObject {
     Q_OBJECT
 public:
@@ -22,7 +22,6 @@ signals:
 
 private:
     void ask(const QString &token);
-    bool renew(); // async; returns false when it can't start
     QString credentialsPath() const;
 
     QNetworkAccessManager m_net;

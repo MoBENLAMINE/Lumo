@@ -71,6 +71,9 @@ signals:
     void toggleRequested();
     void chatRequested();
     void settingsRequested();
+    // The global shortcuts for the request at the top of the island.
+    void allowTopRequested();
+    void denyTopRequested();
     void resurfaced();
 
 private:

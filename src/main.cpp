@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
     QApplication::setApplicationName(QStringLiteral("lumo"));
     QApplication::setApplicationDisplayName(QStringLiteral("Lumo"));
     QApplication::setDesktopFileName(QStringLiteral("io.github.mobenlamine.lumo"));
+    QApplication::setApplicationVersion(QStringLiteral(LUMO_VERSION));
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
 
@@ -83,6 +84,8 @@ int main(int argc, char *argv[]) {
     QObject::connect(&hub, &AgentHub::sessionFailed, &sounds, [&] { sounds.play(QStringLiteral("error")); });
     QObject::connect(&dictation, &Dictation::sound, &sounds, &Sounds::play);
     QObject::connect(&chat, &ChatBackend::replied, &sounds, [&] { sounds.play(QStringLiteral("reply")); });
+    QObject::connect(&shell, &Shell::allowTopRequested, &hub, &AgentHub::allowTop);
+    QObject::connect(&shell, &Shell::denyTopRequested, &hub, &AgentHub::denyTop);
 
     if (!server.listen()) qWarning("Lumo couldn't listen on %s", qPrintable(HookServer::socketPath()));
 
