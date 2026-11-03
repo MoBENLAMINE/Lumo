@@ -41,7 +41,8 @@ Item {
     readonly property var danceMoves: ["bob", "sway", "step", "hop", "arms", "sway", "step", "bob"]
 
     Connections {
-        target: mascot.dancing && mascot.alive && typeof beat !== "undefined" ? beat : null
+        // Not tied to `alive`: the small Lumo in the resting pill is still but dances.
+        target: mascot.dancing && typeof beat !== "undefined" ? beat : null
         function onBeat(index, strength, period) { mascot.danceBeat(index, strength, period) }
     }
     onDancingChanged: if (!dancing) settle()
