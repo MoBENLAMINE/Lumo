@@ -10,6 +10,7 @@
 
 #include "ActiveWindow.h"
 #include "AgentHub.h"
+#include "CloudSessions.h"
 #include "ChatBackend.h"
 #include "Dictation.h"
 #include "HookInstaller.h"
@@ -71,12 +72,14 @@ int main(int argc, char *argv[]) {
     ActiveWindow activeWindow;
     Dictation dictation(&activeWindow);
     PlanUsage planUsage;
+    CloudSessions cloud;
     Music music;
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/Dictation"), &dictation, QDBusConnection::ExportScriptableSlots);
 
     QObject::connect(&server, &HookServer::hookEvent, &hub, &AgentHub::onHookEvent);
     QObject::connect(&chat, &ChatBackend::usage, &hub, &AgentHub::setUsage);
     QObject::connect(&planUsage, &PlanUsage::usage, &hub, &AgentHub::setUsage);
+    QObject::connect(&cloud, &CloudSessions::sessionsChanged, &hub, &AgentHub::setCloudSessions);
     QObject::connect(&hub, &AgentHub::attention, &sounds, [&] { sounds.play(QStringLiteral("needs")); });
     QObject::connect(&hub, &AgentHub::waitingForYou, &sounds, [&] { sounds.play(QStringLiteral("needs")); });
     QObject::connect(&hub, &AgentHub::sessionFinished, &sounds, [&] { sounds.play(QStringLiteral("finish")); });
@@ -96,6 +99,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty(QStringLiteral("activeWindow"), &activeWindow);
     engine.rootContext()->setContextProperty(QStringLiteral("planUsage"), &planUsage);
     engine.rootContext()->setContextProperty(QStringLiteral("music"), &music);
+    engine.rootContext()->setContextProperty(QStringLiteral("cloud"), &cloud);
     engine.loadFromModule("Lumo", "Island");
     if (engine.rootObjects().isEmpty()) return 1;
 

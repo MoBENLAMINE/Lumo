@@ -21,6 +21,7 @@ Rectangle {
     required property string lastMessage
     required property var steps
     required property var diffs
+    required property string url
 
     property bool open: false
     // Set by the island: false while the panel is hidden, so nothing ticks.
@@ -136,7 +137,13 @@ Rectangle {
                     color: jumpHover.hovered ? Ui.line : "transparent"
                     Text { anchors.centerIn: parent; text: "↗"; color: jumpHover.hovered ? Ui.text : Ui.dim; font.pixelSize: 14 }
                     HoverHandler { id: jumpHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: activeWindow.focusProcess(hub.sessionPids(card.sessionId)) }
+                    // A cloud session has no process here: its card opens it on claude.ai.
+                    TapHandler {
+                        onTapped: {
+                            if (card.url.length) Qt.openUrlExternally(card.url)
+                            else activeWindow.focusProcess(hub.sessionPids(card.sessionId))
+                        }
+                    }
                 }
                 Rectangle {
                     implicitWidth: 26; implicitHeight: 26; radius: 13

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Cloud sessions: your Claude Code sessions on claude.ai/code appear in the island (working, needs you, done, failed),
+  with ↗ to open them in the browser. A switch in Settings → Claude Code turns the list off.
+
 ## 0.1.0 — 2026-11-01
 
 First release.

@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QTimer>
 
+#include "CloudSessions.h"
 #include "MapListModel.h"
 
 class QLocalSocket;
@@ -64,6 +65,8 @@ public:
 
 public slots:
     void onHookEvent(const QJsonObject &header, const QJsonObject &payload, QLocalSocket *socket);
+    // The cloud sessions as the last list reported them. Replaces the cloud rows.
+    void setCloudSessions(const QList<CloudSession> &cloud);
 
 signals:
     void stateChanged();
@@ -97,6 +100,8 @@ private:
     MapListModel m_requests;
     QHash<QString, Pending> m_pending;
     QHash<QString, QVariantList> m_pids;
+    QHash<QString, QString> m_cloudStatus;    // cloud session id → status shown last time
+    QHash<QString, QString> m_cloudDismissed; // cloud session id → status when you closed its card
     QTimer m_pruneTimer;
     int m_nextRequest = 1;
     double m_five = 0, m_seven = 0;
