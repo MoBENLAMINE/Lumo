@@ -329,10 +329,6 @@ Window {
                         PillButton { visible: installer.installed; text: qsTr("Disconnect…"); onClicked: installer.prepare(false, false, false) }
                     }
                     Hint { text: installer.message; visible: installer.message.length > 0; color: Ui.text }
-                    Row2 {
-                        label: qsTr("Show my cloud sessions from claude.ai/code. Lumo asks Anthropic for the list every minute, with your Claude login; approvals still happen on claude.ai.")
-                        Toggle { on: cloud.enabled; onToggled: (v) => cloud.enabled = v }
-                    }
                     DiffView {
                         visible: installer.preview.length > 0
                         Layout.fillWidth: true

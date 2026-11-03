@@ -5,7 +5,6 @@
 #include <QJsonDocument>
 #include <QLocalSocket>
 #include <QRegularExpression>
-#include <QSet>
 
 #include "Diff.h"
 
@@ -15,9 +14,6 @@ constexpr qint64 kForgetAfterMs = 20 * 60 * 1000;
 constexpr qint64 kHappyMs = 6000;
 constexpr int kMaxSteps = 40;
 constexpr int kMaxDiffs = 12;
-// A settled cloud session is shown as long as a local idle one is kept.
-constexpr qint64 kCloudRecentMs = kForgetAfterMs;
-const QString kCloudAgent = QStringLiteral("claude-cloud");
 
 qint64 now() { return QDateTime::currentMSecsSinceEpoch(); }
 
@@ -49,7 +45,6 @@ const QStringList kSessionRoles = {
     QStringLiteral("added"),     QStringLiteral("removed"),  QStringLiteral("tools"),
     QStringLiteral("startedAt"), QStringLiteral("updatedAt"), QStringLiteral("lastMessage"),
     QStringLiteral("steps"),     QStringLiteral("diffs"),    QStringLiteral("model"),
-    QStringLiteral("url"), QStringLiteral("deepLink"),
 };
 const QStringList kRequestRoles = {
     QStringLiteral("requestId"), QStringLiteral("sessionId"), QStringLiteral("agent"),
@@ -75,7 +70,6 @@ QString AgentHub::agentColor(const QString &agent) const {
         {QStringLiteral("antigravity"), QStringLiteral("#8AB4F8")},
         {QStringLiteral("cursor"), QStringLiteral("#C9CDD4")}, {QStringLiteral("copilot"), QStringLiteral("#B48CFF")},
         {QStringLiteral("opencode"), QStringLiteral("#F5C451")}, {QStringLiteral("amp"), QStringLiteral("#FF6B9A")},
-        {kCloudAgent, QStringLiteral("#D0A2F7")},
     };
     return colors.value(agent, QStringLiteral("#7DD3FC"));
 }
@@ -87,7 +81,6 @@ QString AgentHub::agentName(const QString &agent) const {
         {QStringLiteral("antigravity"), QStringLiteral("Antigravity")},
         {QStringLiteral("cursor"), QStringLiteral("Cursor")}, {QStringLiteral("copilot"), QStringLiteral("Copilot CLI")},
         {QStringLiteral("opencode"), QStringLiteral("OpenCode")}, {QStringLiteral("amp"), QStringLiteral("Amp")},
-        {kCloudAgent, QStringLiteral("Claude (cloud)")},
     };
     if (names.contains(agent)) return names.value(agent);
     QString n = agent;
@@ -200,8 +193,6 @@ void AgentHub::touchSession(const QString &id, const QString &agent, const QJson
         values.insert(QStringLiteral("steps"), QVariantList());
         values.insert(QStringLiteral("diffs"), QVariantList());
         values.insert(QStringLiteral("model"), p.value(QStringLiteral("model")).toString());
-        values.insert(QStringLiteral("url"), QString()); // local sessions have no page to open
-        values.insert(QStringLiteral("deepLink"), QString());
         if (!values.contains(QStringLiteral("status"))) values.insert(QStringLiteral("status"), QStringLiteral("idle"));
         if (!values.contains(QStringLiteral("activity"))) values.insert(QStringLiteral("activity"), tr("Ready"));
         m_sessions.upsert(values, 0);
@@ -518,95 +509,6 @@ void AgentHub::replyInTerminal(const QString &requestId) {
 
 void AgentHub::dismissSession(const QString &sessionId) {
     m_sessions.remove(sessionId);
-    // A cloud session you closed stays closed until its status changes.
-    if (sessionId.startsWith(QLatin1String("cloud:"))) {
-        const QString id = sessionId.mid(6);
-        m_cloudDismissed.insert(id, m_cloudStatus.value(id));
-    }
-    emit stateChanged();
-}
-
-// ---------------------------------------------------------------- cloud sessions
-
-void AgentHub::setCloudSessions(const QList<CloudSession> &cloud) {
-    const qint64 t = now();
-    QSet<QString> listed;
-    for (const CloudSession &c : cloud) {
-        // Waiting on you, or working right now, is always news. A settled one is shown
-        // only for a while after it settled.
-        QString status;
-        QString activity;
-        if (c.status == QLatin1String("running") || c.status == QLatin1String("pending")) {
-            status = QStringLiteral("working");
-            activity = tr("Working in the cloud");
-        } else if (c.status == QLatin1String("requires_action")) {
-            status = QStringLiteral("waiting");
-            activity = tr("Needs you on claude.ai");
-        } else if (c.status == QLatin1String("idle")) {
-            if (t - c.updatedAt > kCloudRecentMs) continue;
-            status = QStringLiteral("idle");
-            activity = tr("Waiting for your next prompt");
-        } else if (c.status == QLatin1String("failed")) {
-            if (t - c.updatedAt > kCloudRecentMs) continue;
-            status = QStringLiteral("error");
-            activity = tr("Stopped with an error");
-        } else {
-            continue;
-        }
-        listed.insert(c.id);
-
-        // Closed by you, and nothing has changed since: keep it closed.
-        if (m_cloudDismissed.contains(c.id)) {
-            if (m_cloudDismissed.value(c.id) == status) continue;
-            m_cloudDismissed.remove(c.id);
-        }
-
-        const QString sid = QStringLiteral("cloud:") + c.id;
-        const QString before = m_cloudStatus.value(c.id);
-        m_cloudStatus.insert(c.id, status);
-        // Sounds only for changes we saw happen, not for what was already there at start-up.
-        if (!before.isEmpty() && before != status) {
-            if (status == QLatin1String("waiting")) emit waitingForYou();
-            else if (status == QLatin1String("idle") && before == QLatin1String("working")) emit sessionFinished(kCloudAgent);
-            else if (status == QLatin1String("error")) emit sessionFailed();
-        }
-
-        const QString project = c.repo.isEmpty() ? c.title : c.repo.section(QLatin1Char('/'), 1);
-        QVariantMap values{{QStringLiteral("sessionId"), sid},
-                           {QStringLiteral("status"), status},
-                           {QStringLiteral("activity"), activity},
-                           {QStringLiteral("prompt"), c.title},
-                           {QStringLiteral("project"), project.isEmpty() ? QStringLiteral("claude.ai") : project},
-                           {QStringLiteral("url"), c.url},
-                           {QStringLiteral("deepLink"), QStringLiteral("claude://code/continue?session=%1&source=desktop_action").arg(c.id)},
-                           {QStringLiteral("updatedAt"), c.updatedAt}};
-        if (m_sessions.indexOf(sid) < 0) {
-            values.insert(QStringLiteral("agent"), kCloudAgent);
-            values.insert(QStringLiteral("agentName"), agentName(kCloudAgent));
-            values.insert(QStringLiteral("agentColor"), agentColor(kCloudAgent));
-            values.insert(QStringLiteral("cwd"), QString());
-            values.insert(QStringLiteral("startedAt"), c.updatedAt);
-            values.insert(QStringLiteral("added"), 0);
-            values.insert(QStringLiteral("removed"), 0);
-            values.insert(QStringLiteral("tools"), 0);
-            values.insert(QStringLiteral("steps"), QVariantList());
-            values.insert(QStringLiteral("diffs"), QVariantList());
-            values.insert(QStringLiteral("model"), QString());
-            values.insert(QStringLiteral("lastMessage"), QString());
-        }
-        m_sessions.upsert(values, 0); // new ones on top; existing rows are merged in place
-    }
-
-    // Cloud sessions that left the list (archived, deleted, or too old to show).
-    for (auto it = m_cloudStatus.begin(); it != m_cloudStatus.end();) {
-        if (listed.contains(it.key())) {
-            ++it;
-            continue;
-        }
-        m_sessions.remove(QStringLiteral("cloud:") + it.key());
-        m_cloudDismissed.remove(it.key());
-        it = m_cloudStatus.erase(it);
-    }
     emit stateChanged();
 }
 
