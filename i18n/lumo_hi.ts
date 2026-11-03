@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>बंद करें</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>ताल पर: ताल ढूँढने के लिए Lumo आपके कंप्यूटर पर बज रही चीज़ को केवल मेमोरी में सुनता है। कुछ भी रिकॉर्ड नहीं होता।</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

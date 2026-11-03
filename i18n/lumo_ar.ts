@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>إنهاء</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>على الإيقاع: يستمع Lumo إلى ما يشغّله حاسوبك ليجده، في الذاكرة فقط. لا يُسجَّل شيء.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

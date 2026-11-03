@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>종료</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>박자에 맞춰: Lumo는 컴퓨터에서 나오는 소리를 메모리에서만 들으며 박자를 찾아요. 아무것도 녹음하지 않아요.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

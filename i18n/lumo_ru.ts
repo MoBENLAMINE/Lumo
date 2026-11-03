@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>Выйти</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>В ритм: Lumo слушает то, что играет компьютер, чтобы найти ритм, — только в памяти. Ничего не записывается.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

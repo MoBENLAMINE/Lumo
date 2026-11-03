@@ -1378,6 +1378,10 @@ Solte um arquivo aqui para perguntar sobre ele.</translation>
         <source>Quit</source>
         <translation>Sair</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>No ritmo: o Lumo escuta o que o computador toca para encontrá-lo, só na memória. Nada é gravado.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

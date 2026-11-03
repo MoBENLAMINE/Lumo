@@ -36,6 +36,8 @@ Window {
     readonly property bool resting: shell.alwaysShow
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
+    // Listen for the beat only while Lumo is out dancing.
+    Binding { target: beat; property: "active"; value: win.dancing && win.visible }
     // What Lumo wears: your pick, or the season's (headphones while music plays).
     readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false

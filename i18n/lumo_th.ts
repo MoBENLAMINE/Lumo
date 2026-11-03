@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>ออก</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>ตามจังหวะ: Lumo ฟังเสียงที่คอมพิวเตอร์เล่นเพื่อหาจังหวะ ในหน่วยความจำเท่านั้น ไม่มีการบันทึกใด ๆ</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

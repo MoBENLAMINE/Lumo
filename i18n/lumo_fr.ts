@@ -1378,6 +1378,10 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>En rythme : Lumo écoute ce que joue votre ordinateur pour trouver le tempo, en mémoire seulement. Rien n'est enregistré.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

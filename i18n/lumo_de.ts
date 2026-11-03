@@ -1378,6 +1378,10 @@ Zieh eine Datei hierher, um danach zu fragen.</translation>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>Im Takt: Lumo hört, was dein Computer abspielt, um ihn zu finden – nur im Speicher. Nichts wird aufgenommen.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

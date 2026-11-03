@@ -1378,6 +1378,10 @@ Sormak için buraya bir dosya bırak.</translation>
         <source>Quit</source>
         <translation>Çık</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>Ritimde: Lumo ritmi bulmak için bilgisayarının çaldığını yalnızca bellekte dinler. Hiçbir şey kaydedilmez.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

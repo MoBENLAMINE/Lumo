@@ -72,7 +72,7 @@ It's native through and through: C++20 and Qt Quick, no web view. The island ani
 
 - **Lumo** reacts to everything: it works with your agents, calls you, celebrates, sulks, and gets dizzy if you poke
   it too much. Every reaction has its own synthesized sound.
-- **It says hello** when it starts, and dances when music plays.
+- **It says hello** when it starts, and dances on the beat of whatever you play.
 - **Your screen**: the island sits on the screen you pick, and goes back there when you plug it in again.
 - **Music**: what's playing in any MPRIS player, with controls.
 - **Instinct**: hands chat answers, sessions and dictations to the Instinct assistant through you (WhatsApp,

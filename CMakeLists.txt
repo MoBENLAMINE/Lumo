@@ -50,6 +50,7 @@ qt_add_executable(lumo
     src/PlanUsage.cpp src/PlanUsage.h
     src/CloudSessions.cpp src/CloudSessions.h
     src/Music.cpp src/Music.h
+    src/Beat.cpp src/Beat.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -121,6 +122,12 @@ qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/Agen
 target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
+
+# The beat tracker, on synthetic songs.
+qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
+target_include_directories(test_beat PRIVATE src)
+target_link_libraries(test_beat PRIVATE Qt6::Core Qt6::Test)
+add_test(NAME beat COMMAND test_beat)
 
 # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
 qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)

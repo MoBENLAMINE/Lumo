@@ -26,15 +26,85 @@ Item {
     property string outfit: ""
     signal wardrobeRequested()
 
-    // Music is playing: sway to it.
+    // Music is playing: dance on its beat (Beat.cpp), a different move every
+    // two bars, as big as the beat is hard.
     property bool dancing: false
-    SequentialAnimation on rotation {
-        running: mascot.dancing
-        loops: Animation.Infinite
-        onRunningChanged: if (!running) mascot.rotation = 0
-        RotationAnimator { from: 0; to: 9; duration: 240; easing.type: Easing.OutSine }
-        RotationAnimator { from: 9; to: -9; duration: 480; easing.type: Easing.InOutSine }
-        RotationAnimator { from: -9; to: 0; duration: 240; easing.type: Easing.InSine }
+    property string move: "bob"
+    property bool pumping: false        // the arm is up, pumping to the beat
+    // The pose the next beat moves to.
+    property real danceAngle: 0
+    property real danceX: 0
+    property real danceY: 0
+    property real danceSquash: 0
+    property real danceArm: 0
+    property int beatMs: 500
+    readonly property var danceMoves: ["bob", "sway", "step", "hop", "arms", "sway", "step", "bob"]
+
+    Connections {
+        target: mascot.dancing && mascot.alive && typeof beat !== "undefined" ? beat : null
+        function onBeat(index, strength, period) { mascot.danceBeat(index, strength, period) }
+    }
+    onDancingChanged: if (!dancing) settle()
+
+    function danceBeat(index, strength, period) {
+        if (spin.running || mascot.face === "dizzy")
+            return
+        // A new move every two bars; soft music gets the gentle ones.
+        if (index % 8 === 0) {
+            const gentle = strength < 0.4
+            let next = move
+            for (let tries = 0; tries < 6 && next === move; ++tries) {
+                next = danceMoves[Math.floor(Math.random() * danceMoves.length)]
+                if (gentle && (next === "hop" || next === "arms")) next = move
+            }
+            move = next
+            // Now and then, a twirl to start the phrase.
+            if (index > 0 && index % 16 === 0 && strength > 0.7 && Math.random() < 0.35) {
+                spin.restart()
+                return
+            }
+        }
+        const a = Math.max(0.35, Math.min(1, strength))
+        const side = index % 2 ? 1 : -1
+        let angle = 0, x = 0, y = 0, squashBy = 0.1 * a, arm = 0
+        switch (move) {
+        case "sway": angle = side * 9 * a; squashBy = 0.05 * a; break
+        case "step": x = side * 0.07 * size * a; angle = side * 3 * a; squashBy = 0.08 * a; break
+        case "hop": y = -size * (strength >= 0.45 ? 0.1 + 0.12 * a : 0.05); squashBy = 0.12 * a; break
+        case "arms": arm = side > 0 ? -80 : -20; angle = side * 4 * a; squashBy = 0.07 * a; break
+        default: squashBy = 0.13 * a   // bob: a nod of the whole body
+        }
+        pumping = move === "arms"
+        beatMs = Math.max(250, Math.min(900, period))
+        danceAngle = angle; danceX = x; danceY = y; danceSquash = squashBy; danceArm = arm
+        danceAnim.restart()
+    }
+    function settle() {
+        pumping = false
+        danceAngle = 0; danceX = 0; danceY = 0; danceSquash = 0; danceArm = 0
+        beatMs = 500
+        danceAnim.restart()
+    }
+
+    ParallelAnimation {
+        id: danceAnim
+        NumberAnimation { target: swayTurn; property: "angle"; to: mascot.danceAngle; duration: mascot.beatMs * 0.45; easing.type: Easing.OutBack }
+        NumberAnimation { target: groove; property: "x"; to: mascot.danceX; duration: mascot.beatMs * 0.4; easing.type: Easing.OutQuad }
+        SequentialAnimation {
+            NumberAnimation { target: groove; property: "y"; to: mascot.danceY; duration: mascot.beatMs * 0.35; easing.type: Easing.OutQuad }
+            NumberAnimation { target: groove; property: "y"; to: 0; duration: mascot.beatMs * 0.5; easing.type: Easing.OutBounce }
+        }
+        SequentialAnimation {
+            ParallelAnimation {
+                NumberAnimation { target: beatScale; property: "yScale"; to: 1 - mascot.danceSquash; duration: mascot.beatMs * 0.18; easing.type: Easing.OutQuad }
+                NumberAnimation { target: beatScale; property: "xScale"; to: 1 + mascot.danceSquash * 0.6; duration: mascot.beatMs * 0.18; easing.type: Easing.OutQuad }
+            }
+            ParallelAnimation {
+                NumberAnimation { target: beatScale; property: "yScale"; to: 1; duration: mascot.beatMs * 0.7; easing.type: Easing.OutBack }
+                NumberAnimation { target: beatScale; property: "xScale"; to: 1; duration: mascot.beatMs * 0.7; easing.type: Easing.OutBack }
+            }
+        }
+        NumberAnimation { target: waveArm; property: "rotation"; to: mascot.danceArm; duration: mascot.beatMs * 0.4; easing.type: Easing.OutBack }
     }
 
     // A "!" badge on the corner: something needs you.
@@ -166,7 +236,7 @@ Item {
             model: 2
             Rectangle {
                 required property int index
-                visible: !(index === 1 && mascot.waving)
+                visible: !(index === 1 && (mascot.waving || mascot.pumping))
                 z: -0.5
                 x: (index === 0 ? 0.0 : 0.86) * mascot.size
                 y: 0.5 * mascot.size
@@ -195,7 +265,7 @@ Item {
         Rectangle {
             id: waveArm
             z: 1
-            visible: mascot.waving
+            visible: mascot.waving || mascot.pumping
             x: 0.9 * mascot.size
             y: 0.5 * mascot.size
             width: 0.28 * mascot.size; height: 0.15 * mascot.size
@@ -674,7 +744,11 @@ Item {
     // hops: happy jump and alert bounce
     transform: [
         Translate { id: hop; y: 0 },
-        Scale { id: squashScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 }
+        Scale { id: squashScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 },
+        // dancing: a step, a lean from the feet, a nod
+        Translate { id: groove; x: 0; y: 0 },
+        Rotation { id: swayTurn; origin.x: mascot.width / 2; origin.y: mascot.height; angle: 0 },
+        Scale { id: beatScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 }
     ]
     SequentialAnimation {
         running: mascot.alive && (mascot.face === "happy" || mascot.face === "alert")

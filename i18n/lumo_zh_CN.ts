@@ -1378,6 +1378,10 @@ Drop a file here to ask about it.</source>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>踩着节拍：Lumo 只在内存中聆听电脑正在播放的声音来找到节拍，不会录制任何内容。</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

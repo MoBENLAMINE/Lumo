@@ -728,6 +728,7 @@ Window {
                         }
                         SettingRow {
                             title: qsTr("Lumo dances while music plays")
+                            description: qsTr("On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.")
                             Toggle { on: shell.dance; onToggled: (v) => shell.dance = v }
                         }
                     }

@@ -1378,6 +1378,10 @@ Letakkan berkas di sini untuk bertanya tentangnya.</translation>
         <source>Quit</source>
         <translation>Keluar</translation>
     </message>
+    <message>
+        <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
+        <translation>Sesuai irama: Lumo mendengarkan yang diputar komputermu untuk menemukannya, hanya di memori. Tidak ada yang direkam.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>

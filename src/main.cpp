@@ -18,6 +18,7 @@
 #include "HookInstaller.h"
 #include "HookServer.h"
 #include "Music.h"
+#include "Beat.h"
 #include "PlanUsage.h"
 #include "Shell.h"
 #include "Sounds.h"
@@ -88,6 +89,7 @@ int main(int argc, char *argv[]) {
     PlanUsage planUsage;
     CloudSessions cloud;
     Music music;
+    Beat beat;
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/Dictation"), &dictation, QDBusConnection::ExportScriptableSlots);
 
     QObject::connect(&server, &HookServer::hookEvent, &hub, &AgentHub::onHookEvent);
@@ -117,6 +119,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty(QStringLiteral("activeWindow"), &activeWindow);
     engine.rootContext()->setContextProperty(QStringLiteral("planUsage"), &planUsage);
     engine.rootContext()->setContextProperty(QStringLiteral("music"), &music);
+    engine.rootContext()->setContextProperty(QStringLiteral("beat"), &beat);
     engine.rootContext()->setContextProperty(QStringLiteral("cloud"), &cloud);
     engine.loadFromModule("Lumo", "Island");
     if (engine.rootObjects().isEmpty()) return 1;

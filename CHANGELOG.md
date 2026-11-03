@@ -23,6 +23,11 @@
   CLI on your plan; As said by default); and Statistics show time saved, days in a row, words a day and the
   apps you dictate in.
 - The music card has shuffle, repeat and volume, when the player offers them.
+- Lumo dances on the beat: it listens to what your computer plays (in memory, nothing recorded), finds the
+  tempo and moves on every beat — a nod, a sway, a side step, a hop, a pumping arm, now and then a twirl —
+  changing move every two bars, bigger on the hard beats. Without `parec` or `pw-record` it keeps a steady
+  tempo instead.
+- Lumo speaks 16 languages: Settings → General → Language (System follows your desktop), switched live.
 - Settings can be searched: a field in the sidebar (or Ctrl+F) finds any setting and takes you to it.
 - A new README: the launch greeting as an animated hero, Lumo's moods and outfits, and the features grouped
   by what they do for you.
