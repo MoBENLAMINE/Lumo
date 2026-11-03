@@ -19,6 +19,8 @@ const QUrl kSessionsUrl(QStringLiteral("https://api.anthropic.com/v1/code/sessio
 const QStringList kKnownStatuses = {QStringLiteral("running"), QStringLiteral("pending"), QStringLiteral("idle"),
                                     QStringLiteral("requires_action"), QStringLiteral("failed")};
 constexpr int kEveryMs = 60 * 1000;
+// While a cloud session is working or waiting for you, look every few seconds.
+constexpr int kActiveMs = 4 * 1000;
 constexpr int kMaxBackoffMs = 30 * 60 * 1000;
 constexpr int kTimeoutMs = 20 * 1000;
 constexpr qint64 kRenewAheadMs = 60 * 1000;
@@ -182,6 +184,12 @@ void CloudSessions::ask(const QString &token, const QString &org) {
         if (!QJsonDocument::fromJson(body).object().contains(QStringLiteral("data"))) return; // not the list: keep what we show
         m_backoffMs = 0;
         m_warned = false;
-        emit sessionsChanged(parseCloudSessions(body));
+        const QList<CloudSession> sessions = parseCloudSessions(body);
+        emit sessionsChanged(sessions);
+        // Something is moving: ask again soon, so approvals show up within seconds.
+        const bool active = std::any_of(sessions.cbegin(), sessions.cend(), [](const CloudSession &s) {
+            return s.status == QLatin1String("running") || s.status == QLatin1String("pending") || s.status == QLatin1String("requires_action");
+        });
+        if (active) QTimer::singleShot(kActiveMs, this, [this] { refresh(); });
     });
 }
