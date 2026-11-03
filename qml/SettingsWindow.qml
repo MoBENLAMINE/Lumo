@@ -45,6 +45,58 @@ Window {
         pageFade.restart()
     }
 
+    // ------------------------------------------------------------ search
+    // The sidebar's field looks through every row of every page: its title,
+    // its description, its group and its page, ignoring case and accents.
+    property string query: ""
+    function plain(s) {
+        let t = String(s || "")
+        try { t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "") } catch (e) {}
+        return t.toLowerCase()
+    }
+    function collectRows(item, out, page, group) {
+        // A QML list isn't iterable everywhere: index it.
+        for (let i = 0; i < item.children.length; i++) {
+            const c = item.children[i]
+            const g = c.isGroup === true ? c.title : group
+            if (c.isSettingRow === true)
+                out.push({ page: page, group: g, title: c.title, description: c.description, item: c })
+            collectRows(c, out, page, g)
+        }
+    }
+    readonly property var results: {
+        const words = plain(query).split(/\s+/).filter(w => w.length > 0)
+        if (words.length === 0) return []
+        const rows = []
+        for (let i = 0; i < pagesBox.children.length; i++) {
+            const p = pagesBox.children[i]
+            if (p.isPage === true) collectRows(p, rows, p.index, "")
+        }
+        return rows.filter(r => {
+            const hay = plain([r.title, r.description, r.group, settings.pages[r.page].title].join(" "))
+            return words.every(w => hay.indexOf(w) >= 0)
+        })
+    }
+    // Opens the row's page, brings the row into view and makes it glow.
+    function goTo(r) {
+        searchField.text = ""
+        settings.page = r.page
+        revealTimer.target = r.item
+        revealTimer.restart()
+    }
+    Timer {
+        id: revealTimer
+        property var target: null
+        interval: 60
+        onTriggered: {
+            if (!target) return
+            const y = target.mapToItem(pagesBox, 0, 0).y + pagesBox.y
+            scroller.contentY = Math.max(0, Math.min(y - 80, scroller.contentHeight - scroller.height))
+            target.flash()
+        }
+    }
+    Shortcut { sequence: StandardKey.Find; onActivated: { searchField.forceActiveFocus(); searchField.selectAll() } }
+
     // ------------------------------------------------------------ building blocks
 
     component Toggle: Item {
@@ -189,6 +241,7 @@ Window {
     // A page: big title, subtitle, then its groups.
     component Page: ColumnLayout {
         id: pg
+        readonly property bool isPage: true
         property int index
         default property alias content: pageBody.data
         visible: settings.page === index
@@ -219,6 +272,7 @@ Window {
     // A titled card of rows, with an optional note under it.
     component Group: ColumnLayout {
         id: g
+        readonly property bool isGroup: true
         property string title
         property string footer
         default property alias rows: groupBody.data
@@ -261,12 +315,29 @@ Window {
     // One setting: what it is on the left, its control on the right.
     component SettingRow: Item {
         id: row
+        readonly property bool isSettingRow: true
         property string title
         property string description
         property color titleColor: Ui.text
         default property alias controls: rowControls.data
+        // A search result was opened: glow for a moment.
+        function flash() { flashAnim.restart() }
         Layout.fillWidth: true
         implicitHeight: Math.max(rowText.implicitHeight, rowControls.implicitHeight) + 26
+        Rectangle {
+            id: flashRect
+            anchors.fill: parent
+            anchors.margins: 3
+            radius: 10
+            color: Ui.accent
+            opacity: 0
+        }
+        SequentialAnimation {
+            id: flashAnim
+            NumberAnimation { target: flashRect; property: "opacity"; to: 0.22; duration: 180 }
+            PauseAnimation { duration: 700 }
+            NumberAnimation { target: flashRect; property: "opacity"; to: 0; duration: 700 }
+        }
         Rectangle { visible: row.y > 0; x: 16; width: parent.width - 32; height: 1; color: settings.groupLine }
         ColumnLayout {
             id: rowText
@@ -362,6 +433,26 @@ Window {
                     }
                 }
 
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 10
+                    placeholderText: qsTr("Search settings")
+                    placeholderTextColor: Ui.faint
+                    color: Ui.text
+                    font.pixelSize: Ui.body
+                    leftPadding: 34
+                    onTextChanged: settings.query = text
+                    Keys.onEscapePressed: text = ""
+                    background: Rectangle {
+                        implicitHeight: 34
+                        radius: 9
+                        color: Ui.card
+                        border.color: searchField.activeFocus ? Ui.accent : settings.groupLine
+                        Icon { x: 11; anchors.verticalCenter: parent.verticalCenter; path: Ui.icons.search; tint: Ui.dim; size: 15 }
+                    }
+                }
+
                 Repeater {
                     model: settings.pages
                     Rectangle {
@@ -438,9 +529,86 @@ Window {
             }
         }
 
+        // ---------------------------------------------------- search results
+        Flickable {
+            visible: settings.query.trim().length > 0
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            contentWidth: width
+            contentHeight: resultsCol.implicitHeight + 80
+            ColumnLayout {
+                id: resultsCol
+                width: Math.min(settings.contentMax, parent.width - 80)
+                x: (parent.width - width) / 2
+                y: 40
+                spacing: 10
+                Text {
+                    text: qsTr("Search")
+                    color: Ui.text
+                    font.pixelSize: 26
+                    font.weight: Font.Bold
+                }
+                Text {
+                    Layout.bottomMargin: 16
+                    text: settings.results.length === 0 ? qsTr("Nothing matches “%1”.").arg(settings.query.trim())
+                        : settings.results.length === 1 ? qsTr("1 setting matches “%1”.").arg(settings.query.trim())
+                        : qsTr("%1 settings match “%2”.").arg(settings.results.length).arg(settings.query.trim())
+                    color: Ui.dim
+                    font.pixelSize: Ui.body
+                }
+                Repeater {
+                    model: settings.results
+                    Rectangle {
+                        id: hit
+                        required property var modelData
+                        Layout.fillWidth: true
+                        implicitHeight: hitCol.implicitHeight + 24
+                        radius: 12
+                        color: hitHover.hovered ? Ui.cardHover : settings.groupBg
+                        border.color: hitHover.hovered ? Ui.accent : settings.groupLine
+                        ColumnLayout {
+                            id: hitCol
+                            x: 16; y: 12
+                            width: parent.width - 32
+                            spacing: 3
+                            Text {
+                                text: settings.pages[hit.modelData.page].title + (hit.modelData.group ? "  ›  " + hit.modelData.group : "")
+                                color: Ui.accent
+                                font.pixelSize: Ui.small
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: hit.modelData.title
+                                color: Ui.text
+                                font.pixelSize: Ui.body + 1
+                                font.weight: Font.Medium
+                                wrapMode: Text.Wrap
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                visible: text.length > 0
+                                text: hit.modelData.description
+                                color: Ui.dim
+                                font.pixelSize: Ui.small + 1
+                                wrapMode: Text.Wrap
+                                maximumLineCount: 2
+                                elide: Text.ElideRight
+                            }
+                        }
+                        HoverHandler { id: hitHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: settings.goTo(hit.modelData) }
+                    }
+                }
+            }
+        }
+
         // ---------------------------------------------------- pages
         Flickable {
             id: scroller
+            visible: settings.query.trim().length === 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
