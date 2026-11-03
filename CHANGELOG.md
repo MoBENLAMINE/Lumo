@@ -14,6 +14,12 @@
   click skips it. Settings → General → "Say hello when Lumo starts" (on by default) also replays it.
 - Settings → General → Screen puts the island on the screen of your choice. If that screen is unplugged,
   the primary one takes the island until it's back.
+- New expressions, each with its own sound: "> <" when poked (ouch, giggle or poke, never the same twice),
+  spinning spirals and "Too many pokes!" in the island when it's dizzy, dozing off with drifting z's after
+  ten quiet minutes and a yawn when it wakes, heart eyes and floating hearts when you rest the pointer on it,
+  a wink after it celebrates, and a thinking face with three pulsing dots while the chat thinks.
+- The music card has shuffle, repeat and volume, when the player offers them.
+- Settings can be searched: a field in the sidebar (or Ctrl+F) finds any setting and takes you to it.
 - A new README: the launch greeting as an animated hero, Lumo's moods and outfits, and the features grouped
   by what they do for you.
 - Sounds work from the start: they follow the system's default output, so a Lumo started at login, before
