@@ -57,6 +57,16 @@ set_target_properties(lumo PROPERTIES
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
 target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
+
+# Translations (i18n/lumo_<language>.ts), built into the app when Qt's
+# Linguist tools are installed; without them Lumo is in English only.
+find_package(Qt6 QUIET COMPONENTS LinguistTools)
+file(GLOB LUMO_TS ${CMAKE_CURRENT_SOURCE_DIR}/i18n/lumo_*.ts)
+if(Qt6LinguistTools_FOUND AND LUMO_TS)
+    qt_add_translations(lumo TS_FILES ${LUMO_TS} RESOURCE_PREFIX "/i18n")
+elseif(LUMO_TS)
+    message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
+endif()
 set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)

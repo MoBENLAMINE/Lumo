@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm --needed base-devel cmake git curl bzip2 \
-            qt6-base qt6-declarative qt6-multimedia qt6-shadertools layer-shell-qt kglobalaccel
+            qt6-base qt6-declarative qt6-multimedia qt6-shadertools qt6-tools layer-shell-qt kglobalaccel
       - uses: actions/checkout@v4
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

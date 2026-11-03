@@ -117,7 +117,8 @@ cd Lumo/packaging/arch && makepkg -si
 ### From source
 
 Needs Qt ≥ 6.5 (Base, Declarative, Multimedia, ShaderTools), LayerShellQt, KF6 GlobalAccel, `wl-clipboard`, `pactl`,
-and CMake. The speech engine (sherpa-onnx) is downloaded on first configure.
+and CMake, plus Qt's Linguist tools (`qt6-tools`) for the translations. The speech engine (sherpa-onnx) is downloaded
+on first configure.
 
 ```bash
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/.local

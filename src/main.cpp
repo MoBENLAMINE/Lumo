@@ -1,7 +1,9 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QLocale>
 #include <QStandardPaths>
+#include <QTranslator>
 #include <QDBusConnection>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -70,6 +72,17 @@ int main(int argc, char *argv[]) {
     HookInstaller installer;
     Sounds sounds;
     Shell shell;
+    // Lumo's language: the one picked in Settings, or the desktop's. English
+    // needs nothing: it is what the code is written in.
+    QTranslator translator;
+    auto useLanguage = [&] {
+        QCoreApplication::removeTranslator(&translator);
+        const QString language = shell.language();
+        const QLocale locale = language.isEmpty() ? QLocale::system() : QLocale(language);
+        if (translator.load(locale, QStringLiteral("lumo"), QStringLiteral("_"), QStringLiteral(":/i18n")))
+            QCoreApplication::installTranslator(&translator);
+    };
+    useLanguage();
     ActiveWindow activeWindow;
     Dictation dictation(&activeWindow);
     PlanUsage planUsage;
@@ -91,6 +104,10 @@ int main(int argc, char *argv[]) {
     if (!server.listen()) qWarning("Lumo couldn't listen on %s", qPrintable(HookServer::socketPath()));
 
     QQmlApplicationEngine engine;
+    QObject::connect(&shell, &Shell::languageChanged, &engine, [&] {
+        useLanguage();
+        engine.retranslate();
+    });
     engine.rootContext()->setContextProperty(QStringLiteral("hub"), &hub);
     engine.rootContext()->setContextProperty(QStringLiteral("chat"), &chat);
     engine.rootContext()->setContextProperty(QStringLiteral("installer"), &installer);
