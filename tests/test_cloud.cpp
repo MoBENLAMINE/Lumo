@@ -63,14 +63,25 @@ private slots:
     }
 
     void readsTheServerFormat() {
-        // What the server sends: prefixed status, microsecond timestamps.
-        const QJsonArray data{QJsonObject{{QStringLiteral("id"), QStringLiteral("session_018WoC1YAV5RmYjptj1beY84")},
-                                          {QStringLiteral("session_status"), QStringLiteral("SESSION_STATUS_REQUIRES_ACTION")},
-                                          {QStringLiteral("title"), QStringLiteral("Gestion des risques du Projet")},
-                                          {QStringLiteral("updated_at"), QStringLiteral("2026-11-03T08:30:03.914844Z")}}};
+        // What the server sends: status and worker_status, microsecond timestamps.
+        auto entry = [](const char *id, const char *worker, const char *conn) {
+            return QJsonObject{{QStringLiteral("id"), QString::fromLatin1(id)},
+                               {QStringLiteral("status"), QStringLiteral("running")},
+                               {QStringLiteral("worker_status"), QString::fromLatin1(worker)},
+                               {QStringLiteral("connection_status"), QString::fromLatin1(conn)},
+                               {QStringLiteral("title"), QStringLiteral("Gestion des risques du Projet")},
+                               {QStringLiteral("updated_at"), QStringLiteral("2026-11-03T08:30:03.914844Z")}};
+        };
+        const QJsonArray data{entry("session_018WoC1YAV5RmYjptj1beY84", "requires_action", "connected"),
+                              entry("session_running", "running", "connected"),
+                              entry("session_gone", "running", "disconnected"),
+                              entry("session_new", "", "connected")};
         const auto out = parseCloudSessions(listOf(data).toUtf8());
-        QCOMPARE(out.size(), 1);
+        QCOMPARE(out.size(), 4);
         QCOMPARE(out[0].status, QStringLiteral("requires_action"));
+        QCOMPARE(out[1].status, QStringLiteral("running"));
+        QCOMPARE(out[2].status, QStringLiteral("idle"));
+        QCOMPARE(out[3].status, QStringLiteral("pending"));
         QCOMPARE(out[0].updatedAt, QDateTime::fromString(QStringLiteral("2026-11-03T08:30:03.914Z"), Qt::ISODateWithMs).toMSecsSinceEpoch());
     }
 

@@ -37,11 +37,27 @@ qint64 isoMs(QString s) {
     return t.isValid() ? t.toMSecsSinceEpoch() : 0;
 }
 
-// "SESSION_STATUS_REQUIRES_ACTION" and "requires_action" are the same status.
-QString statusOf(QString raw) {
-    raw = raw.toLower();
-    if (raw.startsWith(QLatin1String("session_status_"))) raw.remove(0, 15);
-    return raw;
+// "SESSION_STATUS_IDLE" and "idle" are the same value.
+QString plain(const QJsonValue &v, const QString &prefix) {
+    QString s = v.toString().toLower();
+    if (s.startsWith(prefix)) s.remove(0, prefix.size());
+    return s;
+}
+
+// The status of a list entry, by the rules the Claude Code CLI uses: the entry has
+// status, worker_status and connection_status, not one session_status field.
+QString statusOf(const QJsonObject &o) {
+    const QString prefixS = QStringLiteral("session_status_"), prefixW = QStringLiteral("worker_status_");
+    if (o.contains(QStringLiteral("session_status"))) return plain(o.value(QStringLiteral("session_status")), prefixS);
+    const QString status = plain(o.value(QStringLiteral("status")), prefixS);
+    const QString worker = plain(o.value(QStringLiteral("worker_status")), prefixW);
+    if (status == QLatin1String("archived") || status == QLatin1String("failed")) return status;
+    if (status == QLatin1String("paused")) return worker == QLatin1String("requires_action") ? QStringLiteral("requires_action") : QStringLiteral("idle");
+    if (worker.isEmpty() || worker == QLatin1String("unspecified")) return QStringLiteral("pending");
+    if (worker == QLatin1String("running"))
+        return o.value(QStringLiteral("connection_status")).toString().toLower() == QLatin1String("disconnected") ? QStringLiteral("idle") : QStringLiteral("running");
+    if (worker == QLatin1String("requires_action")) return QStringLiteral("requires_action");
+    return QStringLiteral("idle");
 }
 
 // "https://github.com/owner/name.git" → "owner/name"; empty for anything else.
@@ -67,7 +83,7 @@ QList<CloudSession> parseCloudSessions(const QByteArray &body) {
     for (const auto &item : items) {
         const QJsonObject o = item.toObject();
         const QString id = o.value(QStringLiteral("id")).toString();
-        const QString status = statusOf(o.value(QStringLiteral("session_status")).toString());
+        const QString status = statusOf(o);
         if (!idPattern.match(id).hasMatch() || !kKnownStatuses.contains(status)) {
             // Archived sessions are expected to be left out; anything else is worth a line in the log.
             if (status != QLatin1String("archived")) ++dropped;
