@@ -9,9 +9,9 @@
 #include <QUrlQuery>
 #include <QFile>
 #include <QGuiApplication>
+#include <QLinearGradient>
 #include <QMenu>
 #include <QPainter>
-#include <QPainterPath>
 #include <QQuickWindow>
 #include <QRegion>
 #include <QScreen>
@@ -25,7 +25,8 @@
 namespace {
 QString autostartFile() { return QDir::homePath() + QStringLiteral("/.config/autostart/io.github.mobenlamine.lumo.desktop"); }
 
-// Lumo, drawn small for the tray.
+// Lumo, drawn small for the tray: the blocky terracotta body with its arms and
+// four legs, and the dark face screen with two eyes of light.
 QIcon lumoIcon() {
     QIcon icon;
     for (int size : {16, 22, 24, 32, 48, 64}) {
@@ -33,17 +34,28 @@ QIcon lumoIcon() {
         pm.fill(Qt::transparent);
         QPainter p(&pm);
         p.setRenderHint(QPainter::Antialiasing);
-        const qreal s = size;
-        QPainterPath body;
-        body.addRoundedRect(QRectF(s * .06, s * .1, s * .88, s * .82), s * .34, s * .34);
-        p.fillPath(body, QColor(0xE8, 0x87, 0x5F));
-        p.setBrush(Qt::white);
         p.setPen(Qt::NoPen);
-        p.drawEllipse(QRectF(s * .24, s * .32, s * .2, s * .26));
-        p.drawEllipse(QRectF(s * .56, s * .32, s * .2, s * .26));
-        p.setBrush(QColor(0x1A, 0x1A, 0x1A));
-        p.drawEllipse(QRectF(s * .29, s * .4, s * .11, s * .14));
-        p.drawEllipse(QRectF(s * .61, s * .4, s * .11, s * .14));
+        const qreal s = size;
+        const QColor body(0xD9, 0x77, 0x57), shade(0xB2, 0x5E, 0x40);
+        // legs and arms, behind the body
+        p.setBrush(shade);
+        for (qreal x : {0.22, 0.36, 0.55, 0.69}) p.drawRoundedRect(QRectF(s * x, s * 0.72, s * 0.09, s * 0.2), s * 0.03, s * 0.03);
+        p.drawRoundedRect(QRectF(0, s * 0.45, s * 0.16, s * 0.15), s * 0.04, s * 0.04);
+        p.drawRoundedRect(QRectF(s * 0.84, s * 0.45, s * 0.16, s * 0.15), s * 0.04, s * 0.04);
+        // the body
+        QLinearGradient g(0, 0, 0, s);
+        g.setColorAt(0, QColor(0xF0, 0x8F, 0x6E));
+        g.setColorAt(1, body);
+        p.setBrush(g);
+        p.drawRoundedRect(QRectF(s * 0.07, s * 0.04, s * 0.86, s * 0.76), s * 0.22, s * 0.22);
+        // the face screen
+        p.setBrush(QColor(0x14, 0x14, 0x1C));
+        p.drawRoundedRect(QRectF(s * 0.16, s * 0.24, s * 0.68, s * 0.4), s * 0.17, s * 0.17);
+        // two eyes of light
+        p.setBrush(QColor(0xEE, 0xF8, 0xFF));
+        const qreal ew = std::max(1.5, s * 0.12), eh = std::max(2.5, s * 0.2);
+        p.drawRoundedRect(QRectF(s * 0.35 - ew / 2, s * 0.44 - eh / 2, ew, eh), ew * 0.35, ew * 0.35);
+        p.drawRoundedRect(QRectF(s * 0.65 - ew / 2, s * 0.44 - eh / 2, ew, eh), ew * 0.35, ew * 0.35);
         icon.addPixmap(pm);
     }
     return icon;

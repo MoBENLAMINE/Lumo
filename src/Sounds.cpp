@@ -61,6 +61,32 @@ double note(double semitonesFromA4) { return 440.0 * std::pow(2.0, semitonesFrom
 const QHash<QString, std::vector<Note>> &recipes() {
     static const QHash<QString, std::vector<Note>> r = {
         {QStringLiteral("hello"), {{0, .16, note(3), note(3), .35}, {.09, .16, note(7), note(7), .35}, {.18, .3, note(10), note(10), .35}}},
+        // Lumo says hello at launch: one piece that follows the whole greeting (Island.qml's
+        // greetFx, which starts it). The island opens on a rising swell; Lumo pops out at
+        // 0.28 s and light scatters as chimes; a "ta-da" when it smiles at 0.95 s; the arm
+        // rises at 1.8 s; a "hi" on each wave (2.19, 2.53, 2.87 s); a falling swell as the island
+        // closes at 3.3 s. A soft bed runs underneath, so it never goes quiet.
+        {QStringLiteral("greet"), {
+            {0.00, .45, note(-9), note(3), .14}, {0.05, .40, note(-2), note(10), .07},
+            {0.28, .09, note(15), note(22), .26},
+            {0.33, .14, note(27), note(27), .10}, {0.39, .14, note(31), note(31), .09}, {0.45, .14, note(34), note(34), .09},
+            {0.51, .14, note(29), note(29), .08}, {0.57, .14, note(36), note(36), .07}, {0.63, .14, note(32), note(32), .07},
+            {0.71, .14, note(39), note(39), .06}, {0.79, .14, note(34), note(34), .05}, {0.88, .16, note(31), note(31), .04},
+            {0.95, .13, note(10), note(10), .26}, {1.06, .55, note(15), note(15), .30, 3}, {1.06, .55, note(19), note(19), .12},
+            {1.12, .70, note(22), note(22), .05},
+            // a soft bed under everything, so the greeting never goes quiet
+            {1.30, .80, note(7), note(7), .05}, {1.90, 1.0, note(-2), note(-2), .045}, {2.80, 1.0, note(3), note(3), .04},
+            // a little "mm?" before the arm rises, then the arm rises
+            {1.55, .35, note(10), note(12), .08},
+            {1.80, .26, note(3), note(12), .13},
+            // "hi", "hi", "hi!" on each wave, each with a twinkle after it
+            {2.15, .12, note(14), note(17), .22}, {2.30, .18, note(29), note(29), .05},
+            {2.49, .12, note(15), note(19), .22}, {2.64, .18, note(31), note(31), .05},
+            {2.66, .20, note(19), note(19), .06},
+            {2.83, .22, note(17), note(22), .24}, {3.02, .22, note(34), note(34), .05},
+            {3.05, .30, note(22), note(19), .05}, {3.15, .25, note(15), note(15), .06},
+            {3.30, .55, note(10), note(-2), .12},
+        }},
         {QStringLiteral("attention"), {{0, .22, note(12), note(12), .4}, {.16, .4, note(19), note(19), .4}}},
         {QStringLiteral("done"), {{0, .14, note(3), note(3), .3}, {.07, .14, note(7), note(7), .3}, {.14, .14, note(10), note(10), .3}, {.21, .45, note(15), note(15), .35}}},
         {QStringLiteral("error"), {{0, .22, note(5), note(5), .35}, {.14, .4, note(0), note(-1), .35}}},
@@ -126,6 +152,10 @@ void Sounds::setVolume(double v) {
     for (auto *fx : std::as_const(m_effects)) fx->setVolume(float(m_volume));
     QSettings().setValue(QStringLiteral("sound/volume"), m_volume);
     emit volumeChanged();
+}
+
+void Sounds::stop(const QString &name) {
+    if (auto *fx = m_effects.value(name)) fx->stop();
 }
 
 void Sounds::play(const QString &name) {

@@ -94,14 +94,15 @@ Window {
     property bool greeting: false
     property int greetBurst: 0
     function greet() { greetFx.restart() }
-    function endGreeting() { greetFx.stop(); helloMascot.mood = "idle"; greeting = false }
+    function endGreeting() { greetFx.stop(); sounds.stop("greet"); helloMascot.mood = "idle"; greeting = false }
     Timer { id: greetAtStart; interval: 600; onTriggered: if (shell.greeting) win.greet() }
     SequentialAnimation {
         id: greetFx
-        ScriptAction { script: { helloMascot.scale = 0; helloMascot.opacity = 0; helloMascot.mood = "idle"; win.greeting = true } }
+        // The "greet" sound follows the whole greeting: change a step here, change Sounds.cpp too.
+        ScriptAction { script: { helloMascot.scale = 0; helloMascot.opacity = 0; helloMascot.mood = "idle"; win.greeting = true; sounds.play("greet") } }
         // let the island open first
         PauseAnimation { duration: 280 }
-        ScriptAction { script: { sounds.play("hello"); win.greetBurst++ } }
+        ScriptAction { script: win.greetBurst++ }
         ParallelAnimation {
             NumberAnimation { target: helloMascot; property: "scale"; from: 0.2; to: 1; duration: 520; easing.type: Easing.OutBack; easing.overshoot: 2 }
             NumberAnimation { target: helloMascot; property: "opacity"; from: 0; to: 1; duration: 180 }
