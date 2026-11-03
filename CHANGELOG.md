@@ -9,7 +9,8 @@
   military dress uniform, headphones and sunglasses. "Auto" puts the headphones on while music plays; a
   saved choice from before (a witch hat…) acts as Auto.
 - Lumo says hello when it starts: the island opens in a burst of light, Lumo pops up, smiles and waves
-  with its little arm, then the island goes back to what it was. A request or a dictation comes first; a
+  with its little arm, then the island goes back to what it was. Its own sound follows every step: a rising
+  swell, chimes as the light scatters, a "ta-da" when it smiles, a "hi" on each wave, and a falling swell. A request or a dictation comes first; a
   click skips it. Settings → General → "Say hello when Lumo starts" (on by default) also replays it.
 - Settings → General → Screen puts the island on the screen of your choice. If that screen is unplugged,
   the primary one takes the island until it's back.

@@ -25,8 +25,10 @@ public:
     double volume() const { return m_volume; }
     void setVolume(double v);
 
-    // hello, finish, needs, attention, done, error, poke, dizzy, pop, send, reply
+    // hello, greet, finish, needs, attention, done, error, poke, dizzy, pop, send, reply
     Q_INVOKABLE void play(const QString &name);
+    // Cuts a sound short (the greeting, when you skip it).
+    Q_INVOKABLE void stop(const QString &name);
 
 signals:
     void mutedChanged();
