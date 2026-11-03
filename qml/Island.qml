@@ -42,6 +42,7 @@ Window {
     function openWardrobe() { showWardrobe = true; openIsland("agents", true) }
     readonly property string mode: dictating ? "dictation"
                                  : (hoverOpen || pinned || hasRequests) ? "open"
+                                 : greeting ? "greeting"
                                  : (activeMood || callingYou || (peek && !resting)) ? "compact"
                                  : resting ? "rest" : "hidden"
     // The window only takes the pointer inside the island (its input region),
@@ -84,7 +85,34 @@ Window {
     }
     onTabChanged: if (tab === "chat" && mode === "open") focusChat()
     // After the shell has set up the surface, so the pill takes the pointer at once.
-    Component.onCompleted: Qt.callLater(updateMask)
+    Component.onCompleted: { Qt.callLater(updateMask); greetAtStart.start() }
+
+    // ------------------------------------------------------------ greeting
+    // Lumo says hello when it starts: the island opens, light bursts out of it,
+    // Lumo pops up, smiles and waves, then the island goes back to what it was.
+    // A request or a dictation comes first; a click skips it.
+    property bool greeting: false
+    property int greetBurst: 0
+    function greet() { greetFx.restart() }
+    function endGreeting() { greetFx.stop(); helloMascot.mood = "idle"; greeting = false }
+    Timer { id: greetAtStart; interval: 600; onTriggered: if (shell.greeting) win.greet() }
+    SequentialAnimation {
+        id: greetFx
+        ScriptAction { script: { helloMascot.scale = 0; helloMascot.opacity = 0; helloMascot.mood = "idle"; win.greeting = true } }
+        // let the island open first
+        PauseAnimation { duration: 280 }
+        ScriptAction { script: { sounds.play("hello"); win.greetBurst++ } }
+        ParallelAnimation {
+            NumberAnimation { target: helloMascot; property: "scale"; from: 0.2; to: 1; duration: 520; easing.type: Easing.OutBack; easing.overshoot: 2 }
+            NumberAnimation { target: helloMascot; property: "opacity"; from: 0; to: 1; duration: 180 }
+        }
+        PauseAnimation { duration: 150 }
+        ScriptAction { script: helloMascot.mood = "happy" }
+        PauseAnimation { duration: 850 }
+        ScriptAction { script: { helloMascot.mood = "idle"; helloMascot.wave() } }
+        PauseAnimation { duration: 1500 }
+        ScriptAction { script: win.greeting = false }
+    }
 
     Timer { id: openTimer; interval: 260; onTriggered: win.hoverOpen = true }
     Timer {
@@ -169,11 +197,13 @@ Window {
 
     // ------------------------------------------------------------ geometry
     readonly property real targetW: mode === "open" ? Ui.openWidth
+                                   : mode === "greeting" ? 340
                                    : mode === "compact" ? Math.max(232, Math.min(470, compactRow.implicitWidth + 30))
                                    : mode === "dictation" ? Math.max(200, Math.min(520, dictationBar.implicitWidth + 32))
                                    : mode === "rest" ? Math.max(232, Math.min(470, restRow.implicitWidth + 30))
                                    : 160
     readonly property real targetH: mode === "open" ? Math.min(win.maxOpenH, openCol.implicitHeight + 28)
+                                   : mode === "greeting" ? 148
                                    : mode === "compact" || mode === "dictation" ? Ui.compactHeight
                                    : mode === "rest" ? Ui.compactHeight : 0
     property real bodyW: targetW
@@ -231,7 +261,7 @@ Window {
         // the bottom ones show, like a notch.
         Rectangle {
             id: body
-            readonly property real r: win.mode === "open" ? 28 : 19
+            readonly property real r: win.mode === "open" || win.mode === "greeting" ? 28 : 19
             x: (win.width - win.bodyW) / 2
             y: -r
             width: win.bodyW
@@ -267,6 +297,61 @@ Window {
             height: Math.max(0, win.bodyH)
             clip: true
             transform: Translate { x: win.shakeX }
+
+            // ---------------- greeting
+            Item {
+                id: greetLayer
+                anchors.fill: parent
+                opacity: win.mode === "greeting" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { OpacityAnimator { duration: win.mode === "greeting" ? 200 : 260 } }
+
+                // a field of light bursting out of Lumo, then drifting away
+                Repeater {
+                    model: 30
+                    Rectangle {
+                        id: star
+                        required property int index
+                        readonly property real angle: index * 2.399963 // the golden angle: an even spread
+                        readonly property real reach: 46 + (index * 37 % 120)
+                        readonly property real cx: greetLayer.width / 2
+                        readonly property real cy: greetLayer.height / 2 + 6
+                        width: index % 5 === 0 ? 4 : 2.5
+                        height: width
+                        radius: width / 2
+                        color: index % 3 === 0 ? Ui.accent : index % 3 === 1 ? Ui.glow : "white"
+                        x: cx; y: cy
+                        opacity: 0
+                        Connections { target: win; function onGreetBurstChanged() { starFly.restart() } }
+                        SequentialAnimation {
+                            id: starFly
+                            PauseAnimation { duration: (star.index % 6) * 40 }
+                            ParallelAnimation {
+                                NumberAnimation { target: star; property: "x"; from: star.cx; to: star.cx + Math.cos(star.angle) * star.reach * 1.5; duration: 1700; easing.type: Easing.OutCubic }
+                                NumberAnimation { target: star; property: "y"; from: star.cy; to: star.cy + Math.sin(star.angle) * star.reach * 0.55; duration: 1700; easing.type: Easing.OutCubic }
+                                SequentialAnimation {
+                                    NumberAnimation { target: star; property: "opacity"; to: 0.95; duration: 120 }
+                                    PauseAnimation { duration: 500 }
+                                    NumberAnimation { target: star; property: "opacity"; to: 0; duration: 1080; easing.type: Easing.InQuad }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Mascot {
+                    id: helloMascot
+                    size: 64
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 8
+                    color: Ui.accent
+                    outfit: win.outfit
+                    alive: win.mode === "greeting"
+                    scale: 0
+                    opacity: 0
+                }
+                TapHandler { onTapped: win.endGreeting() }
+            }
 
             // ---------------- compact
             Item {
@@ -802,5 +887,6 @@ Window {
         transientParent: null
         onPreviewFinished: win.previewFinished()
         onPreviewNeedsYou: win.previewNeedsYou()
+        onPreviewGreeting: win.greet()
     }
 }

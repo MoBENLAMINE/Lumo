@@ -18,6 +18,8 @@ class Shell : public QObject {
     Q_PROPERTY(bool alwaysShow READ alwaysShow WRITE setAlwaysShow NOTIFY alwaysShowChanged)
     // The 5-hour / weekly Claude usage rings in the island.
     Q_PROPERTY(bool showUsage READ showUsage WRITE setShowUsage NOTIFY showUsageChanged)
+    // Lumo says hello when it starts: the island opens and Lumo waves.
+    Q_PROPERTY(bool greeting READ greeting WRITE setGreeting NOTIFY greetingChanged)
     Q_PROPERTY(bool showMusic READ showMusic WRITE setShowMusic NOTIFY showMusicChanged)
     Q_PROPERTY(bool dance READ dance WRITE setDance NOTIFY danceChanged)
     // Lumo's outfit: "auto" follows the seasons, "" is none.
@@ -36,6 +38,8 @@ public:
     bool layerShell() const { return m_layerShell; }
     bool alwaysShow() const;
     bool showUsage() const;
+    bool greeting() const;
+    void setGreeting(bool on);
     bool showMusic() const { return flag(QStringLiteral("island/showMusic")); }
     void setShowMusic(bool on) { setFlag(QStringLiteral("island/showMusic"), on, &Shell::showMusicChanged); }
     bool dance() const { return flag(QStringLiteral("island/dance")); }
@@ -64,6 +68,7 @@ signals:
     void autostartChanged();
     void alwaysShowChanged();
     void showUsageChanged();
+    void greetingChanged();
     void showMusicChanged();
     void danceChanged();
     void outfitChanged();

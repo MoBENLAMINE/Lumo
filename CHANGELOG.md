@@ -8,6 +8,9 @@
 - Eight new outfits replace the old ones: crown, Moroccan tarbouche, lion, engineering student, engineer,
   military dress uniform, headphones and sunglasses. "Auto" puts the headphones on while music plays; a
   saved choice from before (a witch hat…) acts as Auto.
+- Lumo says hello when it starts: the island opens in a burst of light, Lumo pops up, smiles and waves
+  with its little arm, then the island goes back to what it was. A request or a dictation comes first; a
+  click skips it. Settings → General → "Say hello when Lumo starts" (on by default) also replays it.
 - The island and Settings match: a depth gradient and a rim lit by the agent's colour on the island, a lit
   stage for Lumo in Settings → About, and one shared palette.
 

@@ -44,6 +44,9 @@ Item {
 
     // Claude finished: a jump with a full spin.
     function celebrate() { spin.restart() }
+    // Hello: the right arm rises and waves three times.
+    function wave() { waveAnim.restart() }
+    property bool waving: false
 
     width: size
     height: size
@@ -133,11 +136,12 @@ Item {
             visible: name.length > 0
         }
 
-        // arms: little nubs on both sides
+        // arms: little nubs on both sides (the right one rises to wave)
         Repeater {
             model: 2
             Rectangle {
                 required property int index
+                visible: !(index === 1 && mascot.waving)
                 z: -0.5
                 x: (index === 0 ? 0.0 : 0.86) * mascot.size
                 y: 0.5 * mascot.size
@@ -160,6 +164,35 @@ Item {
                 color: Qt.darker(mascot.bodyColor, 1.18)
                 antialiasing: true
             }
+        }
+
+        // the waving arm, pivoting at the body's right edge
+        Rectangle {
+            id: waveArm
+            z: 1
+            visible: mascot.waving
+            x: 0.9 * mascot.size
+            y: 0.5 * mascot.size
+            width: 0.28 * mascot.size; height: 0.15 * mascot.size
+            radius: height * 0.42
+            transformOrigin: Item.Left
+            rotation: 0
+            color: Qt.darker(mascot.bodyColor, 1.08)
+            border.width: Math.max(1, mascot.size * 0.015)
+            border.color: Qt.rgba(1, 1, 1, 0.18)
+            antialiasing: true
+        }
+        SequentialAnimation {
+            id: waveAnim
+            PropertyAction { target: mascot; property: "waving"; value: true }
+            NumberAnimation { target: waveArm; property: "rotation"; from: 0; to: -55; duration: 220; easing.type: Easing.OutBack }
+            SequentialAnimation {
+                loops: 3
+                NumberAnimation { target: waveArm; property: "rotation"; to: -100; duration: 170; easing.type: Easing.InOutSine }
+                NumberAnimation { target: waveArm; property: "rotation"; to: -45; duration: 170; easing.type: Easing.InOutSine }
+            }
+            NumberAnimation { target: waveArm; property: "rotation"; to: 0; duration: 220; easing.type: Easing.InQuad }
+            PropertyAction { target: mascot; property: "waving"; value: false }
         }
 
         Rectangle {

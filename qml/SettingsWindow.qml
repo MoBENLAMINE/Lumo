@@ -15,6 +15,7 @@ Window {
     property int page: 0
     signal previewFinished()
     signal previewNeedsYou()
+    signal previewGreeting()
 
     // ------------------------------------------------------------ palette
     readonly property color bg: Ui.islandLow
@@ -475,6 +476,12 @@ Window {
                         SettingRow {
                             title: qsTr("Start Lumo when you log in")
                             Toggle { on: shell.autostart; onToggled: (v) => shell.autostart = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Say hello when Lumo starts")
+                            description: qsTr("The island opens, Lumo pops up and waves, then it gets out of your way.")
+                            ActionButton { text: qsTr("Play"); onClicked: settings.previewGreeting() }
+                            Toggle { on: shell.greeting; onToggled: (v) => shell.greeting = v }
                         }
                         SettingRow {
                             title: qsTr("Always show the island")

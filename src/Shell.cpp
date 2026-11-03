@@ -170,6 +170,14 @@ void Shell::setAlwaysShow(bool on) {
 
 bool Shell::showUsage() const { return QSettings().value(QStringLiteral("island/showUsage"), true).toBool(); }
 
+bool Shell::greeting() const { return QSettings().value(QStringLiteral("island/greeting"), true).toBool(); }
+
+void Shell::setGreeting(bool on) {
+    if (on == greeting()) return;
+    QSettings().setValue(QStringLiteral("island/greeting"), on);
+    emit greetingChanged();
+}
+
 void Shell::setShowUsage(bool on) {
     if (on == showUsage()) return;
     QSettings().setValue(QStringLiteral("island/showUsage"), on);
