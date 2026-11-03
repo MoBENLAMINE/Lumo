@@ -3,407 +3,952 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Window
 
+// Lumo's settings: a sidebar of pages, each page a stack of grouped cards.
 Window {
     id: settings
-    width: 720
-    height: 560
-    minimumWidth: 600
-    minimumHeight: 440
-    title: qsTr("Lumo Settings")
-    color: "#111114"
+    width: 880
+    height: 660
+    minimumWidth: 700
+    minimumHeight: 480
+    title: qsTr("Settings")
+    color: bg
     property int page: 0
     signal previewFinished()
     signal previewNeedsYou()
 
-    readonly property var pages: [qsTr("General"), qsTr("Dictation"), qsTr("Claude Code"), qsTr("Chat"), qsTr("About")]
+    // ------------------------------------------------------------ palette
+    readonly property color bg: "#101013"
+    readonly property color sidebar: "#0B0B0E"
+    readonly property color groupBg: "#16161A"
+    readonly property color groupLine: "#24242B"
+    readonly property color track: "#2E2E36"
+    readonly property color accentSoft: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.14)
+    readonly property int contentMax: 680
 
-    component Section: Text {
-        color: Ui.text
-        font.pixelSize: Ui.title
-        font.weight: Font.DemiBold
-        Layout.topMargin: 6
+    // 24×24 stroke icons, one per page.
+    readonly property var pages: [
+        { title: qsTr("General"), subtitle: qsTr("How Lumo looks, sounds and behaves."),
+          icon: "M4 8h9 M17 8h3 M4 16h3 M11 16h9 M13 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M7 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" },
+        { title: qsTr("Dictation"), subtitle: qsTr("Hold a key, speak, let go — offline, on this computer."),
+          icon: "M12 4a3 3 0 0 0 -3 3v5a3 3 0 0 0 6 0v-5a3 3 0 0 0 -3 -3z M6 11a6 6 0 0 0 12 0 M12 17v3 M9 20h6" },
+        { title: qsTr("Claude Code"), subtitle: qsTr("Follow your sessions and answer them from the island."),
+          icon: "M5 7l5 5l-5 5 M12 17h7" },
+        { title: qsTr("Chat"), subtitle: qsTr("Talk to Claude on your subscription, or to a local model."),
+          icon: "M6 5h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-7l-4 3v-3h-1a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2z" },
+        { title: qsTr("About"), subtitle: qsTr("A tiny friend for your AI coding agents."),
+          icon: "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0 M12 11v5 M12 8v0.01" }
+    ]
+
+    onPageChanged: {
+        scroller.contentY = 0
+        pageFade.restart()
     }
-    component Hint: Text {
-        color: Ui.dim
-        font.pixelSize: Ui.small
-        wrapMode: Text.Wrap
-        Layout.fillWidth: true
-    }
-    component Toggle: Rectangle {
+
+    // ------------------------------------------------------------ building blocks
+
+    component Toggle: Item {
         id: t
         property bool on: false
         signal toggled(bool on)
-        implicitWidth: 40; implicitHeight: 22; radius: 11
-        color: on ? Ui.accent : Ui.line
-        Behavior on color { ColorAnimation { duration: 150 } }
+        implicitWidth: 42
+        implicitHeight: 24
         Rectangle {
-            width: 18; height: 18; radius: 9; y: 2
-            x: t.on ? t.width - width - 2 : 2
-            color: "white"
-            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+            anchors.fill: parent
+            radius: height / 2
+            color: t.on ? Ui.accent : toggleHover.hovered ? "#3A3A44" : settings.track
+            Behavior on color { ColorAnimation { duration: 150 } }
         }
-        TapHandler { onTapped: t.toggled(!t.on) }
+        Rectangle {
+            width: 18; height: 18; radius: 9; y: 3
+            x: t.on ? t.width - width - 3 : 3
+            color: "white"
+            scale: toggleTap.pressed ? 0.9 : 1
+            Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Behavior on scale { NumberAnimation { duration: 90 } }
+        }
+        HoverHandler { id: toggleHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { id: toggleTap; onTapped: t.toggled(!t.on) }
     }
-    component Row2: RowLayout {
-        property alias label: lbl.text
+
+    component LumoSlider: Slider {
+        id: s
+        implicitWidth: 180
+        implicitHeight: 24
+        background: Rectangle {
+            x: s.leftPadding
+            y: s.topPadding + s.availableHeight / 2 - height / 2
+            width: s.availableWidth
+            height: 4
+            radius: 2
+            color: settings.track
+            Rectangle { width: s.visualPosition * parent.width; height: parent.height; radius: 2; color: Ui.accent }
+        }
+        handle: Rectangle {
+            x: s.leftPadding + s.visualPosition * (s.availableWidth - width)
+            y: s.topPadding + s.availableHeight / 2 - height / 2
+            width: 16; height: 16; radius: 8
+            color: "white"
+            border.width: s.pressed ? 4 : 0
+            border.color: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.45)
+            Behavior on border.width { NumberAnimation { duration: 90 } }
+        }
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
+    }
+
+    component LumoCombo: ComboBox {
+        id: c
+        implicitWidth: 240
+        implicitHeight: 32
+        background: Rectangle {
+            radius: 8
+            color: c.hovered ? Ui.cardHover : Ui.card
+            border.color: c.activeFocus || c.popup.visible ? Ui.accent : settings.groupLine
+        }
+        contentItem: Text {
+            leftPadding: 12
+            rightPadding: 30
+            text: c.displayText
+            color: Ui.text
+            font.pixelSize: Ui.body
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
+        indicator: Icon {
+            x: c.width - width - 10
+            y: (c.height - height) / 2
+            size: 14
+            path: "M6 9l6 6l6 -6"
+        }
+        // Wrapped explicitly: an inline component can't rely on implicit Component conversion.
+        delegate: Component {
+            ItemDelegate {
+                id: d
+                required property int index
+                required property var modelData
+                width: c.width - 8
+                height: 30
+                contentItem: Text {
+                    text: d.modelData
+                    color: Ui.text
+                    font.pixelSize: Ui.body
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    radius: 6
+                    color: c.currentIndex === d.index ? settings.accentSoft : d.hovered ? Ui.cardHover : "transparent"
+                }
+            }
+        }
+        popup: Popup {
+            y: c.height + 4
+            width: c.width
+            implicitHeight: Math.min(contentItem.implicitHeight + 8, 260)
+            padding: 4
+            contentItem: ListView {
+                clip: true
+                implicitHeight: contentHeight
+                model: c.popup.visible ? c.delegateModel : null
+                currentIndex: c.highlightedIndex
+            }
+            background: Rectangle { radius: 10; color: "#1B1B20"; border.color: settings.groupLine }
+        }
+    }
+
+    // PillButton, outlined so it reads on the cards.
+    component ActionButton: PillButton {
+        id: btn
+        implicitHeight: 30
+        border.width: checked || primary ? (checked ? 1 : 0) : 1
+        border.color: checked ? tint : btnHover.hovered ? "#45454F" : "#34343C"
+        color: checked ? Qt.rgba(tint.r, tint.g, tint.b, 0.22)
+                       : primary ? tint
+                       : btnHover.hovered ? "#26262D" : "#1E1E24"
+        HoverHandler { id: btnHover }
+    }
+
+    // A coloured dot and a word, in a soft pill: "Connected", "Not installed"…
+    component StatusPill: Rectangle {
+        id: pill
+        property string text
+        property color tint: Ui.good
+        implicitWidth: pillRow.implicitWidth + 20
+        implicitHeight: 24
+        radius: 12
+        color: Qt.rgba(tint.r, tint.g, tint.b, 0.14)
+        Row {
+            id: pillRow
+            anchors.centerIn: parent
+            spacing: 6
+            Rectangle { width: 7; height: 7; radius: 3.5; color: pill.tint; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: pill.text; color: pill.tint; font.pixelSize: Ui.small; font.weight: Font.DemiBold }
+        }
+    }
+
+    // A page: big title, subtitle, then its groups.
+    component Page: ColumnLayout {
+        id: pg
+        property int index
+        default property alias content: pageBody.data
+        visible: settings.page === index
+        width: parent ? parent.width : 0
+        spacing: 0
+        Text {
+            text: settings.pages[pg.index].title
+            color: Ui.text
+            font.pixelSize: 26
+            font.weight: Font.Bold
+        }
+        Text {
+            text: settings.pages[pg.index].subtitle
+            color: Ui.dim
+            font.pixelSize: Ui.body
+            Layout.topMargin: 4
+            Layout.bottomMargin: 26
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+        }
+        ColumnLayout {
+            id: pageBody
+            Layout.fillWidth: true
+            spacing: 26
+        }
+    }
+
+    // A titled card of rows, with an optional note under it.
+    component Group: ColumnLayout {
+        id: g
+        property string title
+        property string footer
+        default property alias rows: groupBody.data
         Layout.fillWidth: true
-        spacing: 12
-        Text { id: lbl; color: Ui.text; font.pixelSize: Ui.body; Layout.fillWidth: true; wrapMode: Text.Wrap }
+        spacing: 8
+        Text {
+            visible: g.title.length > 0
+            text: g.title.toUpperCase()
+            color: Ui.dim
+            font.pixelSize: 11
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.9
+            Layout.leftMargin: 4
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: groupBody.implicitHeight
+            radius: 12
+            color: settings.groupBg
+            border.color: settings.groupLine
+            ColumnLayout {
+                id: groupBody
+                width: parent.width
+                spacing: 0
+            }
+        }
+        Text {
+            visible: g.footer.length > 0
+            text: g.footer
+            color: Ui.faint
+            font.pixelSize: Ui.small
+            wrapMode: Text.Wrap
+            lineHeight: 1.15
+            Layout.fillWidth: true
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+        }
     }
+
+    // One setting: what it is on the left, its control on the right.
+    component SettingRow: Item {
+        id: row
+        property string title
+        property string description
+        property color titleColor: Ui.text
+        default property alias controls: rowControls.data
+        Layout.fillWidth: true
+        implicitHeight: Math.max(rowText.implicitHeight, rowControls.implicitHeight) + 26
+        Rectangle { visible: row.y > 0; x: 16; width: parent.width - 32; height: 1; color: settings.groupLine }
+        ColumnLayout {
+            id: rowText
+            anchors.left: parent.left
+            anchors.leftMargin: 16
+            anchors.right: rowControls.left
+            anchors.rightMargin: 20
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3
+            Text {
+                text: row.title
+                color: row.titleColor
+                font.pixelSize: Ui.body + 1
+                font.weight: Font.Medium
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+            Text {
+                visible: row.description.length > 0
+                text: row.description
+                color: Ui.dim
+                font.pixelSize: Ui.small + 1
+                wrapMode: Text.Wrap
+                lineHeight: 1.15
+                Layout.fillWidth: true
+            }
+        }
+        RowLayout {
+            id: rowControls
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 8
+        }
+    }
+
+    // Free-form content inside a group, with the same padding and divider as a row.
+    component Pane: Item {
+        id: pane
+        default property alias content: paneBody.data
+        Layout.fillWidth: true
+        implicitHeight: paneBody.implicitHeight + 32
+        Rectangle { visible: pane.y > 0; x: 16; width: parent.width - 32; height: 1; color: settings.groupLine }
+        ColumnLayout {
+            id: paneBody
+            x: 16; y: 16
+            width: parent.width - 32
+            spacing: 12
+        }
+    }
+
+    component Note: Text {
+        color: Ui.dim
+        font.pixelSize: Ui.small + 1
+        wrapMode: Text.Wrap
+        lineHeight: 1.15
+        Layout.fillWidth: true
+    }
+
+    // ------------------------------------------------------------ layout
 
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // sidebar
+        // ---------------------------------------------------- sidebar
         Rectangle {
             Layout.fillHeight: true
-            Layout.preferredWidth: 180
-            color: "#0C0C0F"
+            Layout.preferredWidth: 224
+            color: settings.sidebar
+            Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: settings.groupLine }
+
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 4
+                anchors.margins: 16
+                anchors.topMargin: 20
+                spacing: 2
+
                 RowLayout {
-                    spacing: 10
-                    Layout.bottomMargin: 14
-                    Mascot { size: 34; alive: settings.visible; mood: hub.mood; outfit: shell.outfit === "auto" ? Ui.seasonal(new Date(), false) : shell.outfit }
-                    Text { text: "Lumo"; color: Ui.text; font.pixelSize: 18; font.weight: Font.Bold }
+                    spacing: 12
+                    Layout.leftMargin: 4
+                    Layout.bottomMargin: 22
+                    Mascot { size: 40; alive: settings.visible; mood: hub.mood; outfit: shell.outfit === "auto" ? Ui.seasonal(new Date(), false) : shell.outfit }
+                    ColumnLayout {
+                        spacing: 0
+                        Text { text: "Lumo"; color: Ui.text; font.pixelSize: 18; font.weight: Font.Bold }
+                        Text { text: qsTr("Settings"); color: Ui.dim; font.pixelSize: Ui.small + 1 }
+                    }
                 }
+
                 Repeater {
                     model: settings.pages
                     Rectangle {
-                        required property string modelData
+                        id: nav
+                        required property var modelData
                         required property int index
+                        readonly property bool current: settings.page === index
                         Layout.fillWidth: true
-                        implicitHeight: 34
-                        radius: 8
-                        color: settings.page === index ? Ui.line : navHover.hovered ? Ui.card : "transparent"
+                        implicitHeight: 38
+                        radius: 9
+                        color: current ? settings.accentSoft : navHover.hovered ? Ui.card : "transparent"
                         Behavior on color { ColorAnimation { duration: 120 } }
-                        Text { x: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData; color: Ui.text; font.pixelSize: Ui.body }
-                        HoverHandler { id: navHover }
-                        TapHandler { onTapped: settings.page = index }
+                        Rectangle {
+                            visible: nav.current
+                            width: 3; height: 18; radius: 1.5
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Ui.accent
+                        }
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            x: 14
+                            spacing: 12
+                            Icon {
+                                anchors.verticalCenter: parent.verticalCenter
+                                path: nav.modelData.icon
+                                tint: nav.current ? Ui.accent : Ui.dim
+                            }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: nav.modelData.title
+                                color: nav.current ? Ui.text : "#C8C8D0"
+                                font.pixelSize: Ui.body + 1
+                                font.weight: nav.current ? Font.DemiBold : Font.Normal
+                            }
+                        }
+                        HoverHandler { id: navHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: settings.page = nav.index }
                     }
                 }
+
                 Item { Layout.fillHeight: true }
+
+                // Is Claude Code reporting in? The one thing worth seeing from every page.
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: footerCol.implicitHeight + 24
+                    radius: 10
+                    color: footerHover.hovered ? Ui.card : "transparent"
+                    border.color: settings.groupLine
+                    ColumnLayout {
+                        id: footerCol
+                        x: 12; y: 12
+                        width: parent.width - 24
+                        spacing: 6
+                        RowLayout {
+                            spacing: 8
+                            Rectangle { width: 8; height: 8; radius: 4; color: installer.installed ? Ui.good : Ui.warn }
+                            Text {
+                                text: installer.installed ? qsTr("Claude Code connected") : qsTr("Claude Code not connected")
+                                color: Ui.text
+                                font.pixelSize: Ui.small + 1
+                                font.weight: Font.Medium
+                            }
+                        }
+                        Text {
+                            text: qsTr("Version %1").arg(Qt.application.version || "0.1")
+                            color: Ui.faint
+                            font.pixelSize: Ui.small
+                        }
+                    }
+                    HoverHandler { id: footerHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler { onTapped: settings.page = 2 }
+                }
             }
         }
 
-        ScrollView {
+        // ---------------------------------------------------- pages
+        Flickable {
+            id: scroller
             Layout.fillWidth: true
             Layout.fillHeight: true
-            contentWidth: availableWidth
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            contentWidth: width
+            contentHeight: (pagesBox.children[settings.page] ? pagesBox.children[settings.page].implicitHeight : 0) + 80
+            ScrollBar.vertical: ScrollBar {
+                id: vbar
+                policy: scroller.contentHeight > scroller.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                contentItem: Rectangle {
+                    implicitWidth: 6
+                    radius: 3
+                    color: vbar.pressed ? "#55555F" : "#3A3A44"
+                    opacity: vbar.active ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                }
+            }
 
-            StackLayout {
-                width: parent.width
-                currentIndex: settings.page
+            Item {
+                id: pagesBox
+                width: Math.min(settings.contentMax, scroller.width - 80)
+                x: (scroller.width - width) / 2
+                y: 40
+                opacity: 1
+                NumberAnimation on opacity { id: pageFade; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic; running: false }
 
-                // ---------------------------------------------------- General
-                ColumnLayout {
-                    Layout.margins: 24
-                    spacing: 14
-                    Section { text: qsTr("General") }
-                    Row2 {
-                        label: qsTr("Start Lumo when you log in")
-                        Toggle { on: shell.autostart; onToggled: (v) => shell.autostart = v }
-                    }
-                    Row2 {
-                        label: qsTr("Always show the island, on top of everything (or use the eye button in the island)")
-                        Toggle { on: shell.alwaysShow; onToggled: (v) => shell.alwaysShow = v }
-                    }
-                    Row2 {
-                        label: qsTr("Show Claude usage (5-hour and weekly limits, read from your Claude account, updated every 5 minutes)")
-                        Toggle { on: shell.showUsage; onToggled: (v) => shell.showUsage = v }
-                    }
-                    Row2 {
-                        label: qsTr("Show what's playing (Spotify, browser, any player)")
-                        Toggle { on: shell.showMusic; onToggled: (v) => shell.showMusic = v }
-                    }
-                    Row2 {
-                        label: qsTr("Lumo dances while music plays")
-                        Toggle { on: shell.dance; onToggled: (v) => shell.dance = v }
-                    }
-                    Row2 {
-                        label: qsTr("Sounds")
-                        Toggle { on: !sounds.muted; onToggled: (v) => sounds.muted = !v }
-                    }
-                    Row2 {
-                        label: qsTr("Volume")
-                        Slider {
-                            from: 0; to: 1; value: sounds.volume
-                            Layout.preferredWidth: 200
-                            onMoved: sounds.volume = value
+                // ------------------------------------------------ General
+                Page {
+                    index: 0
+
+                    Group {
+                        title: qsTr("Island")
+                        SettingRow {
+                            title: qsTr("Start Lumo when you log in")
+                            Toggle { on: shell.autostart; onToggled: (v) => shell.autostart = v }
                         }
-                        PillButton { text: qsTr("Test"); onClicked: sounds.play("hello") }
+                        SettingRow {
+                            title: qsTr("Always show the island")
+                            description: qsTr("Keep it on top of everything. The eye button in the island hides it for a while.")
+                            Toggle { on: shell.alwaysShow; onToggled: (v) => shell.alwaysShow = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Show Claude usage")
+                            description: qsTr("Your 5-hour and weekly limits, read from your Claude account every 5 minutes.")
+                            Toggle { on: shell.showUsage; onToggled: (v) => shell.showUsage = v }
+                        }
                     }
-                    Row2 {
-                        label: qsTr("When Claude finishes, and when it needs you")
-                        PillButton { text: qsTr("Preview “finished”"); onClicked: settings.previewFinished() }
-                        PillButton { text: qsTr("Preview “needs you”"); onClicked: settings.previewNeedsYou() }
+
+                    Group {
+                        title: qsTr("Music")
+                        SettingRow {
+                            title: qsTr("Show what's playing")
+                            description: qsTr("Spotify, your browser, or any MPRIS player.")
+                            Toggle { on: shell.showMusic; onToggled: (v) => shell.showMusic = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Lumo dances while music plays")
+                            Toggle { on: shell.dance; onToggled: (v) => shell.dance = v }
+                        }
                     }
-                    Hint { text: qsTr("Replace a sound by dropping a WAV named hello, finish, needs, error, poke, dizzy, pop, send or reply in ~/.config/lumo/sounds/.") }
-                    Section { text: qsTr("Wardrobe") }
-                    Hint { text: qsTr("Seasonal dresses Lumo by itself: a witch hat at Halloween, a Santa hat in December, a party hat at New Year, a bow on Valentine's Day, and headphones while music plays. You can also right-click Lumo in the island.") }
-                    Wardrobe {
-                        Layout.fillWidth: true
-                        current: shell.outfit
-                        onPicked: (outfit) => shell.outfit = outfit
+
+                    Group {
+                        title: qsTr("Sounds")
+                        footer: qsTr("Replace a sound by dropping a WAV named hello, finish, needs, error, poke, dizzy, pop, send or reply in ~/.config/lumo/sounds/.")
+                        SettingRow {
+                            title: qsTr("Play sounds")
+                            Toggle { on: !sounds.muted; onToggled: (v) => sounds.muted = !v }
+                        }
+                        SettingRow {
+                            title: qsTr("Volume")
+                            LumoSlider { from: 0; to: 1; value: sounds.volume; onMoved: sounds.volume = value }
+                            ActionButton { text: qsTr("Test"); onClicked: sounds.play("hello") }
+                        }
+                        SettingRow {
+                            title: qsTr("Agent alerts")
+                            description: qsTr("What you hear when Claude finishes, and when it needs you.")
+                            ActionButton { text: qsTr("Finished"); onClicked: settings.previewFinished() }
+                            ActionButton { text: qsTr("Needs you"); onClicked: settings.previewNeedsYou() }
+                        }
                     }
-                    Section { text: qsTr("Shortcuts") }
-                    Hint { text: qsTr("Meta+Alt+N opens the chat, Meta+Alt+I shows or hides the island. Change them in System Settings → Shortcuts → Lumo.") }
-                    Section { text: qsTr("The island") }
-                    Hint { text: qsTr("Hover the pill to open it, drop a file on it to ask about it. Poke Lumo — but not too much.") }
-                    Hint { visible: !shell.layerShell; color: Ui.warn; text: qsTr("Not running on Wayland: the island uses a plain always-on-top window.") }
+
+                    Group {
+                        title: qsTr("Wardrobe")
+                        footer: qsTr("Seasonal dresses Lumo by itself: a witch hat at Halloween, a Santa hat in December, a party hat at New Year, a bow on Valentine's Day, and headphones while music plays. You can also right-click Lumo in the island.")
+                        Pane {
+                            Wardrobe {
+                                Layout.fillWidth: true
+                                current: shell.outfit
+                                onPicked: (outfit) => shell.outfit = outfit
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Shortcuts")
+                        footer: qsTr("Change them in System Settings → Shortcuts → Lumo.")
+                        SettingRow {
+                            title: qsTr("Open the chat")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "N" }
+                        }
+                        SettingRow {
+                            title: qsTr("Show or hide the island")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "I" }
+                        }
+                        SettingRow {
+                            title: qsTr("Allow the top request")
+                            description: qsTr("Approves a plan too.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "Y" }
+                        }
+                        SettingRow {
+                            title: qsTr("Deny the top request")
+                            description: qsTr("Sends a plan back to keep planning.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "D" }
+                        }
+                        SettingRow {
+                            title: qsTr("Dictate")
+                            description: dictation.keyMode === "evdev" ? qsTr("Hold, speak, let go. Tap twice for hands-free.") : qsTr("Set on the Dictation page.")
+                            Keycap { text: dictation.keyLabel || qsTr("None") }
+                        }
+                    }
+
+                    Note {
+                        visible: !shell.layerShell
+                        color: Ui.warn
+                        text: qsTr("Not running on Wayland: the island uses a plain always-on-top window.")
+                    }
                 }
 
-                // ---------------------------------------------------- Dictation
-                ColumnLayout {
-                    Layout.margins: 24
-                    spacing: 14
-                    Section { text: qsTr("Dictation") }
-                    Row2 {
-                        label: qsTr("Hold a key, speak, let go: your words are pasted where you type")
-                        Toggle { on: dictation.enabled; onToggled: (v) => dictation.enabled = v }
-                    }
+                // ------------------------------------------------ Dictation
+                Page {
+                    index: 1
 
-                    // the key
-                    RowLayout {
-                        spacing: 10
-                        Rectangle {
-                            implicitWidth: keyText.implicitWidth + 20; implicitHeight: 30; radius: 8
-                            color: Ui.card; border.color: Ui.line
-                            Text { id: keyText; anchors.centerIn: parent; color: Ui.text; font.pixelSize: Ui.body; font.weight: Font.DemiBold
-                                   text: dictation.keyLabel || qsTr("no key yet") }
+                    Group {
+                        title: qsTr("Dictation")
+                        footer: dictation.keyMode !== "evdev"
+                                ? qsTr("Wayland lets no app see a lone Ctrl. To hold left Ctrl alone, add yourself to the input group (sudo usermod -aG input $USER), log out and in: Lumo switches by itself. Note that any app you run can then read the keyboard.")
+                                : ""
+                        SettingRow {
+                            title: qsTr("Dictate anywhere")
+                            description: qsTr("Hold a key, speak, let go: your words are pasted where you type.")
+                            Toggle { on: dictation.enabled; onToggled: (v) => dictation.enabled = v }
                         }
-                        Text {
-                            color: Ui.dim; font.pixelSize: Ui.small; Layout.fillWidth: true; wrapMode: Text.Wrap
-                            text: dictation.keyMode === "evdev" ? qsTr("Hold left Ctrl alone. Two quick taps for hands-free. Esc cancels.")
-                                : dictation.keyMode === "portal" ? qsTr("Hold it to talk. Tap it twice for hands-free, press again to finish.")
-                                : dictation.keyProblem || qsTr("Waiting for the desktop…")
+                        SettingRow {
+                            title: qsTr("Key")
+                            description: dictation.keyMode === "evdev" ? qsTr("Hold left Ctrl alone. Two quick taps for hands-free. Esc cancels.")
+                                       : dictation.keyMode === "portal" ? qsTr("Hold it to talk. Tap it twice for hands-free, press again to finish.")
+                                       : dictation.keyProblem || qsTr("Waiting for the desktop…")
+                            Keycap { text: dictation.keyLabel || qsTr("No key yet") }
+                            ActionButton { visible: dictation.keyMode === "portal"; text: qsTr("Change…"); onClicked: dictation.configureKey() }
                         }
-                        PillButton { visible: dictation.keyMode === "portal"; text: qsTr("Change keys…"); onClicked: dictation.configureKey() }
-                    }
-                    Hint {
-                        visible: dictation.keyMode !== "evdev"
-                        text: qsTr("Wayland lets no app see a lone Ctrl. To hold left Ctrl alone, add yourself to the input group (sudo usermod -aG input $USER), log out and in: Lumo switches by itself. Note that any app you run can then read the keyboard.")
-                    }
-
-                    Row2 {
-                        label: qsTr("Mute the computer's sound while I dictate (so only my voice is heard)")
-                        Toggle { on: dictation.muteOutput; onToggled: (v) => dictation.muteOutput = v }
-                    }
-                    Row2 {
-                        label: qsTr("Microphone")
-                        ComboBox {
-                            id: micBox
-                            Layout.preferredWidth: 280
-                            property var mics: [{ id: "", name: qsTr("System default") }].concat(dictation.microphones())
-                            model: mics.map(m => m.name)
-                            currentIndex: Math.max(0, mics.findIndex(m => m.id === dictation.microphoneId))
-                            onActivated: (i) => dictation.microphoneId = mics[i].id
-                            onPressedChanged: if (pressed) mics = [{ id: "", name: qsTr("System default") }].concat(dictation.microphones())
+                        SettingRow {
+                            title: qsTr("Microphone")
+                            LumoCombo {
+                                id: micBox
+                                property var mics: [{ id: "", name: qsTr("System default") }].concat(dictation.microphones())
+                                model: mics.map(m => m.name)
+                                currentIndex: Math.max(0, mics.findIndex(m => m.id === dictation.microphoneId))
+                                onActivated: (i) => dictation.microphoneId = mics[i].id
+                                onPressedChanged: if (pressed) mics = [{ id: "", name: qsTr("System default") }].concat(dictation.microphones())
+                            }
+                        }
+                        SettingRow {
+                            title: qsTr("Mute the computer while I talk")
+                            description: qsTr("So only your voice is heard. The sound comes back as soon as you stop.")
+                            Toggle { on: dictation.muteOutput; onToggled: (v) => dictation.muteOutput = v }
                         }
                     }
 
-                    // the model
-                    Section { text: qsTr("Speech recognition") }
-                    RowLayout {
-                        spacing: 8
-                        Rectangle { width: 10; height: 10; radius: 5; color: dictation.speech.modelPresent ? Ui.good : Ui.warn }
-                        Text {
-                            Layout.fillWidth: true; wrapMode: Text.Wrap; color: Ui.text; font.pixelSize: Ui.body
-                            text: dictation.speech.modelPresent
-                                  ? qsTr("Parakeet v3 — offline, 25 languages%1").arg(dictation.speech.loaded ? qsTr(" · in memory") : "")
-                                  : qsTr("Parakeet isn't installed yet (about 640 MB).")
+                    Group {
+                        title: qsTr("Speech recognition")
+                        footer: dictation.speech.modelPresent
+                                ? qsTr("Stored in %1. Nothing you say leaves this computer.").arg(dictation.speech.modelDir)
+                                : qsTr("Nothing you say leaves this computer.")
+                        SettingRow {
+                            title: qsTr("Parakeet v3")
+                            description: dictation.speech.modelPresent
+                                         ? qsTr("Offline, 25 languages.")
+                                         : qsTr("Not installed yet — about 640 MB.")
+                            StatusPill {
+                                visible: dictation.speech.modelPresent
+                                text: dictation.speech.loaded ? qsTr("In memory") : qsTr("Ready")
+                                tint: Ui.good
+                            }
+                            ActionButton {
+                                visible: !dictation.speech.modelPresent && !dictation.speech.downloading
+                                text: qsTr("Download"); primary: true; tint: Ui.accent
+                                onClicked: dictation.speech.download()
+                            }
+                            Text {
+                                visible: dictation.speech.downloading
+                                text: Math.round(dictation.speech.downloadProgress * 100) + " %"
+                                color: Ui.dim
+                                font.pixelSize: Ui.body
+                            }
                         }
-                        PillButton {
-                            visible: !dictation.speech.modelPresent && !dictation.speech.downloading
-                            text: qsTr("Download"); primary: true; tint: Ui.accent
-                            onClicked: dictation.speech.download()
-                        }
-                    }
-                    Hint { visible: dictation.speech.modelPresent; text: dictation.speech.modelDir; font.family: Ui.mono }
-                    Rectangle {
-                        visible: dictation.speech.downloading
-                        Layout.fillWidth: true; implicitHeight: 6; radius: 3; color: Ui.line
-                        Rectangle { width: parent.width * dictation.speech.downloadProgress; height: parent.height; radius: 3; color: Ui.accent }
-                    }
-                    Hint { visible: dictation.speech.downloadError.length > 0; color: Ui.bad; text: dictation.speech.downloadError }
-                    Row2 {
-                        label: qsTr("Keep it in memory (instant first dictation, ~1 GB of RAM)")
-                        Toggle { on: dictation.speech.keepLoaded; onToggled: (v) => dictation.speech.keepLoaded = v }
-                    }
-                    Hint { text: qsTr("Otherwise it loads while you speak and leaves memory after 5 idle minutes. Nothing you say leaves this computer.") }
-
-                    // stats
-                    Section { text: qsTr("Your words") }
-                    RowLayout {
-                        spacing: 10
-                        Repeater {
-                            model: [
-                                { v: dictation.wordsToday, l: qsTr("today") },
-                                { v: dictation.totalWords, l: qsTr("in all") },
-                                { v: dictation.wordsPerMinute, l: qsTr("words / min") }
-                            ]
+                        Pane {
+                            visible: dictation.speech.downloading || dictation.speech.downloadError.length > 0
                             Rectangle {
-                                required property var modelData
-                                implicitWidth: 120; implicitHeight: 62; radius: 10; color: Ui.card
-                                Column {
-                                    anchors.centerIn: parent
-                                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.v; color: Ui.text; font.pixelSize: 20; font.weight: Font.Bold }
-                                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.l; color: Ui.dim; font.pixelSize: Ui.small }
+                                visible: dictation.speech.downloading
+                                Layout.fillWidth: true; implicitHeight: 6; radius: 3; color: settings.track
+                                Rectangle { width: parent.width * dictation.speech.downloadProgress; height: parent.height; radius: 3; color: Ui.accent }
+                            }
+                            Note { visible: dictation.speech.downloadError.length > 0; color: Ui.bad; text: dictation.speech.downloadError }
+                        }
+                        SettingRow {
+                            title: qsTr("Keep it in memory")
+                            description: qsTr("Instant first dictation, for about 1 GB of RAM. Otherwise it loads while you speak and leaves after 5 idle minutes.")
+                            Toggle { on: dictation.speech.keepLoaded; onToggled: (v) => dictation.speech.keepLoaded = v }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Your words")
+                        Pane {
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+                                Repeater {
+                                    model: [
+                                        { v: dictation.wordsToday, l: qsTr("today") },
+                                        { v: dictation.totalWords, l: qsTr("in all") },
+                                        { v: dictation.wordsPerMinute, l: qsTr("words / min") }
+                                    ]
+                                    Rectangle {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        implicitHeight: 74
+                                        radius: 10
+                                        color: settings.bg
+                                        border.color: settings.groupLine
+                                        Column {
+                                            anchors.centerIn: parent
+                                            spacing: 2
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: Number(modelData.v).toLocaleString(Qt.locale(), "f", 0)
+                                                color: Ui.text
+                                                font.pixelSize: 24
+                                                font.weight: Font.Bold
+                                            }
+                                            Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.l; color: Ui.dim; font.pixelSize: Ui.small }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Section { text: qsTr("Recent"); Layout.fillWidth: true }
-                        PillButton { visible: dictation.history.length > 0; text: qsTr("Clear"); onClicked: dictation.clearHistory() }
-                    }
-                    Hint { visible: dictation.history.length === 0; text: qsTr("Nothing dictated yet.") }
-                    Repeater {
-                        model: dictation.history.slice(0, 20)
-                        Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            implicitHeight: histText.implicitHeight + 34
-                            radius: 10
-                            color: histHover.hovered ? Ui.cardHover : Ui.card
-                            HoverHandler { id: histHover }
-                            Text {
-                                id: histText
-                                x: 12; y: 8; width: parent.width - 80
-                                text: modelData.text; color: Ui.text; font.pixelSize: Ui.body; wrapMode: Text.Wrap
-                            }
-                            Text {
-                                x: 12; anchors.bottom: parent.bottom; anchors.bottomMargin: 6
-                                text: new Date(modelData.at).toLocaleString(Qt.locale(), "d MMM HH:mm") + (modelData.app ? " · " + modelData.app : "")
-                                color: Ui.faint; font.pixelSize: 10
-                            }
-                            Row {
-                                anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter
-                                spacing: 6
-                                visible: histHover.hovered
-                                PillButton { implicitHeight: 24; text: qsTr("Instinct"); onClicked: shell.sendToInstinct(modelData.text) }
-                                PillButton { implicitHeight: 24; text: qsTr("Copy"); onClicked: dictation.copy(modelData.text) }
-                            }
-                        }
-                    }
-                }
 
-                // ---------------------------------------------------- Claude Code
-                ColumnLayout {
-                    Layout.margins: 24
-                    spacing: 14
-                    Section { text: qsTr("Claude Code") }
-                    RowLayout {
-                        spacing: 8
-                        Rectangle { width: 10; height: 10; radius: 5; color: installer.installed ? Ui.good : Ui.warn }
-                        Text {
-                            color: Ui.text; font.pixelSize: Ui.body
-                            text: installer.installed ? qsTr("Connected: Claude Code reports to Lumo.") : qsTr("Not connected yet.")
+                    Group {
+                        title: qsTr("Recent")
+                        SettingRow {
+                            visible: dictation.history.length === 0
+                            title: qsTr("Nothing dictated yet")
+                            description: qsTr("Your last dictations show up here, ready to copy again.")
                         }
-                    }
-                    Hint {
-                        text: qsTr("Lumo adds its hook (%1) to ~/.claude/settings.json so every session, tool, permission request and question reaches the island. "
-                                 + "If Lumo isn't running the hook exits at once and Claude Code carries on as usual.").arg(installer.hookPath)
-                    }
-                    CheckBox {
-                        id: replaceCoucou
-                        visible: installer.coucouHooks
-                        checked: true
-                        text: qsTr("Replace Coucou's hooks (both would ask you for every permission)")
-                        contentItem: Text { leftPadding: 28; text: replaceCoucou.text; color: Ui.text; font.pixelSize: Ui.body; wrapMode: Text.Wrap }
-                    }
-                    CheckBox {
-                        id: statusLine
-                        checked: true
-                        text: qsTr("Show plan usage (5-hour and weekly limits) — your current status line keeps working")
-                        contentItem: Text { leftPadding: 28; text: statusLine.text; color: Ui.text; font.pixelSize: Ui.body; wrapMode: Text.Wrap }
-                    }
-                    RowLayout {
-                        spacing: 8
-                        PillButton { text: installer.installed ? qsTr("Update connection…") : qsTr("Connect…"); primary: true; tint: Ui.accent
-                            onClicked: installer.prepare(true, replaceCoucou.visible && replaceCoucou.checked, statusLine.checked) }
-                        PillButton { visible: installer.installed; text: qsTr("Disconnect…"); onClicked: installer.prepare(false, false, false) }
-                    }
-                    Hint { text: installer.message; visible: installer.message.length > 0; color: Ui.text }
-                    Row2 {
-                        label: qsTr("Show my cloud sessions from claude.ai/code. Lumo asks Anthropic for the list every minute, with your Claude login; approvals still happen on claude.ai.")
-                        Toggle { on: cloud.enabled; onToggled: (v) => cloud.enabled = v }
-                    }
-                    DiffView {
-                        visible: installer.preview.length > 0
-                        Layout.fillWidth: true
-                        maxHeight: 240
-                        lines: installer.preview
-                    }
-                    RowLayout {
-                        visible: installer.preview.length > 0
-                        spacing: 8
-                        PillButton { text: qsTr("Cancel"); onClicked: installer.cancel() }
-                        PillButton { text: qsTr("Apply"); primary: true; tint: Ui.good; onClicked: installer.apply() }
-                    }
-                }
-
-                // ---------------------------------------------------- Chat
-                ColumnLayout {
-                    Layout.margins: 24
-                    spacing: 14
-                    Section { text: qsTr("Chat") }
-                    Hint { text: qsTr("Claude chat runs on your Claude Pro subscription, through the `claude` CLI you are signed in to — no API key, nothing billed per token. Ollama talks to a local server on this computer.") }
-                    Row2 {
-                        label: qsTr("Provider")
                         Repeater {
-                            model: [{ id: "claude", n: "Claude (Pro)" }, { id: "ollama", n: "Ollama" }]
-                            PillButton {
+                            model: dictation.history.slice(0, 20)
+                            Item {
+                                id: hist
                                 required property var modelData
-                                text: modelData.n
-                                checked: chat.provider === modelData.id
-                                tint: Ui.accent
-                                onClicked: chat.provider = modelData.id
+                                required property int index
+                                Layout.fillWidth: true
+                                implicitHeight: histText.implicitHeight + histMeta.implicitHeight + 30
+                                Rectangle { visible: hist.index > 0; x: 16; width: parent.width - 32; height: 1; color: settings.groupLine }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 4
+                                    radius: 8
+                                    color: histHover.hovered ? Ui.cardHover : "transparent"
+                                }
+                                HoverHandler { id: histHover }
+                                Text {
+                                    id: histText
+                                    x: 16; y: 12
+                                    width: parent.width - 32 - (histHover.hovered ? histActions.width + 12 : 0)
+                                    text: hist.modelData.text
+                                    color: Ui.text
+                                    font.pixelSize: Ui.body
+                                    wrapMode: Text.Wrap
+                                }
+                                Text {
+                                    id: histMeta
+                                    x: 16
+                                    anchors.top: histText.bottom
+                                    anchors.topMargin: 4
+                                    text: new Date(hist.modelData.at).toLocaleString(Qt.locale(), "d MMM HH:mm") + (hist.modelData.app ? "  ·  " + hist.modelData.app : "")
+                                    color: Ui.faint
+                                    font.pixelSize: Ui.small
+                                }
+                                Row {
+                                    id: histActions
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 14
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 6
+                                    visible: histHover.hovered
+                                    ActionButton { implicitHeight: 26; text: qsTr("Instinct"); onClicked: shell.sendToInstinct(hist.modelData.text) }
+                                    ActionButton { implicitHeight: 26; text: qsTr("Copy"); onClicked: dictation.copy(hist.modelData.text) }
+                                }
                             }
                         }
-                    }
-                    Row2 {
-                        label: qsTr("Model")
-                        ComboBox {
-                            Layout.preferredWidth: 220
-                            model: chat.models
-                            currentIndex: chat.models.indexOf(chat.model)
-                            onActivated: (i) => chat.model = chat.models[i]
+                        SettingRow {
+                            visible: dictation.history.length > 0
+                            title: qsTr("Clear history")
+                            titleColor: Ui.dim
+                            ActionButton { text: qsTr("Clear"); onClicked: dictation.clearHistory() }
                         }
-                    }
-                    Section { text: qsTr("Instinct") }
-                    Hint {
-                        text: qsTr("Instinct and Claude have no direct connection, so Lumo relays through you, as Instinct's own brief describes. "
-                                 + "“Send to Instinct” (under chat answers, finished sessions and dictations) copies the text and opens your WhatsApp chat with Instinct with it typed in — you review it and press Send. "
-                                 + "In the Notion chat, “From Instinct” finds the pages Instinct labelled “(Made by Instinct)”, read as information only.")
-                    }
-                    RowLayout {
-                        spacing: 8
-                        Layout.fillWidth: true
-                        TextField {
-                            id: instinctField
-                            Layout.fillWidth: true
-                            text: shell.instinctNumber ? "+" + shell.instinctNumber : ""
-                            placeholderText: qsTr("Instinct's WhatsApp number, e.g. +212 6…")
-                            color: Ui.text
-                            background: Rectangle { radius: 8; color: Ui.card; border.color: instinctField.activeFocus ? Ui.accent : Ui.line }
-                        }
-                        PillButton { text: qsTr("Save"); primary: true; tint: Ui.accent; onClicked: shell.instinctNumber = instinctField.text }
                     }
                 }
 
-                // ---------------------------------------------------- About
-                ColumnLayout {
-                    Layout.margins: 24
-                    spacing: 14
-                    Section { text: qsTr("About Lumo") }
-                    Hint { text: qsTr("Lumo 0.1 — a native Qt Quick companion for your AI coding agents, made for KDE Plasma on Wayland. No telemetry; it only talks to the services you pick.") }
-                    Hint { text: qsTr("Hook socket: %1").arg("$XDG_RUNTIME_DIR/lumo.sock") }
-                    PillButton { text: qsTr("Quit Lumo"); onClicked: shell.quit() }
+                // ------------------------------------------------ Claude Code
+                Page {
+                    index: 2
+
+                    Group {
+                        title: qsTr("Connection")
+                        footer: qsTr("Lumo adds its hook (%1) to ~/.claude/settings.json so every session, tool, permission request and question reaches the island. If Lumo isn't running, the hook exits at once and Claude Code carries on as usual.").arg(installer.hookPath)
+                        SettingRow {
+                            title: installer.installed ? qsTr("Claude Code reports to Lumo") : qsTr("Not connected yet")
+                            description: installer.installed ? qsTr("New sessions show up in the island.")
+                                                             : qsTr("Connect once; you'll see every change before it's written.")
+                            StatusPill {
+                                text: installer.installed ? qsTr("Connected") : qsTr("Off")
+                                tint: installer.installed ? Ui.good : Ui.warn
+                            }
+                        }
+                        SettingRow {
+                            visible: installer.coucouHooks
+                            title: qsTr("Replace Coucou's hooks")
+                            description: qsTr("Both would ask you for every permission.")
+                            Toggle { id: replaceCoucou; on: true; onToggled: (v) => on = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Show plan usage")
+                            description: qsTr("Your 5-hour and weekly limits, through Claude Code's status line. Your own status line keeps working.")
+                            Toggle { id: statusLine; on: true; onToggled: (v) => on = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Show my cloud sessions")
+                            description: qsTr("Your claude.ai/code sessions, listed every minute with your Claude login. Approvals still happen on claude.ai.")
+                            Toggle { on: cloud.enabled; onToggled: (v) => cloud.enabled = v }
+                        }
+                        Pane {
+                            RowLayout {
+                                spacing: 8
+                                ActionButton {
+                                    text: installer.installed ? qsTr("Update connection…") : qsTr("Connect…")
+                                    primary: true; tint: Ui.accent
+                                    onClicked: installer.prepare(true, replaceCoucou.visible && replaceCoucou.on, statusLine.on)
+                                }
+                                ActionButton { visible: installer.installed; text: qsTr("Disconnect…"); onClicked: installer.prepare(false, false, false) }
+                            }
+                        }
+                    }
+
+                    Group {
+                        visible: installer.message.length > 0 || installer.preview.length > 0
+                        title: qsTr("Review the change")
+                        Pane {
+                            Note { visible: installer.message.length > 0; color: Ui.text; text: installer.message }
+                            DiffView {
+                                visible: installer.preview.length > 0
+                                Layout.fillWidth: true
+                                maxHeight: 280
+                                lines: installer.preview
+                            }
+                            RowLayout {
+                                visible: installer.preview.length > 0
+                                spacing: 8
+                                ActionButton { text: qsTr("Cancel"); onClicked: installer.cancel() }
+                                ActionButton { text: qsTr("Apply"); primary: true; tint: Ui.good; onClicked: installer.apply() }
+                            }
+                        }
+                    }
+                }
+
+                // ------------------------------------------------ Chat
+                Page {
+                    index: 3
+
+                    Group {
+                        title: qsTr("Assistant")
+                        footer: qsTr("Claude runs on your Claude Pro or Max subscription, through the `claude` CLI you are signed in to — no API key, nothing billed per token. Ollama talks to a local server on this computer.")
+                        SettingRow {
+                            title: qsTr("Provider")
+                            Repeater {
+                                model: [{ id: "claude", n: qsTr("Claude") }, { id: "notion", n: qsTr("Notion") }, { id: "ollama", n: qsTr("Ollama") }]
+                                ActionButton {
+                                    required property var modelData
+                                    text: modelData.n
+                                    checked: chat.provider === modelData.id
+                                    tint: Ui.accent
+                                    onClicked: chat.provider = modelData.id
+                                }
+                            }
+                        }
+                        SettingRow {
+                            title: qsTr("Model")
+                            description: chat.provider === "ollama" && chat.models.length === 0 ? qsTr("No local model found. Is Ollama running?") : ""
+                            LumoCombo {
+                                model: chat.models
+                                currentIndex: chat.models.indexOf(chat.model)
+                                onActivated: (i) => chat.model = chat.models[i]
+                            }
+                        }
+                        SettingRow {
+                            visible: chat.provider === "notion"
+                            title: qsTr("Let Claude edit Notion")
+                            description: qsTr("Off: read-only. On: Claude may create and change pages, and says what it will do first.")
+                            Toggle { on: chat.notionEdits; onToggled: (v) => chat.notionEdits = v }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Instinct")
+                        footer: qsTr("Instinct and Claude have no direct connection, so Lumo relays through you. “Send to Instinct” (under chat answers, finished sessions and dictations) copies the text and opens your WhatsApp chat with Instinct with it typed in — you review it and press Send. In the Notion chat, “From Instinct” finds the pages Instinct labelled “(Made by Instinct)”, read as information only.")
+                        SettingRow {
+                            title: qsTr("WhatsApp number")
+                            TextField {
+                                id: instinctField
+                                implicitWidth: 220
+                                implicitHeight: 32
+                                text: shell.instinctNumber ? "+" + shell.instinctNumber : ""
+                                placeholderText: qsTr("+212 6…")
+                                placeholderTextColor: Ui.faint
+                                color: Ui.text
+                                font.pixelSize: Ui.body
+                                leftPadding: 12
+                                background: Rectangle { radius: 8; color: Ui.card; border.color: instinctField.activeFocus ? Ui.accent : settings.groupLine }
+                                onAccepted: shell.instinctNumber = text
+                            }
+                            ActionButton { text: qsTr("Save"); primary: true; tint: Ui.accent; onClicked: shell.instinctNumber = instinctField.text }
+                        }
+                    }
+                }
+
+                // ------------------------------------------------ About
+                Page {
+                    index: 4
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: hero.implicitHeight + 56
+                        radius: 16
+                        gradient: Gradient {
+                            GradientStop { position: 0; color: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.20) }
+                            GradientStop { position: 1; color: settings.groupBg }
+                        }
+                        border.color: settings.groupLine
+                        ColumnLayout {
+                            id: hero
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Mascot {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.bottomMargin: 8
+                                size: 76
+                                alive: settings.visible && settings.page === 4
+                                mood: hub.mood
+                                outfit: shell.outfit === "auto" ? Ui.seasonal(new Date(), false) : shell.outfit
+                            }
+                            Text { Layout.alignment: Qt.AlignHCenter; text: "Lumo"; color: Ui.text; font.pixelSize: 30; font.weight: Font.Bold }
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: qsTr("Version %1").arg(Qt.application.version || "0.1")
+                                color: Ui.dim
+                                font.pixelSize: Ui.body
+                            }
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.topMargin: 6
+                                Layout.maximumWidth: 420
+                                horizontalAlignment: Text.AlignHCenter
+                                wrapMode: Text.Wrap
+                                text: qsTr("A native Qt Quick companion for your AI coding agents, made for KDE Plasma on Wayland.")
+                                color: "#C8C8D0"
+                                font.pixelSize: Ui.body + 1
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Privacy")
+                        SettingRow {
+                            title: qsTr("No telemetry, no account")
+                            description: qsTr("Lumo only talks to what you use: Claude Code, Anthropic's usage endpoint with your Claude login, your local Ollama and your Notion connector. Nothing is sent or approved without your click.")
+                        }
+                        SettingRow {
+                            title: qsTr("Hook socket")
+                            description: "$XDG_RUNTIME_DIR/lumo.sock"
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Project")
+                        SettingRow {
+                            title: qsTr("Source code")
+                            description: qsTr("MIT licence. Issues and pull requests welcome.")
+                            ActionButton { text: qsTr("Open on GitHub"); onClicked: Qt.openUrlExternally("https://github.com/MoBENLAMINE/Lumo") }
+                        }
+                        SettingRow {
+                            title: qsTr("Quit Lumo")
+                            description: qsTr("The island, dictation and the hook's answers stop until you start it again.")
+                            ActionButton { text: qsTr("Quit"); textColor: Ui.bad; onClicked: shell.quit() }
+                        }
+                    }
                 }
             }
         }

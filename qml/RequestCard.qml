@@ -14,10 +14,15 @@ Rectangle {
     required property string detail
     required property var questions
     required property bool canAlways
+    // Its place in the list: the global shortcuts answer the one at the top.
+    required property int index
 
     // question text -> label (single) or [labels] (multi)
     property var picks: ({})
     property bool live: true
+    readonly property color kindColor: kind === "question" ? Ui.info : kind === "plan" ? Ui.accent : kind === "notice" ? Ui.dim : Ui.warn
+    readonly property string kindIcon: kind === "question" ? Ui.icons.question : kind === "plan" ? Ui.icons.plan
+                                     : kind === "notice" ? Ui.icons.terminal : Ui.icons.shield
     readonly property bool complete: {
         if (kind !== "question") return false
         for (let q of questions) {
@@ -51,28 +56,51 @@ Rectangle {
     radius: 14
     color: Ui.card
     border.width: 1
-    border.color: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.55)
+    border.color: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.5)
+    clip: true
+
+    // An accent strip down the left edge: a request, not a session.
+    Rectangle {
+        width: 3
+        height: parent.height - 24
+        y: 12
+        radius: 1.5
+        color: card.kindColor
+    }
 
     // gentle glow pulse while waiting
     SequentialAnimation on border.color {
         running: card.live
         loops: Animation.Infinite
-        ColorAnimation { to: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.95); duration: 900; easing.type: Easing.InOutSine }
-        ColorAnimation { to: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.35); duration: 900; easing.type: Easing.InOutSine }
+        ColorAnimation { to: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.7); duration: 1100; easing.type: Easing.InOutSine }
+        ColorAnimation { to: Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.3); duration: 1100; easing.type: Easing.InOutSine }
     }
 
     ColumnLayout {
         id: col
-        x: 14; y: 12
-        width: parent.width - 28
+        x: 16; y: 12
+        width: parent.width - 30
         spacing: 10
 
         RowLayout {
             spacing: 8
-            Rectangle { width: 8; height: 8; radius: 4; color: card.agentColor }
+            Rectangle {
+                implicitWidth: 26; implicitHeight: 26; radius: 13
+                color: Qt.rgba(card.kindColor.r, card.kindColor.g, card.kindColor.b, 0.16)
+                Icon { anchors.centerIn: parent; size: 15; path: card.kindIcon; tint: card.kindColor }
+            }
+            Rectangle { width: 7; height: 7; radius: 3.5; color: card.agentColor }
             Text { text: card.project; color: Ui.dim; font.pixelSize: Ui.small; visible: card.project.length > 0 }
             Item { Layout.fillWidth: true }
-            Text { text: card.tool; color: Ui.faint; font.pixelSize: Ui.small; font.family: Ui.mono }
+            Rectangle {
+                visible: card.tool.length > 0
+                implicitWidth: toolText.implicitWidth + 12
+                implicitHeight: 20
+                radius: 5
+                color: "#121216"
+                border.color: Ui.line
+                Text { id: toolText; anchors.centerIn: parent; text: card.tool; color: Ui.dim; font.pixelSize: 10; font.family: Ui.mono }
+            }
         }
 
         Text {
@@ -117,7 +145,7 @@ Rectangle {
             visible: card.kind === "permission"
             Layout.fillWidth: true
             spacing: 8
-            PillButton { text: qsTr("Terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
+            PillButton { text: qsTr("Answer in terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
             Item { Layout.fillWidth: true }
             PillButton { text: qsTr("Deny"); tint: Ui.bad; textColor: Ui.bad; onClicked: hub.deny(card.requestId) }
             PillButton { text: qsTr("Always"); visible: card.canAlways; tint: Ui.good; textColor: Ui.good; onClicked: hub.always(card.requestId) }
@@ -177,11 +205,27 @@ Rectangle {
             visible: card.kind === "plan"
             Layout.fillWidth: true
             spacing: 8
-            PillButton { text: qsTr("Terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
+            PillButton { text: qsTr("Answer in terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
             Item { Layout.fillWidth: true }
             PillButton { text: qsTr("Keep planning"); tint: Ui.warn; textColor: Ui.warn; onClicked: hub.keepPlanning(card.requestId, feedback.text) }
             PillButton { text: qsTr("Approve + auto-edit"); visible: card.canAlways; tint: Ui.good; textColor: Ui.good; onClicked: hub.always(card.requestId) }
             PillButton { text: qsTr("Approve"); primary: true; tint: Ui.good; onClicked: hub.allow(card.requestId) }
+        }
+
+        // The global shortcuts act on the card at the top.
+        Row {
+            visible: card.index === 0 && (card.kind === "permission" || card.kind === "plan")
+            Layout.alignment: Qt.AlignRight
+            spacing: 4
+            opacity: 0.85
+            Keycap { small: true; text: "Meta" }
+            Keycap { small: true; text: "Alt" }
+            Keycap { small: true; text: "Y" }
+            Text { anchors.verticalCenter: parent.verticalCenter; text: card.kind === "plan" ? qsTr("approve") : qsTr("allow"); color: Ui.faint; font.pixelSize: 10; rightPadding: 8 }
+            Keycap { small: true; text: "Meta" }
+            Keycap { small: true; text: "Alt" }
+            Keycap { small: true; text: "D" }
+            Text { anchors.verticalCenter: parent.verticalCenter; text: card.kind === "plan" ? qsTr("keep planning") : qsTr("deny"); color: Ui.faint; font.pixelSize: 10 }
         }
 
         RowLayout {
@@ -230,10 +274,22 @@ Rectangle {
                         Behavior on color { ColorAnimation { duration: 120 } }
                         HoverHandler { id: optHover; cursorShape: Qt.PointingHandCursor }
                         TapHandler { id: optTap; onTapped: card.pick(qcol.modelData, opt.modelData.label) }
+                        // A ring for one choice, a square for several; filled when picked.
+                        Rectangle {
+                            id: marker
+                            x: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 16; height: 16
+                            radius: qcol.modelData.multiSelect ? 4 : 8
+                            color: opt.on ? Ui.accent : "transparent"
+                            border.width: opt.on ? 0 : 1.5
+                            border.color: Ui.faint
+                            Icon { anchors.centerIn: parent; visible: opt.on; size: 12; stroke: 2.4; path: Ui.icons.check; tint: "#0A0A0C" }
+                        }
                         Column {
                             id: optCol
-                            x: 10; y: 7
-                            width: parent.width - 20
+                            x: 36; y: 7
+                            width: parent.width - 46
                             spacing: 2
                             Text { text: opt.modelData.label; color: Ui.text; font.pixelSize: Ui.body; width: parent.width; wrapMode: Text.Wrap }
                             Text {
@@ -249,7 +305,7 @@ Rectangle {
         RowLayout {
             visible: card.kind === "question"
             Layout.fillWidth: true
-            PillButton { text: qsTr("Reply in terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
+            PillButton { text: qsTr("Answer in terminal"); textColor: Ui.dim; onClicked: hub.replyInTerminal(card.requestId) }
             Item { Layout.fillWidth: true }
             PillButton {
                 text: qsTr("Send")

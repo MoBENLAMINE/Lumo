@@ -133,27 +133,23 @@ Rectangle {
                         text: ({ working: qsTr("Working"), waiting: qsTr("Needs you"), done: qsTr("Done"), error: qsTr("Error"), idle: qsTr("Waiting for you") })[card.status] || card.status
                     }
                 }
-                Rectangle { // bring the session's terminal or editor forward
-                    implicitWidth: 26; implicitHeight: 26; radius: 13
-                    color: jumpHover.hovered ? Ui.line : "transparent"
-                    Text { anchors.centerIn: parent; text: "↗"; color: jumpHover.hovered ? Ui.text : Ui.dim; font.pixelSize: 14 }
-                    HoverHandler { id: jumpHover; cursorShape: Qt.PointingHandCursor }
-                    // A cloud session has no process here: its card opens it on claude.ai.
-                    TapHandler {
-                        onTapped: {
-                            // A cloud session opens in Claude Desktop, else in the browser; a local one comes forward.
-                            if (card.deepLink.length && Qt.openUrlExternally(card.deepLink)) return
-                            if (card.url.length) Qt.openUrlExternally(card.url)
-                            else if (!card.deepLink.length) activeWindow.focusProcess(hub.sessionPids(card.sessionId))
-                        }
+                IconButton { // bring the session's terminal or editor forward
+                    size: 26; iconSize: 14; filled: false
+                    icon: Ui.icons.jump
+                    tip: qsTr("Bring its window forward")
+                    onClicked: {
+                        // A cloud session opens in Claude Desktop, else in the browser; a local one comes forward.
+                        if (card.deepLink.length && Qt.openUrlExternally(card.deepLink)) return
+                        if (card.url.length) Qt.openUrlExternally(card.url)
+                        else if (!card.deepLink.length) activeWindow.focusProcess(hub.sessionPids(card.sessionId))
                     }
                 }
-                Rectangle {
-                    implicitWidth: 26; implicitHeight: 26; radius: 13
-                    color: closeHover.hovered ? Ui.line : "transparent"
-                    Text { anchors.centerIn: parent; text: "✕"; color: closeHover.hovered ? Ui.text : Ui.faint; font.pixelSize: 11 }
-                    HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: hub.dismissSession(card.sessionId) }
+                IconButton {
+                    size: 26; iconSize: 13; filled: false
+                    icon: Ui.icons.close
+                    tint: Ui.faint
+                    tip: qsTr("Dismiss")
+                    onClicked: hub.dismissSession(card.sessionId)
                 }
             }
 
@@ -178,10 +174,10 @@ Rectangle {
                     font.pixelSize: Ui.body
                     elide: Text.ElideRight
                 }
-                Text {
-                    text: card.open ? "▴" : "▾"
-                    color: Ui.faint
-                    font.pixelSize: 11
+                Icon {
+                    path: card.open ? Ui.icons.chevronUp : Ui.icons.chevronDown
+                    tint: Ui.faint
+                    size: 14
                 }
             }
 
@@ -210,11 +206,12 @@ Rectangle {
             Layout.fillWidth: true
             implicitHeight: askCol.implicitHeight + 16
             radius: 10
-            color: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.10)
+            color: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.05)
+            Rectangle { width: 3; height: parent.height - 12; y: 6; x: 0; radius: 1.5; color: Ui.accent }
             ColumnLayout {
                 id: askCol
-                x: 10; y: 8
-                width: parent.width - 20
+                x: 14; y: 8
+                width: parent.width - 24
                 spacing: 3
                 Text { text: qsTr("You asked"); color: Ui.accent; font.pixelSize: 10; font.weight: Font.DemiBold }
                 Text {
@@ -237,10 +234,11 @@ Rectangle {
             implicitHeight: ansCol.implicitHeight + 16
             radius: 10
             color: "#121216"
+            Rectangle { width: 3; height: parent.height - 12; y: 6; x: 0; radius: 1.5; color: Ui.good }
             ColumnLayout {
                 id: ansCol
-                x: 10; y: 8
-                width: parent.width - 20
+                x: 14; y: 8
+                width: parent.width - 24
                 spacing: 3
                 RowLayout {
                     Layout.fillWidth: true
@@ -289,7 +287,7 @@ Rectangle {
                             anchors.leftMargin: 10
                             anchors.rightMargin: 10
                             spacing: 8
-                            Text { text: fileRow.shown ? "▾" : "▸"; color: Ui.faint; font.pixelSize: 10 }
+                            Icon { path: fileRow.shown ? Ui.icons.chevronDown : Ui.icons.chevronRight; tint: Ui.faint; size: 12 }
                             Text {
                                 Layout.fillWidth: true
                                 text: fileRow.modelData.file

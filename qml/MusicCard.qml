@@ -16,7 +16,7 @@ Rectangle {
         color: big ? Ui.text : (btnHover.hovered ? Ui.line : "transparent")
         scale: btnTap.pressed ? 0.9 : 1
         Behavior on scale { NumberAnimation { duration: 80 } }
-        Text { anchors.centerIn: parent; text: btn.glyph; color: btn.big ? "#0A0A0C" : Ui.text; font.pixelSize: btn.big ? 15 : 13 }
+        Icon { anchors.centerIn: parent; path: btn.glyph; tint: btn.big ? "#0A0A0C" : Ui.text; size: btn.big ? 18 : 15; stroke: btn.big ? 2.2 : 1.8 }
         HoverHandler { id: btnHover; cursorShape: Qt.PointingHandCursor }
         TapHandler { id: btnTap; onTapped: btn.activated() }
     }
@@ -53,7 +53,7 @@ Rectangle {
                 asynchronous: true
                 sourceSize: Qt.size(104, 104)
             }
-            Text { anchors.centerIn: parent; visible: !music.artUrl; text: "♪"; color: Ui.dim; font.pixelSize: 22 }
+            Icon { anchors.centerIn: parent; visible: !music.artUrl; path: Ui.icons.music; tint: Ui.dim; size: 24 }
         }
 
         ColumnLayout {
@@ -100,9 +100,9 @@ Rectangle {
 
         Row {
             spacing: 4
-            Control { glyph: "⏮"; onActivated: music.previous() }
-            Control { glyph: music.playing ? "⏸" : "▶"; big: true; onActivated: music.playPause() }
-            Control { glyph: "⏭"; onActivated: music.next() }
+            Control { glyph: Ui.icons.skipBack; onActivated: music.previous() }
+            Control { glyph: music.playing ? Ui.icons.pause : Ui.icons.play; big: true; onActivated: music.playPause() }
+            Control { glyph: Ui.icons.skipForward; onActivated: music.next() }
         }
     }
 }
