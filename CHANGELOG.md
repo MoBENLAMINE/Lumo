@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Music from a player that starts after Lumo (a browser tab, Zen, Firefox…) now shows up and makes Lumo
+  dance; before, Lumo only saw players that were already there when it started.
 - A new Lumo, a cousin of Claude's Clawd: a blocky body in Claude's terracotta with little arms and four
   stubby legs, a soft aura, and a glowing screen for a face. Each mood changes the light: cyan while working,
   amber when it needs you, arcs when happy, slits when sad, spinning crosses when dizzy. New app icon.

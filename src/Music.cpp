@@ -5,7 +5,6 @@
 #include <QDBusConnectionInterface>
 #include <QDBusObjectPath>
 #include <QDBusReply>
-#include <QDBusServiceWatcher>
 #include <QDateTime>
 #include <QTimer>
 
@@ -16,7 +15,7 @@ const QString kPrefix = QStringLiteral("org.mpris.MediaPlayer2.");
 const QString kPath = QStringLiteral("/org/mpris/MediaPlayer2");
 const QString kPlayer = QStringLiteral("org.mpris.MediaPlayer2.Player");
 const QString kProps = QStringLiteral("org.freedesktop.DBus.Properties");
-constexpr int kTimeoutMs = 400;
+constexpr int kTimeoutMs = 1500;
 
 QVariant unwrap(const QVariant &v) {
     if (v.canConvert<QDBusVariant>()) return v.value<QDBusVariant>().variant();
@@ -46,8 +45,12 @@ Music::Music(QObject *parent) : QObject(parent) {
     QDBusConnection bus = QDBusConnection::sessionBus();
     bus.connect(QString(), kPath, kProps, QStringLiteral("PropertiesChanged"), this, SLOT(onPropertiesChanged(QDBusMessage)));
     bus.connect(QString(), kPath, kPlayer, QStringLiteral("Seeked"), this, SLOT(onSeeked(QDBusMessage)));
-    auto *watcher = new QDBusServiceWatcher(kPrefix + QLatin1Char('*'), bus, QDBusServiceWatcher::WatchForOwnerChange, this);
-    connect(watcher, &QDBusServiceWatcher::serviceOwnerChanged, this, &Music::onNameOwnerChanged);
+    // Players come and go (a browser only shows up once a tab plays). Listen
+    // to the bus itself rather than a wildcard QDBusServiceWatcher, which
+    // never fires for a pattern on some Qt and bus versions.
+    bus.connect(QStringLiteral("org.freedesktop.DBus"), QStringLiteral("/org/freedesktop/DBus"),
+                QStringLiteral("org.freedesktop.DBus"), QStringLiteral("NameOwnerChanged"),
+                this, SLOT(onNameOwnerChanged(QString,QString,QString)));
     m_since.start();
     scan();
 }
@@ -55,7 +58,7 @@ Music::Music(QObject *parent) : QObject(parent) {
 void Music::scan() {
     const QStringList names = QDBusConnection::sessionBus().interface()->registeredServiceNames().value();
     for (const auto &name : names) {
-        if (ignored(name)) continue;
+        if (ignored(name) || m_players.contains(name)) continue;
         m_owners.insert(QDBusConnection::sessionBus().interface()->serviceOwner(name).value(), name);
         m_players.insert(name, {readProperty(name, kPlayer, QStringLiteral("PlaybackStatus")).toString(), 0});
     }
@@ -75,6 +78,10 @@ void Music::onNameOwnerChanged(const QString &name, const QString &, const QStri
 }
 
 void Music::onPropertiesChanged(const QDBusMessage &message) {
+    // A player we haven't met (we missed its arrival): look again.
+    if (!m_owners.contains(message.service()) && !message.arguments().isEmpty()
+        && message.arguments().at(0).toString() == kPlayer)
+        scan();
     const QString name = m_owners.value(message.service());
     const QVariantList args = message.arguments();
     if (name.isEmpty() || args.size() < 2 || args.at(0).toString() != kPlayer) return;
@@ -115,6 +122,7 @@ void Music::choose() {
             emit changed();
             return;
         }
+        emit changed();   // even if the player is slow to answer below
     }
     if (!best.isEmpty()) load(best);
 }
