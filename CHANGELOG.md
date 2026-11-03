@@ -13,6 +13,8 @@
   click skips it. Settings → General → "Say hello when Lumo starts" (on by default) also replays it.
 - Settings → General → Screen puts the island on the screen of your choice. If that screen is unplugged,
   the primary one takes the island until it's back.
+- Sounds work from the start: they follow the system's default output, so a Lumo started at login, before
+  the sound server had picked an output, no longer stays silent until you switch outputs.
 - The island and Settings match: a depth gradient and a rim lit by the agent's colour on the island, a lit
   stage for Lumo in Settings → About, and one shared palette.
 
