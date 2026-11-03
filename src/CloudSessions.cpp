@@ -28,10 +28,20 @@ QJsonObject readDoc(const QString &path) {
     return f.open(QIODevice::ReadOnly) ? QJsonDocument::fromJson(f.readAll()).object() : QJsonObject();
 }
 
-qint64 isoMs(const QString &s) {
+// The server writes microseconds ("…08:30:03.914844Z"); Qt reads milliseconds.
+qint64 isoMs(QString s) {
+    static const QRegularExpression extraDigits(QStringLiteral("(\\.\\d{3})\\d+"));
+    s.replace(extraDigits, QStringLiteral("\\1"));
     QDateTime t = QDateTime::fromString(s, Qt::ISODateWithMs);
     if (!t.isValid()) t = QDateTime::fromString(s, Qt::ISODate);
     return t.isValid() ? t.toMSecsSinceEpoch() : 0;
+}
+
+// "SESSION_STATUS_REQUIRES_ACTION" and "requires_action" are the same status.
+QString statusOf(QString raw) {
+    raw = raw.toLower();
+    if (raw.startsWith(QLatin1String("session_status_"))) raw.remove(0, 15);
+    return raw;
 }
 
 // "https://github.com/owner/name.git" → "owner/name"; empty for anything else.
@@ -53,22 +63,30 @@ QList<CloudSession> parseCloudSessions(const QByteArray &body) {
     static const QRegularExpression idPattern(QStringLiteral("^[A-Za-z0-9_-]{1,128}$"));
     QList<CloudSession> out;
     const QJsonArray items = QJsonDocument::fromJson(body).object().value(QStringLiteral("data")).toArray();
+    int dropped = 0;
     for (const auto &item : items) {
         const QJsonObject o = item.toObject();
         const QString id = o.value(QStringLiteral("id")).toString();
-        if (!idPattern.match(id).hasMatch()) continue;
-        const QString status = o.value(QStringLiteral("session_status")).toString();
-        if (!kKnownStatuses.contains(status)) continue; // archived, or a status this Lumo doesn't know yet
+        const QString status = statusOf(o.value(QStringLiteral("session_status")).toString());
+        if (!idPattern.match(id).hasMatch() || !kKnownStatuses.contains(status)) {
+            // Archived sessions are expected to be left out; anything else is worth a line in the log.
+            if (status != QLatin1String("archived")) ++dropped;
+            continue;
+        }
         // The first timestamp that reads as a date: when the session last moved.
         qint64 updated = 0;
         for (const char *key : {"updated_at", "last_event_at", "created_at"}) {
             updated = isoMs(o.value(QLatin1String(key)).toString());
             if (updated) break;
         }
-        if (!updated) continue;
+        if (!updated) {
+            ++dropped;
+            continue;
+        }
         out << CloudSession{id, o.value(QStringLiteral("title")).toString(), status, repoOf(o.value(QStringLiteral("sources")).toArray()),
                             QStringLiteral("https://claude.ai/code/") + id, updated};
     }
+    if (dropped) qInfo("cloud sessions: %d entries left out (unknown status or date)", dropped);
     return out;
 }
 

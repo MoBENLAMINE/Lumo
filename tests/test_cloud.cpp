@@ -1,5 +1,6 @@
 // Cloud sessions: the list parser, and how the hub shows and sounds them.
 #include <QDateTime>
+#include <QTimeZone>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -11,7 +12,7 @@
 
 namespace {
 qint64 nowMs() { return QDateTime::currentMSecsSinceEpoch(); }
-QString isoAt(qint64 ms) { return QDateTime::fromMSecsSinceEpoch(ms, Qt::UTC).toString(Qt::ISODateWithMs); }
+QString isoAt(qint64 ms) { return QDateTime::fromMSecsSinceEpoch(ms, QTimeZone::utc()).toString(Qt::ISODateWithMs); }
 
 CloudSession cs(const QString &id, const QString &status, qint64 updated = nowMs(), const QString &repo = {}) {
     return CloudSession{id, QStringLiteral("Task ") + id, status, repo, QStringLiteral("https://claude.ai/code/") + id, updated};
@@ -59,6 +60,18 @@ private slots:
         QCOMPARE(out[1].id, QStringLiteral("session_b"));
         QVERIFY(out[1].repo.isEmpty());
         QVERIFY(out[1].updatedAt > 0);
+    }
+
+    void readsTheServerFormat() {
+        // What the server sends: prefixed status, microsecond timestamps.
+        const QJsonArray data{QJsonObject{{QStringLiteral("id"), QStringLiteral("session_018WoC1YAV5RmYjptj1beY84")},
+                                          {QStringLiteral("session_status"), QStringLiteral("SESSION_STATUS_REQUIRES_ACTION")},
+                                          {QStringLiteral("title"), QStringLiteral("Gestion des risques du Projet")},
+                                          {QStringLiteral("updated_at"), QStringLiteral("2026-11-03T08:30:03.914844Z")}}};
+        const auto out = parseCloudSessions(listOf(data).toUtf8());
+        QCOMPARE(out.size(), 1);
+        QCOMPARE(out[0].status, QStringLiteral("requires_action"));
+        QCOMPARE(out[0].updatedAt, QDateTime::fromString(QStringLiteral("2026-11-03T08:30:03.914Z"), Qt::ISODateWithMs).toMSecsSinceEpoch());
     }
 
     void emptyOrBrokenBodiesGiveNothing() {
