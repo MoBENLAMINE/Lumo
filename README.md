@@ -57,6 +57,9 @@ It's native through and through: C++20 and Qt Quick, no web view. The island ani
   [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), about 0.1 s per second of speech, on your computer.
 - **Thoughtful**: speakers muted while it listens, your clipboard given back, your words always spelled your way,
   spoken shortcuts.
+- **Your words, your way**: a dictionary, snippets (say a short phrase, paste a whole text), an optional clean-up by
+  Claude on your plan (as said, natural or polished, per app), and statistics: words, time saved, days in a row,
+  words a day and where you dictate.
 
 ### Claude, one hover away
 
@@ -69,7 +72,7 @@ It's native through and through: C++20 and Qt Quick, no web view. The island ani
 
 - **Lumo** reacts to everything: it works with your agents, calls you, celebrates, sulks, and gets dizzy if you poke
   it too much. Every reaction has its own synthesized sound.
-- **It says hello** when it starts, and dances when music plays.
+- **It says hello** when it starts, and dances on the beat of whatever you play.
 - **Your screen**: the island sits on the screen you pick, and goes back there when you plug it in again.
 - **Music**: what's playing in any MPRIS player, with controls.
 - **Instinct**: hands chat answers, sessions and dictations to the Instinct assistant through you (WhatsApp,
@@ -114,7 +117,8 @@ cd Lumo/packaging/arch && makepkg -si
 ### From source
 
 Needs Qt ≥ 6.5 (Base, Declarative, Multimedia, ShaderTools), LayerShellQt, KF6 GlobalAccel, `wl-clipboard`, `pactl`,
-and CMake. The speech engine (sherpa-onnx) is downloaded on first configure.
+and CMake, plus Qt's Linguist tools (`qt6-tools`) for the translations. The speech engine (sherpa-onnx) is downloaded
+on first configure.
 
 ```bash
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/.local

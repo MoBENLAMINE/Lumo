@@ -91,6 +91,16 @@ const QHash<QString, std::vector<Note>> &recipes() {
         {QStringLiteral("done"), {{0, .14, note(3), note(3), .3}, {.07, .14, note(7), note(7), .3}, {.14, .14, note(10), note(10), .3}, {.21, .45, note(15), note(15), .35}}},
         {QStringLiteral("error"), {{0, .22, note(5), note(5), .35}, {.14, .4, note(0), note(-1), .35}}},
         {QStringLiteral("poke"), {{0, .18, note(14), note(7), .45, 25}}},
+        // more pokes, picked at random so a poke never sounds the same twice in a row
+        {QStringLiteral("ouch"), {{0, .16, note(19), note(10), .38, 30}}},
+        {QStringLiteral("giggle"), {{0, .07, note(17), note(19), .25}, {.09, .07, note(19), note(21), .22}, {.18, .09, note(21), note(24), .2}}},
+        // falling asleep: a soft, low, wobbly snore, twice
+        {QStringLiteral("snore"), {{0, .9, note(-17), note(-21), .2, 6}, {1.0, .7, note(-14), note(-19), .14, 6}}},
+        // waking up: a yawn that slides down
+        {QStringLiteral("yawn"), {{0, .25, note(5), note(12), .22}, {.2, .7, note(12), note(0), .26, 4}}},
+        // petted: a warm "aww"
+        {QStringLiteral("love"), {{0, .18, note(12), note(12), .28, 5}, {.14, .45, note(19), note(19), .3, 5}, {.16, .45, note(24), note(24), .08}}},
+        {QStringLiteral("wink"), {{0, .06, note(19), note(26), .22}, {.07, .25, note(31), note(31), .12}}},
         {QStringLiteral("dizzy"), {{0, .7, note(10), note(2), .35, 60}}},
         // Claude finished: a bright rising chime with a sparkle on top.
         {QStringLiteral("finish"), {{0, .13, note(15), note(15), .30}, {.075, .13, note(19), note(19), .30}, {.15, .13, note(22), note(22), .30},

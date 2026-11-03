@@ -14,6 +14,21 @@
   click skips it. Settings → General → "Say hello when Lumo starts" (on by default) also replays it.
 - Settings → General → Screen puts the island on the screen of your choice. If that screen is unplugged,
   the primary one takes the island until it's back.
+- New expressions, each with its own sound: "> <" when poked (ouch, giggle or poke, never the same twice),
+  spinning spirals and "Too many pokes!" in the island when it's dizzy, dozing off with drifting z's after
+  ten quiet minutes and a yawn when it wakes, heart eyes and floating hearts when you rest the pointer on it,
+  a wink after it celebrates, and a thinking face with three pulsing dots while the chat thinks.
+- Dictation, your way: edit your dictionary in Settings; snippets paste a whole text when you say only their
+  short phrase; Styles can have Claude clean your words up (Natural or Polished, per app, through the `claude`
+  CLI on your plan; As said by default); and Statistics show time saved, days in a row, words a day and the
+  apps you dictate in.
+- The music card has shuffle, repeat and volume, when the player offers them.
+- Lumo dances on the beat: it listens to what your computer plays (in memory, nothing recorded), finds the
+  tempo and moves on every beat — a nod, a sway, a side step, a hop, a pumping arm, now and then a twirl —
+  changing move every two bars, bigger on the hard beats. Without `parec` or `pw-record` it keeps a steady
+  tempo instead.
+- Lumo speaks 16 languages: Settings → General → Language (System follows your desktop), switched live.
+- Settings can be searched: a field in the sidebar (or Ctrl+F) finds any setting and takes you to it.
 - A new README: the launch greeting as an animated hero, Lumo's moods and outfits, and the features grouped
   by what they do for you.
 - Sounds work from the start: they follow the system's default output, so a Lumo started at login, before

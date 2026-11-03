@@ -36,6 +36,8 @@ Window {
     readonly property bool resting: shell.alwaysShow
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
+    // Listen for the beat only while Lumo is out dancing.
+    Binding { target: beat; property: "active"; value: win.dancing && win.visible }
     // What Lumo wears: your pick, or the season's (headphones while music plays).
     readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false
@@ -69,6 +71,7 @@ Window {
     }
 
     onPointerInChanged: {
+        stir()
         if (pointerIn) {
             closeTimer.stop()
             peek = true
@@ -80,10 +83,42 @@ Window {
     }
     onModeChanged: {
         updateMask()
+        if (mode !== "rest") stir()
         if (mode === "open") { sounds.play("pop"); planUsage.refresh(60000) }
         if (mode !== "open") shell.setKeyboard(false)
     }
     onTabChanged: if (tab === "chat" && mode === "open") focusChat()
+    // ------------------------------------------------------------ expressions
+    // A poke never sounds the same twice; too many and Lumo is dizzy, and says so.
+    function pokeSound(pokes) {
+        if (pokes === 0) return "dizzy"
+        return ["poke", "ouch", "giggle"][Math.floor(Math.random() * 3)]
+    }
+    property bool dizzyNotice: false
+    function gotDizzy() { dizzyNotice = true; dizzyNoticeTimer.restart() }
+    Timer { id: dizzyNoticeTimer; interval: 2600; onTriggered: win.dizzyNotice = false }
+
+    // Ten quiet minutes in the resting pill and Lumo dozes off; anything wakes it.
+    property bool asleep: false
+    property double lastActivity: Date.now()
+    function stir() {
+        lastActivity = Date.now()
+        if (!asleep) return
+        asleep = false
+        sounds.play("yawn")
+        restMascot.express("yawn", 1300)
+    }
+    Timer {
+        interval: 60000
+        repeat: true
+        running: !win.asleep
+        onTriggered: if (win.mode === "rest" && win.mood === "idle" && Date.now() - win.lastActivity > 10 * 60000) {
+            win.asleep = true
+            sounds.play("snore")
+        }
+    }
+    onDictatingChanged: stir()
+
     // After the shell has set up the surface, so the pill takes the pointer at once.
     Component.onCompleted: { Qt.callLater(updateMask); greetAtStart.start() }
 
@@ -140,6 +175,7 @@ Window {
         function onAttention() { win.needsYou() }
         function onWaitingForYou() { win.callingYou = true; callTimer.restart(); win.needsYou() }
         function onPromptSubmitted() { win.callingYou = false }
+        function onStateChanged() { win.stir() }
     }
 
     // ------------------------------------------------------------ reactions
@@ -378,7 +414,11 @@ Window {
                         onWardrobeRequested: win.openWardrobe()
                         dancing: win.dancing && win.mode === "compact" && win.mood === "idle"
                         alive: win.mode === "compact"
-                        onPoked: sounds.play(pokes === 0 ? "dizzy" : "poke")
+                        pettable: true
+                        onPoked: sounds.play(win.pokeSound(pokes))
+                        onGotDizzy: win.gotDizzy()
+                        onPetted: sounds.play("love")
+                        onWinked: sounds.play("wink")
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
@@ -392,7 +432,8 @@ Window {
                     Text {
                         id: headlineText
                         anchors.verticalCenter: parent.verticalCenter
-                        text: win.mood === "happy" ? qsTr("Done")
+                        text: win.dizzyNotice ? qsTr("Too many pokes! Back in three…")
+                            : win.mood === "happy" ? qsTr("Done")
                             : win.callingYou && win.mood !== "alert" ? qsTr("Waiting for you")
                             : win.mood === "alert" && !hub.headline ? qsTr("Needs you")
                             : hub.headline || (hub.sessions.count ? (hub.sessions.count === 1 ? qsTr("1 session") : qsTr("%1 sessions").arg(hub.sessions.count)) : qsTr("Hi!"))
@@ -449,10 +490,11 @@ Window {
                     anchors.verticalCenterOffset: 1
                     spacing: 9
                     Mascot {
+                        id: restMascot
                         size: 24
                         anchors.verticalCenter: parent.verticalCenter
                         color: Ui.accent
-                        mood: win.mood === "waiting" ? "waiting" : "idle"
+                        mood: win.asleep ? "sleeping" : win.mood === "waiting" ? "waiting" : "idle"
                         alive: false
                         blinks: win.mode === "rest"
                         outfit: win.outfit
@@ -546,7 +588,7 @@ Window {
                             id: mascot
                             size: 40
                             color: hub.headlineColor
-                            mood: win.mood === "idle" && win.tab === "chat" && chat.busy ? "working" : win.mood
+                            mood: win.mood === "idle" && win.tab === "chat" && chat.busy ? "thinking" : win.mood
                             badge: hub.requests.count > 0
                             outfit: wardrobePanel.trying !== "" && win.showWardrobe
                                     ? Ui.outfitFor(wardrobePanel.trying, true) : win.outfit
@@ -554,20 +596,25 @@ Window {
                             dancing: win.dancing && win.mode === "open"
                             alive: win.mode === "open"
                             lookAt: rootHover.hovered ? mascot.mapFromItem(root, rootHover.point.position) : null
-                            onPoked: sounds.play(pokes === 0 ? "dizzy" : "poke")
+                            pettable: true
+                            onPoked: sounds.play(win.pokeSound(pokes))
+                            onGotDizzy: win.gotDizzy()
+                            onPetted: sounds.play("love")
+                            onWinked: sounds.play("wink")
                         }
                         ColumnLayout {
                             spacing: 0
                             Layout.fillWidth: true
                             Text {
-                                text: hub.requests.count ? qsTr("Lumo needs you") : hub.workingCount ? (hub.workingCount === 1 ? qsTr("1 agent working") : qsTr("%1 agents working").arg(hub.workingCount)) : qsTr("All quiet")
+                                text: win.dizzyNotice ? qsTr("Too many pokes!")
+                                    : hub.requests.count ? qsTr("Lumo needs you") : hub.workingCount ? (hub.workingCount === 1 ? qsTr("1 agent working") : qsTr("%1 agents working").arg(hub.workingCount)) : qsTr("All quiet")
                                 color: hub.requests.count ? Ui.warn : Ui.text
                                 Behavior on color { ColorAnimation { duration: 200 } }
                                 font.pixelSize: Ui.title
                                 font.weight: Font.DemiBold
                             }
                             Text {
-                                text: hub.headline || qsTr("Your agents show up here.")
+                                text: win.dizzyNotice ? qsTr("Back in three seconds.") : hub.headline || qsTr("Your agents show up here.")
                                 color: Ui.dim
                                 font.pixelSize: Ui.small
                                 elide: Text.ElideRight

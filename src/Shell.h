@@ -24,6 +24,8 @@ class Shell : public QObject {
     Q_PROPERTY(QString screen READ screenName WRITE setScreenName NOTIFY screenChanged)
     // The screens to pick from: [{ name, label }], the primary one first.
     Q_PROPERTY(QVariantList screens READ screens NOTIFY screensChanged)
+    // Lumo's own language: "fr", "pt_BR"…; "" follows the desktop.
+    Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     // Lumo says hello when it starts: the island opens and Lumo waves.
     Q_PROPERTY(bool greeting READ greeting WRITE setGreeting NOTIFY greetingChanged)
     Q_PROPERTY(bool showMusic READ showMusic WRITE setShowMusic NOTIFY showMusicChanged)
@@ -46,6 +48,8 @@ public:
     bool showUsage() const;
     bool greeting() const;
     void setGreeting(bool on);
+    QString language() const;
+    void setLanguage(const QString &language);
     QString screenName() const;
     void setScreenName(const QString &name);
     QVariantList screens() const;
@@ -79,6 +83,7 @@ signals:
     void showUsageChanged();
     void greetingChanged();
     void screenChanged();
+    void languageChanged();
     void screensChanged();
     void showMusicChanged();
     void danceChanged();

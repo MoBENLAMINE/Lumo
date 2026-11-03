@@ -1,7 +1,9 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QLocale>
 #include <QStandardPaths>
+#include <QTranslator>
 #include <QDBusConnection>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -16,6 +18,7 @@
 #include "HookInstaller.h"
 #include "HookServer.h"
 #include "Music.h"
+#include "Beat.h"
 #include "PlanUsage.h"
 #include "Shell.h"
 #include "Sounds.h"
@@ -70,11 +73,23 @@ int main(int argc, char *argv[]) {
     HookInstaller installer;
     Sounds sounds;
     Shell shell;
+    // Lumo's language: the one picked in Settings, or the desktop's. English
+    // needs nothing: it is what the code is written in.
+    QTranslator translator;
+    auto useLanguage = [&] {
+        QCoreApplication::removeTranslator(&translator);
+        const QString language = shell.language();
+        const QLocale locale = language.isEmpty() ? QLocale::system() : QLocale(language);
+        if (translator.load(locale, QStringLiteral("lumo"), QStringLiteral("_"), QStringLiteral(":/i18n")))
+            QCoreApplication::installTranslator(&translator);
+    };
+    useLanguage();
     ActiveWindow activeWindow;
     Dictation dictation(&activeWindow);
     PlanUsage planUsage;
     CloudSessions cloud;
     Music music;
+    Beat beat;
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/Dictation"), &dictation, QDBusConnection::ExportScriptableSlots);
 
     QObject::connect(&server, &HookServer::hookEvent, &hub, &AgentHub::onHookEvent);
@@ -91,6 +106,10 @@ int main(int argc, char *argv[]) {
     if (!server.listen()) qWarning("Lumo couldn't listen on %s", qPrintable(HookServer::socketPath()));
 
     QQmlApplicationEngine engine;
+    QObject::connect(&shell, &Shell::languageChanged, &engine, [&] {
+        useLanguage();
+        engine.retranslate();
+    });
     engine.rootContext()->setContextProperty(QStringLiteral("hub"), &hub);
     engine.rootContext()->setContextProperty(QStringLiteral("chat"), &chat);
     engine.rootContext()->setContextProperty(QStringLiteral("installer"), &installer);
@@ -100,6 +119,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty(QStringLiteral("activeWindow"), &activeWindow);
     engine.rootContext()->setContextProperty(QStringLiteral("planUsage"), &planUsage);
     engine.rootContext()->setContextProperty(QStringLiteral("music"), &music);
+    engine.rootContext()->setContextProperty(QStringLiteral("beat"), &beat);
     engine.rootContext()->setContextProperty(QStringLiteral("cloud"), &cloud);
     engine.loadFromModule("Lumo", "Island");
     if (engine.rootObjects().isEmpty()) return 1;

@@ -137,17 +137,27 @@ void Shell::setupTray() {
     m_tray = new QSystemTrayIcon(lumoIcon(), this);
     m_tray->setToolTip(QStringLiteral("Lumo"));
     auto *menu = new QMenu();
-    menu->addAction(tr("Open island"), this, &Shell::toggleRequested);
+    QAction *open = menu->addAction(QString(), this, &Shell::toggleRequested);
     // The way back when the island was hidden with its eye button.
-    QAction *always = menu->addAction(tr("Always show island"));
+    QAction *always = menu->addAction(QString());
     always->setCheckable(true);
     always->setChecked(alwaysShow());
     connect(always, &QAction::toggled, this, &Shell::setAlwaysShow);
     connect(this, &Shell::alwaysShowChanged, always, [this, always] { always->setChecked(alwaysShow()); });
-    menu->addAction(tr("Chat"), this, &Shell::chatRequested);
-    menu->addAction(tr("Settings…"), this, &Shell::settingsRequested);
+    QAction *chat = menu->addAction(QString(), this, &Shell::chatRequested);
+    QAction *prefs = menu->addAction(QString(), this, &Shell::settingsRequested);
     menu->addSeparator();
-    menu->addAction(tr("Quit Lumo"), this, &Shell::quit);
+    QAction *quit = menu->addAction(QString(), this, &Shell::quit);
+    auto label = [=, this] {
+        open->setText(tr("Open island"));
+        always->setText(tr("Always show island"));
+        chat->setText(tr("Chat"));
+        prefs->setText(tr("Settings…"));
+        quit->setText(tr("Quit Lumo"));
+    };
+    label();
+    // Queued, so the new translation is loaded first.
+    connect(this, &Shell::languageChanged, menu, label, Qt::QueuedConnection);
     m_tray->setContextMenu(menu);
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason r) {
         if (r == QSystemTrayIcon::Trigger) emit toggleRequested();
@@ -199,6 +209,14 @@ void Shell::setAlwaysShow(bool on) {
 }
 
 bool Shell::showUsage() const { return QSettings().value(QStringLiteral("island/showUsage"), true).toBool(); }
+
+QString Shell::language() const { return QSettings().value(QStringLiteral("general/language")).toString(); }
+
+void Shell::setLanguage(const QString &language) {
+    if (language == this->language()) return;
+    QSettings().setValue(QStringLiteral("general/language"), language);
+    emit languageChanged();
+}
 
 QString Shell::screenName() const { return QSettings().value(QStringLiteral("island/screen")).toString(); }
 

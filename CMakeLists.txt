@@ -50,6 +50,7 @@ qt_add_executable(lumo
     src/PlanUsage.cpp src/PlanUsage.h
     src/CloudSessions.cpp src/CloudSessions.h
     src/Music.cpp src/Music.h
+    src/Beat.cpp src/Beat.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -57,6 +58,16 @@ set_target_properties(lumo PROPERTIES
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
 target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
+
+# Translations (i18n/lumo_<language>.ts), built into the app when Qt's
+# Linguist tools are installed; without them Lumo is in English only.
+find_package(Qt6 QUIET COMPONENTS LinguistTools)
+file(GLOB LUMO_TS ${CMAKE_CURRENT_SOURCE_DIR}/i18n/lumo_*.ts)
+if(Qt6LinguistTools_FOUND AND LUMO_TS)
+    qt_add_translations(lumo TS_FILES ${LUMO_TS} RESOURCE_PREFIX "/i18n")
+elseif(LUMO_TS)
+    message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
+endif()
 set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
@@ -111,6 +122,12 @@ qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/Agen
 target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
+
+# The beat tracker, on synthetic songs.
+qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
+target_include_directories(test_beat PRIVATE src)
+target_link_libraries(test_beat PRIVATE Qt6::Core Qt6::Test)
+add_test(NAME beat COMMAND test_beat)
 
 # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
 qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)

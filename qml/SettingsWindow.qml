@@ -45,6 +45,58 @@ Window {
         pageFade.restart()
     }
 
+    // ------------------------------------------------------------ search
+    // The sidebar's field looks through every row of every page: its title,
+    // its description, its group and its page, ignoring case and accents.
+    property string query: ""
+    function plain(s) {
+        let t = String(s || "")
+        try { t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "") } catch (e) {}
+        return t.toLowerCase()
+    }
+    function collectRows(item, out, page, group) {
+        // A QML list isn't iterable everywhere: index it.
+        for (let i = 0; i < item.children.length; i++) {
+            const c = item.children[i]
+            const g = c.isGroup === true ? c.title : group
+            if (c.isSettingRow === true)
+                out.push({ page: page, group: g, title: c.title, description: c.description, item: c })
+            collectRows(c, out, page, g)
+        }
+    }
+    readonly property var results: {
+        const words = plain(query).split(/\s+/).filter(w => w.length > 0)
+        if (words.length === 0) return []
+        const rows = []
+        for (let i = 0; i < pagesBox.children.length; i++) {
+            const p = pagesBox.children[i]
+            if (p.isPage === true) collectRows(p, rows, p.index, "")
+        }
+        return rows.filter(r => {
+            const hay = plain([r.title, r.description, r.group, settings.pages[r.page].title].join(" "))
+            return words.every(w => hay.indexOf(w) >= 0)
+        })
+    }
+    // Opens the row's page, brings the row into view and makes it glow.
+    function goTo(r) {
+        searchField.text = ""
+        settings.page = r.page
+        revealTimer.target = r.item
+        revealTimer.restart()
+    }
+    Timer {
+        id: revealTimer
+        property var target: null
+        interval: 60
+        onTriggered: {
+            if (!target) return
+            const y = target.mapToItem(pagesBox, 0, 0).y + pagesBox.y
+            scroller.contentY = Math.max(0, Math.min(y - 80, scroller.contentHeight - scroller.height))
+            target.flash()
+        }
+    }
+    Shortcut { sequence: StandardKey.Find; onActivated: { searchField.forceActiveFocus(); searchField.selectAll() } }
+
     // ------------------------------------------------------------ building blocks
 
     component Toggle: Item {
@@ -94,6 +146,26 @@ Window {
             Behavior on border.width { NumberAnimation { duration: 90 } }
         }
         HoverHandler { cursorShape: Qt.PointingHandCursor }
+    }
+
+    component LumoField: TextField {
+        id: field
+        color: Ui.text
+        placeholderTextColor: Ui.faint
+        font.pixelSize: Ui.body
+        background: Rectangle {
+            implicitHeight: 34
+            radius: 8
+            color: settings.bg
+            border.color: field.activeFocus ? Ui.accent : settings.groupLine
+        }
+    }
+
+    // "org.kde.konsole" → "Konsole"
+    function appName(app) {
+        if (!app || app === "other") return qsTr("Other apps")
+        const last = app.split(".").pop()
+        return last.charAt(0).toUpperCase() + last.slice(1)
     }
 
     component LumoCombo: ComboBox {
@@ -189,6 +261,7 @@ Window {
     // A page: big title, subtitle, then its groups.
     component Page: ColumnLayout {
         id: pg
+        readonly property bool isPage: true
         property int index
         default property alias content: pageBody.data
         visible: settings.page === index
@@ -219,6 +292,7 @@ Window {
     // A titled card of rows, with an optional note under it.
     component Group: ColumnLayout {
         id: g
+        readonly property bool isGroup: true
         property string title
         property string footer
         default property alias rows: groupBody.data
@@ -261,12 +335,29 @@ Window {
     // One setting: what it is on the left, its control on the right.
     component SettingRow: Item {
         id: row
+        readonly property bool isSettingRow: true
         property string title
         property string description
         property color titleColor: Ui.text
         default property alias controls: rowControls.data
+        // A search result was opened: glow for a moment.
+        function flash() { flashAnim.restart() }
         Layout.fillWidth: true
         implicitHeight: Math.max(rowText.implicitHeight, rowControls.implicitHeight) + 26
+        Rectangle {
+            id: flashRect
+            anchors.fill: parent
+            anchors.margins: 3
+            radius: 10
+            color: Ui.accent
+            opacity: 0
+        }
+        SequentialAnimation {
+            id: flashAnim
+            NumberAnimation { target: flashRect; property: "opacity"; to: 0.22; duration: 180 }
+            PauseAnimation { duration: 700 }
+            NumberAnimation { target: flashRect; property: "opacity"; to: 0; duration: 700 }
+        }
         Rectangle { visible: row.y > 0; x: 16; width: parent.width - 32; height: 1; color: settings.groupLine }
         ColumnLayout {
             id: rowText
@@ -362,6 +453,26 @@ Window {
                     }
                 }
 
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 10
+                    placeholderText: qsTr("Search settings")
+                    placeholderTextColor: Ui.faint
+                    color: Ui.text
+                    font.pixelSize: Ui.body
+                    leftPadding: 34
+                    onTextChanged: settings.query = text
+                    Keys.onEscapePressed: text = ""
+                    background: Rectangle {
+                        implicitHeight: 34
+                        radius: 9
+                        color: Ui.card
+                        border.color: searchField.activeFocus ? Ui.accent : settings.groupLine
+                        Icon { x: 11; anchors.verticalCenter: parent.verticalCenter; path: Ui.icons.search; tint: Ui.dim; size: 15 }
+                    }
+                }
+
                 Repeater {
                     model: settings.pages
                     Rectangle {
@@ -438,9 +549,86 @@ Window {
             }
         }
 
+        // ---------------------------------------------------- search results
+        Flickable {
+            visible: settings.query.trim().length > 0
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            contentWidth: width
+            contentHeight: resultsCol.implicitHeight + 80
+            ColumnLayout {
+                id: resultsCol
+                width: Math.min(settings.contentMax, parent.width - 80)
+                x: (parent.width - width) / 2
+                y: 40
+                spacing: 10
+                Text {
+                    text: qsTr("Search")
+                    color: Ui.text
+                    font.pixelSize: 26
+                    font.weight: Font.Bold
+                }
+                Text {
+                    Layout.bottomMargin: 16
+                    text: settings.results.length === 0 ? qsTr("Nothing matches “%1”.").arg(settings.query.trim())
+                        : settings.results.length === 1 ? qsTr("1 setting matches “%1”.").arg(settings.query.trim())
+                        : qsTr("%1 settings match “%2”.").arg(settings.results.length).arg(settings.query.trim())
+                    color: Ui.dim
+                    font.pixelSize: Ui.body
+                }
+                Repeater {
+                    model: settings.results
+                    Rectangle {
+                        id: hit
+                        required property var modelData
+                        Layout.fillWidth: true
+                        implicitHeight: hitCol.implicitHeight + 24
+                        radius: 12
+                        color: hitHover.hovered ? Ui.cardHover : settings.groupBg
+                        border.color: hitHover.hovered ? Ui.accent : settings.groupLine
+                        ColumnLayout {
+                            id: hitCol
+                            x: 16; y: 12
+                            width: parent.width - 32
+                            spacing: 3
+                            Text {
+                                text: settings.pages[hit.modelData.page].title + (hit.modelData.group ? "  ›  " + hit.modelData.group : "")
+                                color: Ui.accent
+                                font.pixelSize: Ui.small
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: hit.modelData.title
+                                color: Ui.text
+                                font.pixelSize: Ui.body + 1
+                                font.weight: Font.Medium
+                                wrapMode: Text.Wrap
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                visible: text.length > 0
+                                text: hit.modelData.description
+                                color: Ui.dim
+                                font.pixelSize: Ui.small + 1
+                                wrapMode: Text.Wrap
+                                maximumLineCount: 2
+                                elide: Text.ElideRight
+                            }
+                        }
+                        HoverHandler { id: hitHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: settings.goTo(hit.modelData) }
+                    }
+                }
+            }
+        }
+
         // ---------------------------------------------------- pages
         Flickable {
             id: scroller
+            visible: settings.query.trim().length === 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -470,6 +658,31 @@ Window {
                 // ------------------------------------------------ General
                 Page {
                     index: 0
+
+                    Group {
+                        title: qsTr("Language")
+                        SettingRow {
+                            title: qsTr("Language")
+                            description: qsTr("Lumo's own words. System follows your desktop.")
+                            LumoCombo {
+                                // Each language in its own words.
+                                readonly property var languages: [
+                                    { id: "", name: qsTr("System") }, { id: "en", name: "English" },
+                                    { id: "fr", name: "Français" }, { id: "es", name: "Español" },
+                                    { id: "de", name: "Deutsch" }, { id: "pt_BR", name: "Português (Brasil)" },
+                                    { id: "ar", name: "العربية" }, { id: "tr", name: "Türkçe" },
+                                    { id: "ru", name: "Русский" }, { id: "hi", name: "हिन्दी" },
+                                    { id: "bn", name: "বাংলা" }, { id: "id", name: "Bahasa Indonesia" },
+                                    { id: "th", name: "ไทย" }, { id: "zh_CN", name: "简体中文" },
+                                    { id: "zh_TW", name: "繁體中文" }, { id: "ja", name: "日本語" },
+                                    { id: "ko", name: "한국어" }
+                                ]
+                                model: languages.map(l => l.name)
+                                currentIndex: Math.max(0, languages.findIndex(l => l.id === shell.language))
+                                onActivated: (i) => shell.language = languages[i].id
+                            }
+                        }
+                    }
 
                     Group {
                         title: qsTr("Island")
@@ -515,13 +728,14 @@ Window {
                         }
                         SettingRow {
                             title: qsTr("Lumo dances while music plays")
+                            description: qsTr("On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.")
                             Toggle { on: shell.dance; onToggled: (v) => shell.dance = v }
                         }
                     }
 
                     Group {
                         title: qsTr("Sounds")
-                        footer: qsTr("Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, dizzy, pop, send or reply in ~/.config/lumo/sounds/.")
+                        footer: qsTr("Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.")
                         SettingRow {
                             title: qsTr("Play sounds")
                             Toggle { on: !sounds.muted; onToggled: (v) => sounds.muted = !v }
@@ -664,21 +878,24 @@ Window {
                     }
 
                     Group {
-                        title: qsTr("Your words")
+                        title: qsTr("Statistics")
+                        footer: qsTr("Time saved counts typing at 40 words a minute. Everything is counted on this computer.")
                         Pane {
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 10
+                                spacing: 8
                                 Repeater {
                                     model: [
                                         { v: dictation.wordsToday, l: qsTr("today") },
                                         { v: dictation.totalWords, l: qsTr("in all") },
-                                        { v: dictation.wordsPerMinute, l: qsTr("words / min") }
+                                        { v: dictation.wordsPerMinute, l: qsTr("words / min") },
+                                        { v: dictation.minutesSaved, l: qsTr("min saved") },
+                                        { v: dictation.streak, l: qsTr("days in a row") }
                                     ]
                                     Rectangle {
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        implicitHeight: 74
+                                        implicitHeight: 70
                                         radius: 10
                                         color: settings.bg
                                         border.color: settings.groupLine
@@ -689,12 +906,242 @@ Window {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                                 text: Number(modelData.v).toLocaleString(Qt.locale(), "f", 0)
                                                 color: Ui.text
-                                                font.pixelSize: 24
+                                                font.pixelSize: 22
                                                 font.weight: Font.Bold
                                             }
                                             Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.l; color: Ui.dim; font.pixelSize: Ui.small }
                                         }
                                     }
+                                }
+                            }
+                        }
+                        // the last two weeks, a bar a day
+                        Pane {
+                            Item {
+                                id: chart
+                                property var days: dictation.dailyWords(14)
+                                readonly property int most: Math.max(1, ...days.map(d => d.words))
+                                Connections { target: dictation; function onHistoryChanged() { chart.days = dictation.dailyWords(14) } }
+                                Layout.fillWidth: true
+                                implicitHeight: 112
+                                Text { text: qsTr("Words a day"); color: Ui.dim; font.pixelSize: Ui.small }
+                                Row {
+                                    id: bars
+                                    anchors.bottom: parent.bottom
+                                    width: parent.width
+                                    spacing: 6
+                                    Repeater {
+                                        model: chart.days
+                                        // a fixed-height cell, the bar standing on its bottom
+                                        Item {
+                                        id: cell
+                                        required property var modelData
+                                        required property int index
+                                        width: (bars.width - 13 * bars.spacing) / 14
+                                        height: 92
+                                        Column {
+                                            readonly property var modelData: cell.modelData
+                                            readonly property int index: cell.index
+                                            anchors.bottom: parent.bottom
+                                            width: parent.width
+                                            spacing: 4
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                visible: modelData.words > 0 && modelData.words === chart.most
+                                                text: modelData.words
+                                                color: Ui.dim
+                                                font.pixelSize: 10
+                                            }
+                                            Rectangle {
+                                                width: parent.width
+                                                height: Math.max(3, 56 * modelData.words / chart.most)
+                                                radius: 3
+                                                color: index === 13 ? Ui.accent : Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, modelData.words > 0 ? 0.45 : 0.15)
+                                            }
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: modelData.day
+                                                color: index === 13 ? Ui.text : Ui.faint
+                                                font.pixelSize: 10
+                                            }
+                                        }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // where you dictate
+                        Pane {
+                            visible: dictation.apps.length > 0
+                            Text { text: qsTr("Where you dictate"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Repeater {
+                                model: dictation.apps
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 10
+                                    Text {
+                                        Layout.preferredWidth: 130
+                                        text: settings.appName(modelData.app)
+                                        color: Ui.text
+                                        font.pixelSize: Ui.body
+                                        elide: Text.ElideRight
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 6
+                                        radius: 3
+                                        color: settings.track
+                                        Rectangle {
+                                            width: parent.width * modelData.words / Math.max(1, dictation.apps[0].words)
+                                            height: parent.height; radius: 3
+                                            color: Ui.accent
+                                        }
+                                    }
+                                    Text {
+                                        Layout.preferredWidth: 70
+                                        horizontalAlignment: Text.AlignRight
+                                        text: qsTr("%1 words").arg(Number(modelData.words).toLocaleString(Qt.locale(), "f", 0))
+                                        color: Ui.dim
+                                        font.pixelSize: Ui.small
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Dictionary")
+                        footer: qsTr("Words are always spelled your way, in any case and even when Parakeet hears them a little wrong. A replacement swaps a phrase you say for a text, wherever it comes up.")
+                        Pane {
+                            Text { text: qsTr("Your words"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 6
+                                visible: dictation.vocabulary.words.length > 0
+                                Repeater {
+                                    model: dictation.vocabulary.words
+                                    Rectangle {
+                                        required property string modelData
+                                        width: chipText.implicitWidth + 36; height: 28; radius: 14
+                                        color: settings.bg
+                                        border.color: settings.groupLine
+                                        Text { id: chipText; x: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData; color: Ui.text; font.pixelSize: Ui.body }
+                                        Text {
+                                            anchors.right: parent.right; anchors.rightMargin: 10
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "✕"; color: chipX.hovered ? Ui.text : Ui.faint; font.pixelSize: 10
+                                            HoverHandler { id: chipX; cursorShape: Qt.PointingHandCursor }
+                                            TapHandler { onTapped: dictation.vocabulary.removeWord(modelData) }
+                                        }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                LumoField { id: newWord; Layout.fillWidth: true; placeholderText: qsTr("A name or a word, e.g. Parakeet"); onAccepted: addWordBtn.clicked() }
+                                ActionButton { id: addWordBtn; text: qsTr("Add"); onClicked: { dictation.vocabulary.addWord(newWord.text); newWord.text = "" } }
+                            }
+                        }
+                        Pane {
+                            Text { text: qsTr("Replacements"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Repeater {
+                                model: dictation.vocabulary.replacements
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Text { text: "« " + modelData.spoken + " »"; color: Ui.text; font.pixelSize: Ui.body }
+                                    Text { text: "→"; color: Ui.faint; font.pixelSize: Ui.body }
+                                    Text { Layout.fillWidth: true; text: modelData.text; color: Ui.dim; font.pixelSize: Ui.body; elide: Text.ElideRight }
+                                    ActionButton { implicitHeight: 26; text: qsTr("Remove"); onClicked: dictation.vocabulary.removeReplacement(modelData.spoken) }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                LumoField { id: newSpoken; Layout.fillWidth: true; placeholderText: qsTr("You say, e.g. my email") }
+                                LumoField { id: newWritten; Layout.fillWidth: true; placeholderText: qsTr("Lumo writes, e.g. me@example.com"); onAccepted: addRepBtn.clicked() }
+                                ActionButton {
+                                    id: addRepBtn
+                                    text: qsTr("Add")
+                                    onClicked: { dictation.vocabulary.addReplacement(newSpoken.text, newWritten.text); newSpoken.text = ""; newWritten.text = "" }
+                                }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Snippets")
+                        footer: qsTr("Say only the short phrase, and the whole text is pasted, untouched, line breaks and all.")
+                        Pane {
+                            Repeater {
+                                model: dictation.vocabulary.snippets
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Text { text: "« " + modelData.trigger + " »"; color: Ui.text; font.pixelSize: Ui.body }
+                                    Text { text: "→"; color: Ui.faint; font.pixelSize: Ui.body }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.text.split("\n")[0] + (modelData.text.indexOf("\n") >= 0 ? " …" : "")
+                                        color: Ui.dim; font.pixelSize: Ui.body; elide: Text.ElideRight
+                                    }
+                                    ActionButton { implicitHeight: 26; text: qsTr("Remove"); onClicked: dictation.vocabulary.removeSnippet(modelData.trigger) }
+                                }
+                            }
+                            LumoField { id: newTrigger; Layout.fillWidth: true; placeholderText: qsTr("The phrase you say, e.g. sign off") }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 84
+                                radius: 8
+                                color: settings.bg
+                                border.color: snippetText.activeFocus ? Ui.accent : settings.groupLine
+                                TextArea {
+                                    id: snippetText
+                                    anchors.fill: parent
+                                    placeholderText: qsTr("The text Lumo pastes, on as many lines as you like")
+                                    placeholderTextColor: Ui.faint
+                                    color: Ui.text
+                                    font.pixelSize: Ui.body
+                                    wrapMode: TextEdit.Wrap
+                                    background: null
+                                }
+                            }
+                            ActionButton {
+                                Layout.alignment: Qt.AlignRight
+                                text: qsTr("Add snippet")
+                                onClicked: { dictation.vocabulary.addSnippet(newTrigger.text, snippetText.text); newTrigger.text = ""; snippetText.text = "" }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Styles")
+                        footer: qsTr("Natural and Polished hand your words to Claude through the `claude` CLI on your plan, then paste the result; it takes a few seconds, and if Claude can't, your words are pasted as said. As said keeps everything on this computer.")
+                        SettingRow {
+                            title: qsTr("Clean-up")
+                            description: qsTr("As said pastes your words as Parakeet heard them. Natural removes the ums and repeats. Polished also smooths the sentences.")
+                            LumoCombo {
+                                model: [qsTr("As said"), qsTr("Natural"), qsTr("Polished")]
+                                currentIndex: Math.max(0, ["said", "natural", "polished"].indexOf(dictation.style))
+                                onActivated: (i) => dictation.style = ["said", "natural", "polished"][i]
+                            }
+                        }
+                        Repeater {
+                            model: dictation.apps
+                            SettingRow {
+                                required property var modelData
+                                visible: modelData.app !== "other"
+                                title: settings.appName(modelData.app)
+                                description: qsTr("In this app only")
+                                LumoCombo {
+                                    readonly property var ids: ["", "said", "natural", "polished"]
+                                    model: [qsTr("Default"), qsTr("As said"), qsTr("Natural"), qsTr("Polished")]
+                                    currentIndex: Math.max(0, ids.indexOf(dictation.appStyles[modelData.app] || ""))
+                                    onActivated: (i) => dictation.setAppStyle(modelData.app, ids[i])
                                 }
                             }
                         }

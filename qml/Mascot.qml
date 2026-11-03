@@ -26,15 +26,85 @@ Item {
     property string outfit: ""
     signal wardrobeRequested()
 
-    // Music is playing: sway to it.
+    // Music is playing: dance on its beat (Beat.cpp), a different move every
+    // two bars, as big as the beat is hard.
     property bool dancing: false
-    SequentialAnimation on rotation {
-        running: mascot.dancing
-        loops: Animation.Infinite
-        onRunningChanged: if (!running) mascot.rotation = 0
-        RotationAnimator { from: 0; to: 9; duration: 240; easing.type: Easing.OutSine }
-        RotationAnimator { from: 9; to: -9; duration: 480; easing.type: Easing.InOutSine }
-        RotationAnimator { from: -9; to: 0; duration: 240; easing.type: Easing.InSine }
+    property string move: "bob"
+    property bool pumping: false        // the arm is up, pumping to the beat
+    // The pose the next beat moves to.
+    property real danceAngle: 0
+    property real danceX: 0
+    property real danceY: 0
+    property real danceSquash: 0
+    property real danceArm: 0
+    property int beatMs: 500
+    readonly property var danceMoves: ["bob", "sway", "step", "hop", "arms", "sway", "step", "bob"]
+
+    Connections {
+        target: mascot.dancing && mascot.alive && typeof beat !== "undefined" ? beat : null
+        function onBeat(index, strength, period) { mascot.danceBeat(index, strength, period) }
+    }
+    onDancingChanged: if (!dancing) settle()
+
+    function danceBeat(index, strength, period) {
+        if (spin.running || mascot.face === "dizzy")
+            return
+        // A new move every two bars; soft music gets the gentle ones.
+        if (index % 8 === 0) {
+            const gentle = strength < 0.4
+            let next = move
+            for (let tries = 0; tries < 6 && next === move; ++tries) {
+                next = danceMoves[Math.floor(Math.random() * danceMoves.length)]
+                if (gentle && (next === "hop" || next === "arms")) next = move
+            }
+            move = next
+            // Now and then, a twirl to start the phrase.
+            if (index > 0 && index % 16 === 0 && strength > 0.7 && Math.random() < 0.35) {
+                spin.restart()
+                return
+            }
+        }
+        const a = Math.max(0.35, Math.min(1, strength))
+        const side = index % 2 ? 1 : -1
+        let angle = 0, x = 0, y = 0, squashBy = 0.1 * a, arm = 0
+        switch (move) {
+        case "sway": angle = side * 9 * a; squashBy = 0.05 * a; break
+        case "step": x = side * 0.07 * size * a; angle = side * 3 * a; squashBy = 0.08 * a; break
+        case "hop": y = -size * (strength >= 0.45 ? 0.1 + 0.12 * a : 0.05); squashBy = 0.12 * a; break
+        case "arms": arm = side > 0 ? -80 : -20; angle = side * 4 * a; squashBy = 0.07 * a; break
+        default: squashBy = 0.13 * a   // bob: a nod of the whole body
+        }
+        pumping = move === "arms"
+        beatMs = Math.max(250, Math.min(900, period))
+        danceAngle = angle; danceX = x; danceY = y; danceSquash = squashBy; danceArm = arm
+        danceAnim.restart()
+    }
+    function settle() {
+        pumping = false
+        danceAngle = 0; danceX = 0; danceY = 0; danceSquash = 0; danceArm = 0
+        beatMs = 500
+        danceAnim.restart()
+    }
+
+    ParallelAnimation {
+        id: danceAnim
+        NumberAnimation { target: swayTurn; property: "angle"; to: mascot.danceAngle; duration: mascot.beatMs * 0.45; easing.type: Easing.OutBack }
+        NumberAnimation { target: groove; property: "x"; to: mascot.danceX; duration: mascot.beatMs * 0.4; easing.type: Easing.OutQuad }
+        SequentialAnimation {
+            NumberAnimation { target: groove; property: "y"; to: mascot.danceY; duration: mascot.beatMs * 0.35; easing.type: Easing.OutQuad }
+            NumberAnimation { target: groove; property: "y"; to: 0; duration: mascot.beatMs * 0.5; easing.type: Easing.OutBounce }
+        }
+        SequentialAnimation {
+            ParallelAnimation {
+                NumberAnimation { target: beatScale; property: "yScale"; to: 1 - mascot.danceSquash; duration: mascot.beatMs * 0.18; easing.type: Easing.OutQuad }
+                NumberAnimation { target: beatScale; property: "xScale"; to: 1 + mascot.danceSquash * 0.6; duration: mascot.beatMs * 0.18; easing.type: Easing.OutQuad }
+            }
+            ParallelAnimation {
+                NumberAnimation { target: beatScale; property: "yScale"; to: 1; duration: mascot.beatMs * 0.7; easing.type: Easing.OutBack }
+                NumberAnimation { target: beatScale; property: "xScale"; to: 1; duration: mascot.beatMs * 0.7; easing.type: Easing.OutBack }
+            }
+        }
+        NumberAnimation { target: waveArm; property: "rotation"; to: mascot.danceArm; duration: mascot.beatMs * 0.4; easing.type: Easing.OutBack }
     }
 
     // A "!" badge on the corner: something needs you.
@@ -42,8 +112,26 @@ Item {
 
     signal poked()
 
-    // Claude finished: a jump with a full spin.
-    function celebrate() { spin.restart() }
+    // Claude finished: a jump with a full spin, then a wink.
+    function celebrate() { spin.restart(); winkLater.restart() }
+    Timer { id: winkLater; interval: 760; onTriggered: mascot.wink() }
+
+    // A passing expression over the mood: "wink", "love", "yawn".
+    property string expression: ""
+    function express(name, ms) {
+        expression = name
+        expressionTimer.interval = ms
+        expressionTimer.restart()
+    }
+    Timer { id: expressionTimer; onTriggered: mascot.expression = "" }
+    function wink() { express("wink", 900); winked() }
+    signal winked()
+
+    // Rest the pointer on Lumo for a moment and it loves it (when `pettable`).
+    property bool pettable: false
+    signal petted()
+    // Poked too often: it's dizzy for a few seconds.
+    signal gotDizzy()
     // Hello: the right arm rises and waves three times.
     function wave() { waveAnim.restart() }
     property bool waving: false
@@ -51,14 +139,20 @@ Item {
     width: size
     height: size
 
-    readonly property string face: dizzyTimer.running ? "dizzy" : annoyed && mood !== "happy" ? "annoyed" : mood
+    // idle | working | thinking | alert | happy | sad | waiting | sleeping,
+    // and the passing ones: dizzy, annoyed, wink, love, yawn
+    readonly property string face: dizzyTimer.running ? "dizzy" : expression !== "" ? expression
+                                 : annoyed && mood !== "happy" ? "annoyed" : mood
     property int pokes: 0
     property bool annoyed: false
 
     // The light the face is drawn with.
     readonly property color light: face === "working" ? "#8FE3FF"
+                                 : face === "thinking" ? "#C4B8FF"
                                  : face === "alert" ? "#FFC85C"
                                  : face === "sad" ? "#8FB0FF"
+                                 : face === "love" ? "#FF7AA8"
+                                 : face === "sleeping" ? "#9AA9C2"
                                  : "#EEF8FF"
     readonly property color bodyColor: face === "sad" ? Qt.darker(color, 1.35) : color
 
@@ -71,6 +165,7 @@ Item {
         if (pokes >= 5) {
             pokes = 0
             dizzyTimer.restart()
+            gotDizzy()
         }
         poked()
     }
@@ -141,7 +236,7 @@ Item {
             model: 2
             Rectangle {
                 required property int index
-                visible: !(index === 1 && mascot.waving)
+                visible: !(index === 1 && (mascot.waving || mascot.pumping))
                 z: -0.5
                 x: (index === 0 ? 0.0 : 0.86) * mascot.size
                 y: 0.5 * mascot.size
@@ -170,7 +265,7 @@ Item {
         Rectangle {
             id: waveArm
             z: 1
-            visible: mascot.waving
+            visible: mascot.waving || mascot.pumping
             x: 0.9 * mascot.size
             y: 0.5 * mascot.size
             width: 0.28 * mascot.size; height: 0.15 * mascot.size
@@ -289,11 +384,13 @@ Item {
 
             Timer {
                 // Wander, or read left-to-right while working.
-                running: mascot.alive && (!mascot.lookAt || mascot.face === "working")
+                running: mascot.alive && (!mascot.lookAt || mascot.face === "working" || mascot.face === "thinking")
                 repeat: true
                 interval: mascot.face === "working" ? 650 : 1800 + Math.random() * 1800
                 onTriggered: {
-                    if (mascot.face === "working") {
+                    if (mascot.face === "thinking") {
+                        eyes.gx = 0.6; eyes.gy = -0.7
+                    } else if (mascot.face === "working") {
                         eyes.gx = eyes.gx > 0 ? -0.8 : 0.8
                         eyes.gy = 0.3
                     } else if (mascot.face === "waiting" || mascot.face === "alert") {
@@ -314,6 +411,17 @@ Item {
                     readonly property real cy: mascot.size * 0.455
                     readonly property real w: mascot.size * 0.115
                     readonly property real h: mascot.size * 0.19
+                    // What this eye is drawn as.
+                    readonly property string kind: {
+                        const f = mascot.face
+                        if (f === "wink") return index === 1 ? "arc" : "open"
+                        if (f === "happy") return "arc"
+                        if (f === "sleeping") return "closed"
+                        if (f === "love") return "heart"
+                        if (f === "dizzy") return "spiral"
+                        if (f === "annoyed") return index === 0 ? "chevronRight" : "chevronLeft"
+                        return "open"
+                    }
                     x: cx - w / 2 + eyes.gx * mascot.size * 0.045
                     y: cy - h / 2 + eyes.gy * mascot.size * 0.035
                     width: w
@@ -325,20 +433,20 @@ Item {
                         width: eye.w * 2.1; height: eye.h * 1.5
                         radius: width / 2
                         color: mascot.light
-                        opacity: mascot.face === "happy" || mascot.face === "dizzy" ? 0 : 0.16
+                        opacity: eye.kind === "open" ? 0.16 : eye.kind === "heart" ? 0.22 : 0
                     }
 
                     // open eye: a capsule of light
                     Rectangle {
                         id: lens
                         anchors.centerIn: parent
-                        visible: mascot.face !== "happy" && mascot.face !== "dizzy"
+                        visible: eye.kind === "open"
                         width: mascot.face === "sad" ? eye.w * 1.3 : eye.w
-                        height: mascot.face === "annoyed" ? eye.h * 0.26
+                        height: mascot.face === "yawn" ? eye.h * 0.3
                               : mascot.face === "sad" ? eye.h * 0.42
                               : mascot.face === "working" ? eye.h * 0.78
                               : eye.h
-                        radius: Math.min(width, height) * (mascot.face === "sad" || mascot.face === "annoyed" ? 0.5 : 0.34)
+                        radius: Math.min(width, height) * (mascot.face === "sad" || mascot.face === "yawn" ? 0.5 : 0.34)
                         rotation: mascot.face === "sad" ? (eye.index === 0 ? -16 : 16) : 0
                         scale: mascot.face === "alert" ? 1.18 : 1
                         color: mascot.light
@@ -353,7 +461,7 @@ Item {
                     Shape {
                         anchors.centerIn: parent
                         width: eye.w * 1.5; height: eye.h * 0.7
-                        visible: mascot.face === "happy"
+                        visible: eye.kind === "arc"
                         preferredRendererType: Shape.CurveRenderer
                         ShapePath {
                             fillColor: "transparent"
@@ -365,20 +473,87 @@ Item {
                         }
                     }
 
-                    // dizzy eye: a spinning ×
+                    // asleep: ‿
+                    Shape {
+                        anchors.centerIn: parent
+                        width: eye.w * 1.5; height: eye.h * 0.5
+                        visible: eye.kind === "closed"
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            fillColor: "transparent"
+                            strokeColor: mascot.light
+                            strokeWidth: Math.max(1.3, mascot.size * 0.04)
+                            capStyle: ShapePath.RoundCap
+                            startX: 0; startY: eye.h * 0.1
+                            PathQuad { x: eye.w * 1.5; y: eye.h * 0.1; controlX: eye.w * 0.75; controlY: eye.h * 0.55 }
+                        }
+                    }
+
+                    // annoyed: > <
+                    Shape {
+                        anchors.centerIn: parent
+                        width: eye.w * 1.3; height: eye.h * 0.9
+                        visible: eye.kind === "chevronRight" || eye.kind === "chevronLeft"
+                        preferredRendererType: Shape.CurveRenderer
+                        // ">" points right, "<" points left. (Named plainly: inside a
+                        // path, "right" would be the item's anchor line.)
+                        ShapePath {
+                            fillColor: "transparent"
+                            strokeColor: mascot.light
+                            strokeWidth: Math.max(1.4, mascot.size * 0.045)
+                            capStyle: ShapePath.RoundCap
+                            joinStyle: ShapePath.RoundJoin
+                            startX: eye.w * 1.3 * (eye.kind === "chevronRight" ? 0.15 : 0.85); startY: eye.h * 0.9 * 0.15
+                            PathLine { x: eye.w * 1.3 * (eye.kind === "chevronRight" ? 0.85 : 0.15); y: eye.h * 0.9 * 0.5 }
+                            PathLine { x: eye.w * 1.3 * (eye.kind === "chevronRight" ? 0.15 : 0.85); y: eye.h * 0.9 * 0.85 }
+                        }
+                    }
+
+                    // in love: a heart of light, beating
+                    Shape {
+                        id: heart
+                        readonly property real base: eye.w * 1.7 / 24
+                        anchors.centerIn: parent
+                        width: 24; height: 24
+                        visible: eye.kind === "heart"
+                        scale: base
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            fillColor: mascot.light
+                            strokeColor: "transparent"
+                            PathSvg { path: "M12 21l-1.5 -1.4c-5.2 -4.7 -8.5 -7.7 -8.5 -11.4c0 -3 2.4 -5.2 5.4 -5.2c1.7 0 3.4 0.8 4.6 2.1c1.2 -1.3 2.9 -2.1 4.6 -2.1c3 0 5.4 2.2 5.4 5.2c0 3.7 -3.3 6.7 -8.5 11.4z" }
+                        }
+                        SequentialAnimation on scale {
+                            running: mascot.face === "love" && mascot.alive
+                            loops: Animation.Infinite
+                            NumberAnimation { to: heart.base * 1.15; duration: 260; easing.type: Easing.OutQuad }
+                            NumberAnimation { to: heart.base; duration: 340; easing.type: Easing.InQuad }
+                        }
+                    }
+
+                    // dizzy eye: a spinning spiral
                     Item {
                         anchors.centerIn: parent
-                        width: eye.w * 1.6; height: width
-                        visible: mascot.face === "dizzy"
-                        Repeater {
-                            model: 2
-                            Rectangle {
-                                required property int index
-                                anchors.centerIn: parent
-                                width: parent.width; height: Math.max(1.4, mascot.size * 0.04)
-                                radius: height / 2
-                                rotation: index === 0 ? 45 : -45
-                                color: mascot.light
+                        width: eye.w * 1.7; height: width
+                        visible: eye.kind === "spiral"
+                        Shape {
+                            anchors.fill: parent
+                            preferredRendererType: Shape.CurveRenderer
+                            ShapePath {
+                                fillColor: "transparent"
+                                strokeColor: mascot.light
+                                strokeWidth: Math.max(1.2, mascot.size * 0.03)
+                                capStyle: ShapePath.RoundCap
+                                PathPolyline {
+                                    path: {
+                                        const pts = [], c = eye.w * 0.85, turns = 2.2
+                                        for (let i = 0; i <= 44; i++) {
+                                            const t = i / 44, a = t * turns * 2 * Math.PI, r = t * c * 0.95
+                                            pts.push(Qt.point(c + r * Math.cos(a), c + r * Math.sin(a)))
+                                        }
+                                        return pts
+                                    }
+                                }
                             }
                         }
                         RotationAnimator on rotation {
@@ -402,7 +577,7 @@ Item {
                 NumberAnimation { target: blinkScale; property: "yScale"; to: 1; duration: 110 }
             }
             Timer {
-                running: (mascot.alive || mascot.blinks) && mascot.face !== "happy" && mascot.face !== "dizzy"
+                running: (mascot.alive || mascot.blinks) && ["happy", "dizzy", "sleeping", "love", "wink", "annoyed"].indexOf(mascot.face) < 0
                 repeat: true
                 interval: 2600 + Math.random() * 2600
                 onTriggered: { interval = 2200 + Math.random() * 3200; blink.restart() }
@@ -422,42 +597,119 @@ Item {
             // a short line of light
             Rectangle {
                 anchors.centerIn: parent
-                visible: mascot.face !== "happy" && mascot.face !== "sad" && mascot.face !== "alert" && mascot.face !== "dizzy"
-                width: mascot.face === "working" ? mascot.size * 0.06 : mascot.size * 0.09
+                visible: ["happy", "sad", "alert", "dizzy", "love", "wink", "yawn", "thinking"].indexOf(mascot.face) < 0
+                width: mascot.face === "working" || mascot.face === "sleeping" ? mascot.size * 0.06 : mascot.size * 0.09
                 height: Math.max(1.2, mascot.size * 0.028)
                 radius: height / 2
                 color: mascot.light
                 opacity: 0.85
                 Behavior on width { NumberAnimation { duration: 160 } }
             }
-            // surprised / dizzy: a small ring
+            // surprised / dizzy: a small ring; a yawn: a big one
             Rectangle {
                 anchors.centerIn: parent
-                visible: mascot.face === "alert" || mascot.face === "dizzy"
-                width: mascot.size * 0.075; height: width
+                visible: mascot.face === "alert" || mascot.face === "dizzy" || mascot.face === "yawn"
+                width: mascot.size * (mascot.face === "yawn" ? 0.12 : 0.075); height: width * (mascot.face === "yawn" ? 1.15 : 1)
                 radius: width / 2
                 color: "transparent"
                 border.width: Math.max(1.2, mascot.size * 0.024)
                 border.color: mascot.light
             }
+            // thinking: three dots, one after the other
+            Row {
+                anchors.centerIn: parent
+                visible: mascot.face === "thinking"
+                spacing: mascot.size * 0.025
+                Repeater {
+                    model: 3
+                    Rectangle {
+                        id: dot
+                        required property int index
+                        width: Math.max(1.6, mascot.size * 0.03); height: width; radius: width / 2
+                        color: mascot.light
+                        opacity: 0.35
+                        SequentialAnimation on opacity {
+                            running: mascot.alive && mascot.face === "thinking"
+                            loops: Animation.Infinite
+                            PauseAnimation { duration: dot.index * 180 }
+                            NumberAnimation { to: 1; duration: 220 }
+                            NumberAnimation { to: 0.35; duration: 380 }
+                            PauseAnimation { duration: (2 - dot.index) * 180 }
+                        }
+                    }
+                }
+            }
             // smile or frown
             Shape {
                 anchors.fill: parent
-                visible: mascot.face === "happy" || mascot.face === "sad"
+                visible: ["happy", "sad", "love", "wink"].indexOf(mascot.face) >= 0
                 preferredRendererType: Shape.CurveRenderer
                 ShapePath {
                     fillColor: "transparent"
                     strokeColor: mascot.light
                     strokeWidth: Math.max(1.3, mascot.size * 0.032)
                     capStyle: ShapePath.RoundCap
-                    readonly property bool smile: mascot.face === "happy"
+                    readonly property bool smile: mascot.face !== "sad"
                     startX: mouth.width * (smile ? 0.1 : 0.28)
                     startY: mouth.height * (smile ? 0.25 : 0.8)
                     PathQuad {
-                        x: mouth.width * (mascot.face === "happy" ? 0.9 : 0.72)
-                        y: mouth.height * (mascot.face === "happy" ? 0.25 : 0.8)
+                        x: mouth.width * (mascot.face !== "sad" ? 0.9 : 0.72)
+                        y: mouth.height * (mascot.face !== "sad" ? 0.25 : 0.8)
                         controlX: mouth.width * 0.5
-                        controlY: mouth.height * (mascot.face === "happy" ? 1.15 : 0.05)
+                        controlY: mouth.height * (mascot.face !== "sad" ? 1.15 : 0.05)
+                    }
+                }
+            }
+        }
+
+        // asleep: a few z's drift up, then stay (no endless loop while resting)
+        Item {
+            id: zz
+            z: 6
+            visible: mascot.face === "sleeping"
+            x: mascot.size * 0.78; y: -mascot.size * 0.1
+            Repeater {
+                model: 3
+                Text {
+                    required property int index
+                    x: index * mascot.size * 0.12
+                    y: -index * mascot.size * 0.16
+                    text: "z"
+                    color: "#C9D6EE"
+                    font.pixelSize: Math.max(7, mascot.size * (0.16 + index * 0.05))
+                    font.weight: Font.Bold
+                    opacity: 0.85 - index * 0.2
+                }
+            }
+            SequentialAnimation on y {
+                running: zz.visible
+                loops: 4
+                NumberAnimation { from: -mascot.size * 0.02; to: -mascot.size * 0.14; duration: 1400; easing.type: Easing.InOutSine }
+                NumberAnimation { to: -mascot.size * 0.02; duration: 1400; easing.type: Easing.InOutSine }
+            }
+        }
+
+        // in love: two hearts float up and fade
+        Repeater {
+            model: 2
+            Text {
+                id: floatHeart
+                required property int index
+                z: 6
+                text: "♥"
+                color: "#FF7AA8"
+                font.pixelSize: Math.max(8, mascot.size * 0.22)
+                x: mascot.size * (index === 0 ? 0.12 : 0.74)
+                y: 0
+                opacity: 0
+                Connections { target: mascot; function onPetted() { floatUp.restart() } }
+                ParallelAnimation {
+                    id: floatUp
+                    NumberAnimation { target: floatHeart; property: "y"; from: mascot.size * 0.15; to: -mascot.size * 0.35; duration: 1200 + floatHeart.index * 200; easing.type: Easing.OutQuad }
+                    SequentialAnimation {
+                        NumberAnimation { target: floatHeart; property: "opacity"; to: 0.95; duration: 150 }
+                        PauseAnimation { duration: 600 }
+                        NumberAnimation { target: floatHeart; property: "opacity"; to: 0; duration: 500 }
                     }
                 }
             }
@@ -492,7 +744,11 @@ Item {
     // hops: happy jump and alert bounce
     transform: [
         Translate { id: hop; y: 0 },
-        Scale { id: squashScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 }
+        Scale { id: squashScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 },
+        // dancing: a step, a lean from the feet, a nod
+        Translate { id: groove; x: 0; y: 0 },
+        Rotation { id: swayTurn; origin.x: mascot.width / 2; origin.y: mascot.height; angle: 0 },
+        Scale { id: beatScale; origin.x: mascot.width / 2; origin.y: mascot.height; xScale: 1; yScale: 1 }
     ]
     SequentialAnimation {
         running: mascot.alive && (mascot.face === "happy" || mascot.face === "alert")
@@ -548,6 +804,14 @@ Item {
             font.pixelSize: parent.width * 0.75
             font.weight: Font.Black
         }
+    }
+
+    // petting: rest the pointer on Lumo for a moment
+    HoverHandler { id: petHover; enabled: mascot.pettable }
+    Timer {
+        running: petHover.hovered && mascot.pettable && !dizzyTimer.running && mascot.expression === ""
+        interval: 1400
+        onTriggered: { mascot.express("love", 2000); mascot.petted() }
     }
 
     MouseArea {

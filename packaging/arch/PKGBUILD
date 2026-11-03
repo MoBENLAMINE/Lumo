@@ -7,7 +7,7 @@ arch=('x86_64')
 url="https://github.com/MoBENLAMINE/Lumo"
 license=('MIT')
 depends=('qt6-base' 'qt6-declarative' 'qt6-multimedia' 'layer-shell-qt' 'kglobalaccel' 'wl-clipboard' 'libpulse')
-makedepends=('cmake' 'git' 'curl' 'qt6-shadertools')
+makedepends=('cmake' 'git' 'curl' 'qt6-shadertools' 'qt6-tools')
 optdepends=('claude-code: Claude chat and agent sessions'
             'ollama: chat with a local model')
 provides=('lumo')

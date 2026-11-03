@@ -9,6 +9,8 @@
 #include <QDateTime>
 #include <QTimer>
 
+#include <algorithm>
+
 namespace {
 const QString kPrefix = QStringLiteral("org.mpris.MediaPlayer2.");
 const QString kPath = QStringLiteral("/org/mpris/MediaPlayer2");
@@ -136,6 +138,12 @@ void Music::load(const QString &service) {
     if (length > 0 || !sameTrack) m_length = length;
     m_trackId = unwrap(meta.value(QStringLiteral("mpris:trackid"))).value<QDBusObjectPath>().path();
     m_canSeek = props.value(QStringLiteral("CanSeek")).toBool() && !m_trackId.isEmpty();
+    m_hasShuffle = props.contains(QStringLiteral("Shuffle"));
+    m_shuffle = props.value(QStringLiteral("Shuffle")).toBool();
+    m_hasLoop = props.contains(QStringLiteral("LoopStatus"));
+    m_loop = props.value(QStringLiteral("LoopStatus")).toString();
+    m_hasVolume = props.contains(QStringLiteral("Volume"));
+    m_volume = std::clamp(props.value(QStringLiteral("Volume"), 1.0).toDouble(), 0.0, 1.0);
     // Right after our own seek the player may still report the old position.
     if (!(sameTrack && m_seekedAt.isValid() && m_seekedAt.elapsed() < 2000)) {
         m_positionAt = props.value(QStringLiteral("Position")).toLongLong() / 1000;
@@ -156,6 +164,36 @@ void Music::call(const QString &method, const QVariantList &args) {
     QDBusMessage msg = QDBusMessage::createMethodCall(m_service, kPath, kPlayer, method);
     msg.setArguments(args);
     QDBusConnection::sessionBus().call(msg, QDBus::NoBlock);
+}
+
+void Music::setPlayerProperty(const QString &name, const QVariant &value) {
+    if (m_service.isEmpty()) return;
+    QDBusMessage msg = QDBusMessage::createMethodCall(m_service, kPath, kProps, QStringLiteral("Set"));
+    msg.setArguments({kPlayer, name, QVariant::fromValue(QDBusVariant(value))});
+    QDBusConnection::sessionBus().call(msg, QDBus::NoBlock);
+}
+
+// The player confirms with PropertiesChanged; we show the change at once.
+void Music::toggleShuffle() {
+    if (!m_hasShuffle) return;
+    m_shuffle = !m_shuffle;
+    setPlayerProperty(QStringLiteral("Shuffle"), m_shuffle);
+    emit changed();
+}
+
+void Music::cycleLoop() {
+    if (!m_hasLoop) return;
+    m_loop = m_loop == QLatin1String("None") ? QStringLiteral("Playlist")
+           : m_loop == QLatin1String("Playlist") ? QStringLiteral("Track") : QStringLiteral("None");
+    setPlayerProperty(QStringLiteral("LoopStatus"), m_loop);
+    emit changed();
+}
+
+void Music::setVolume(double volume) {
+    if (!m_hasVolume) return;
+    m_volume = std::clamp(volume, 0.0, 1.0);
+    setPlayerProperty(QStringLiteral("Volume"), m_volume);
+    emit changed();
 }
 
 void Music::playPause() { call(QStringLiteral("PlayPause")); }
