@@ -106,6 +106,7 @@ private slots:
         QCOMPARE(a.value(QStringLiteral("agent")).toString(), QStringLiteral("claude-cloud"));
         QCOMPARE(a.value(QStringLiteral("agentName")).toString(), QStringLiteral("Claude (cloud)"));
         QCOMPARE(a.value(QStringLiteral("url")).toString(), QStringLiteral("https://claude.ai/code/a"));
+        QCOMPARE(a.value(QStringLiteral("deepLink")).toString(), QStringLiteral("claude://code/continue?session=a&source=desktop_action"));
         QCOMPARE(hub.sessions()->row(rowOf(hub, QStringLiteral("b")))
                      .value(QStringLiteral("status")).toString(), QStringLiteral("waiting"));
         QCOMPARE(hub.sessions()->row(rowOf(hub, QStringLiteral("d")))

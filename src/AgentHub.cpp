@@ -49,7 +49,7 @@ const QStringList kSessionRoles = {
     QStringLiteral("added"),     QStringLiteral("removed"),  QStringLiteral("tools"),
     QStringLiteral("startedAt"), QStringLiteral("updatedAt"), QStringLiteral("lastMessage"),
     QStringLiteral("steps"),     QStringLiteral("diffs"),    QStringLiteral("model"),
-    QStringLiteral("url"),
+    QStringLiteral("url"), QStringLiteral("deepLink"),
 };
 const QStringList kRequestRoles = {
     QStringLiteral("requestId"), QStringLiteral("sessionId"), QStringLiteral("agent"),
@@ -201,6 +201,7 @@ void AgentHub::touchSession(const QString &id, const QString &agent, const QJson
         values.insert(QStringLiteral("diffs"), QVariantList());
         values.insert(QStringLiteral("model"), p.value(QStringLiteral("model")).toString());
         values.insert(QStringLiteral("url"), QString()); // local sessions have no page to open
+        values.insert(QStringLiteral("deepLink"), QString());
         if (!values.contains(QStringLiteral("status"))) values.insert(QStringLiteral("status"), QStringLiteral("idle"));
         if (!values.contains(QStringLiteral("activity"))) values.insert(QStringLiteral("activity"), tr("Ready"));
         m_sessions.upsert(values, 0);
@@ -577,6 +578,7 @@ void AgentHub::setCloudSessions(const QList<CloudSession> &cloud) {
                            {QStringLiteral("prompt"), c.title},
                            {QStringLiteral("project"), project.isEmpty() ? QStringLiteral("claude.ai") : project},
                            {QStringLiteral("url"), c.url},
+                           {QStringLiteral("deepLink"), QStringLiteral("claude://code/continue?session=%1&source=desktop_action").arg(c.id)},
                            {QStringLiteral("updatedAt"), c.updatedAt}};
         if (m_sessions.indexOf(sid) < 0) {
             values.insert(QStringLiteral("agent"), kCloudAgent);

@@ -22,6 +22,7 @@ Rectangle {
     required property var steps
     required property var diffs
     required property string url
+    required property string deepLink
 
     property bool open: false
     // Set by the island: false while the panel is hidden, so nothing ticks.
@@ -140,8 +141,10 @@ Rectangle {
                     // A cloud session has no process here: its card opens it on claude.ai.
                     TapHandler {
                         onTapped: {
+                            // A cloud session opens in Claude Desktop, else in the browser; a local one comes forward.
+                            if (card.deepLink.length && Qt.openUrlExternally(card.deepLink)) return
                             if (card.url.length) Qt.openUrlExternally(card.url)
-                            else activeWindow.focusProcess(hub.sessionPids(card.sessionId))
+                            else if (!card.deepLink.length) activeWindow.focusProcess(hub.sessionPids(card.sessionId))
                         }
                     }
                 }
