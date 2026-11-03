@@ -18,6 +18,15 @@ namespace {
 const QUrl kSessionsUrl(QStringLiteral("https://api.anthropic.com/v1/code/sessions?limit=50"));
 const QStringList kKnownStatuses = {QStringLiteral("running"), QStringLiteral("pending"), QStringLiteral("idle"),
                                     QStringLiteral("requires_action"), QStringLiteral("failed")};
+// For testing with a local fake server (scripts/fake-cloud-sessions.py). Only a
+// local address is accepted: the login token goes with every request.
+QUrl sessionsUrl() {
+    const QString override = qEnvironmentVariable("LUMO_CLOUD_SESSIONS_URL");
+    if (override.startsWith(QLatin1String("http://127.0.0.1:")) || override.startsWith(QLatin1String("http://localhost:")))
+        return QUrl(override);
+    return kSessionsUrl;
+}
+
 constexpr int kEveryMs = 60 * 1000;
 // While a cloud session is working or waiting for you, look every few seconds.
 constexpr int kActiveMs = 4 * 1000;
@@ -156,7 +165,7 @@ void CloudSessions::refresh() {
 
 void CloudSessions::ask(const QString &token, const QString &org) {
     m_busy = true;
-    QNetworkRequest req(kSessionsUrl);
+    QNetworkRequest req(sessionsUrl());
     req.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     req.setRawHeader("anthropic-version", "2023-06-01");
     req.setRawHeader("x-organization-uuid", org.toUtf8());
