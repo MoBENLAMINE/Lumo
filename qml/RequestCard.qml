@@ -212,22 +212,6 @@ Rectangle {
             PillButton { text: qsTr("Approve"); primary: true; tint: Ui.good; onClicked: hub.allow(card.requestId) }
         }
 
-        // The global shortcuts act on the card at the top.
-        Row {
-            visible: card.index === 0 && (card.kind === "permission" || card.kind === "plan")
-            Layout.alignment: Qt.AlignRight
-            spacing: 4
-            opacity: 0.85
-            Keycap { small: true; text: "Meta" }
-            Keycap { small: true; text: "Alt" }
-            Keycap { small: true; text: "Y" }
-            Text { anchors.verticalCenter: parent.verticalCenter; text: card.kind === "plan" ? qsTr("approve") : qsTr("allow"); color: Ui.faint; font.pixelSize: 10; rightPadding: 8 }
-            Keycap { small: true; text: "Meta" }
-            Keycap { small: true; text: "Alt" }
-            Keycap { small: true; text: "D" }
-            Text { anchors.verticalCenter: parent.verticalCenter; text: card.kind === "plan" ? qsTr("keep planning") : qsTr("deny"); color: Ui.faint; font.pixelSize: 10 }
-        }
-
         RowLayout {
             visible: card.kind === "notice"
             Layout.fillWidth: true
