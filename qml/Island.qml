@@ -37,9 +37,7 @@ Window {
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
     // What Lumo wears: your pick, or the season's (headphones while music plays).
-    property var today: new Date()
-    Timer { interval: 3600000; repeat: true; running: true; onTriggered: win.today = new Date() }
-    readonly property string outfit: shell.outfit === "auto" ? Ui.seasonal(today, music.playing && shell.showMusic) : shell.outfit
+    readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false
     function openWardrobe() { showWardrobe = true; openIsland("agents", true) }
     readonly property string mode: dictating ? "dictation"
@@ -239,14 +237,18 @@ Window {
             width: win.bodyW
             height: Math.max(0, win.bodyH) + r
             radius: r
-            color: Ui.island
+            gradient: Gradient {
+                GradientStop { position: 0; color: Ui.island }
+                GradientStop { position: 1; color: Ui.islandLow }
+            }
             opacity: win.bodyH > 1 ? 1 : 0
             antialiasing: true
             Behavior on radius { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
 
             border.width: 1
             border.color: win.hasRequests || win.callingYou ? Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.45)
-                        : win.mood === "happy" ? Qt.rgba(Ui.good.r, Ui.good.g, Ui.good.b, 0.45) : "#1C1C21"
+                        : win.mood === "happy" ? Qt.rgba(Ui.good.r, Ui.good.g, Ui.good.b, 0.45)
+                        : Qt.rgba(hub.headlineColor.r, hub.headlineColor.g, hub.headlineColor.b, 0.22)
             Behavior on border.color { ColorAnimation { duration: 300 } }
             transform: Translate { x: win.shakeX }
 
@@ -461,7 +463,7 @@ Window {
                             mood: win.mood === "idle" && win.tab === "chat" && chat.busy ? "working" : win.mood
                             badge: hub.requests.count > 0
                             outfit: wardrobePanel.trying !== "" && win.showWardrobe
-                                    ? (wardrobePanel.trying === "auto" ? Ui.seasonal(win.today, false) : wardrobePanel.trying) : win.outfit
+                                    ? Ui.outfitFor(wardrobePanel.trying, true) : win.outfit
                             onWardrobeRequested: win.showWardrobe = !win.showWardrobe
                             dancing: win.dancing && win.mode === "open"
                             alive: win.mode === "open"
@@ -775,7 +777,7 @@ Window {
                     width: index % 3 === 0 ? 6.5 : 4.5
                     height: width
                     radius: width / 2
-                    color: ["#3DD68C", "#FFD866", "#E8875F", "#FFFFFF"][index % 4]
+                    color: ["#3DD68C", "#FFD866", "#D97757", "#8FE3FF"][index % 4]
                     opacity: 0
                     Connections { target: win; function onBurstChanged() { fly.restart() } }
                     ParallelAnimation {

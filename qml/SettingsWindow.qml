@@ -17,10 +17,10 @@ Window {
     signal previewNeedsYou()
 
     // ------------------------------------------------------------ palette
-    readonly property color bg: "#101013"
-    readonly property color sidebar: "#0B0B0E"
-    readonly property color groupBg: "#16161A"
-    readonly property color groupLine: "#24242B"
+    readonly property color bg: Ui.islandLow
+    readonly property color sidebar: Ui.island
+    readonly property color groupBg: Ui.card
+    readonly property color groupLine: Ui.line
     readonly property color track: "#2E2E36"
     readonly property color accentSoft: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.14)
     readonly property int contentMax: 680
@@ -348,7 +348,12 @@ Window {
                     spacing: 12
                     Layout.leftMargin: 4
                     Layout.bottomMargin: 22
-                    Mascot { size: 40; alive: settings.visible; mood: hub.mood; outfit: shell.outfit === "auto" ? Ui.seasonal(new Date(), false) : shell.outfit }
+                    Mascot {
+                        size: 40
+                        alive: settings.visible
+                        mood: hub.mood
+                        outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
+                    }
                     ColumnLayout {
                         spacing: 0
                         Text { text: "Lumo"; color: Ui.text; font.pixelSize: 18; font.weight: Font.Bold }
@@ -518,7 +523,7 @@ Window {
 
                     Group {
                         title: qsTr("Wardrobe")
-                        footer: qsTr("Seasonal dresses Lumo by itself: a witch hat at Halloween, a Santa hat in December, a party hat at New Year, a bow on Valentine's Day, and headphones while music plays. You can also right-click Lumo in the island.")
+                        footer: qsTr("Auto puts Lumo's headphones on while music plays. You can also right-click Lumo in the island.")
                         Pane {
                             Wardrobe {
                                 Layout.fillWidth: true
@@ -896,13 +901,28 @@ Window {
                             id: hero
                             anchors.centerIn: parent
                             spacing: 6
-                            Mascot {
+                            // a lit stage: Lumo's light fading out behind it
+                            Item {
                                 Layout.alignment: Qt.AlignHCenter
-                                Layout.bottomMargin: 8
-                                size: 76
-                                alive: settings.visible && settings.page === 4
-                                mood: hub.mood
-                                outfit: shell.outfit === "auto" ? Ui.seasonal(new Date(), false) : shell.outfit
+                                Layout.bottomMargin: 6
+                                implicitWidth: 200; implicitHeight: 140
+                                Repeater {
+                                    model: [[200, 0.022], [176, 0.026], [152, 0.03], [128, 0.036], [106, 0.042]]
+                                    Rectangle {
+                                        required property var modelData
+                                        anchors.centerIn: parent
+                                        anchors.verticalCenterOffset: -6
+                                        width: modelData[0]; height: width; radius: width / 2
+                                        color: Ui.accent; opacity: modelData[1]
+                                    }
+                                }
+                                Mascot {
+                                    anchors.centerIn: parent
+                                    size: 88
+                                    alive: settings.visible && settings.page === 4
+                                    mood: hub.mood
+                                    outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
+                                }
                             }
                             Text { Layout.alignment: Qt.AlignHCenter; text: "Lumo"; color: Ui.text; font.pixelSize: 30; font.weight: Font.Bold }
                             Text {

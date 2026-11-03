@@ -2,14 +2,19 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    readonly property color island: "#0A0A0C"
-    readonly property color card: "#17171B"
-    readonly property color cardHover: "#1F1F25"
-    readonly property color line: "#2A2A31"
-    readonly property color text: "#F2F2F5"
-    readonly property color dim: "#9A9AA5"
-    readonly property color faint: "#5E5E68"
-    readonly property color accent: "#E8875F"
+    readonly property color island: "#09090D"
+    // the island and Settings get a little depth toward the bottom
+    readonly property color islandLow: "#111118"
+    readonly property color card: "#15151C"
+    readonly property color cardHover: "#1C1C25"
+    readonly property color line: "#262630"
+    readonly property color text: "#F3F3F7"
+    readonly property color dim: "#9C9CAA"
+    readonly property color faint: "#5E5E6C"
+    // Claude's terracotta: Lumo's body, and every accent
+    readonly property color accent: "#D97757"
+    // the light Lumo's face is drawn with
+    readonly property color glow: "#8FE3FF"
     readonly property color good: "#3DD68C"
     readonly property color bad: "#FF6B6B"
     readonly property color warn: "#F5C451"
@@ -58,14 +63,28 @@ QtObject {
     readonly property int openWidth: 580
     readonly property int maxOpenHeight: 560
 
-    // What Lumo wears on its own at this time of year ("" for nothing).
-    function seasonal(d, musicPlaying) {
-        const m = d.getMonth() + 1, day = d.getDate()
-        if (m === 10 && day >= 20) return "witch"
-        if (m === 12 && day >= 1 && day <= 26) return "santa"
-        if ((m === 12 && day === 31) || (m === 1 && day <= 2)) return "party"
-        if (m === 2 && day === 14) return "bow"
-        return musicPlaying ? "headphones" : ""
+    // Lumo's wardrobe. "auto" puts the headphones on while music plays.
+    readonly property var outfits: [
+        { id: "auto", label: qsTr("Auto") }, { id: "", label: qsTr("None") },
+        { id: "crown", label: qsTr("Crown") }, { id: "tarbouche", label: qsTr("Tarbouche") },
+        { id: "lion", label: qsTr("Lion") }, { id: "student", label: qsTr("Eng. student") },
+        { id: "engineer", label: qsTr("Engineer") }, { id: "military", label: qsTr("Military") },
+        { id: "headphones", label: qsTr("Headphones") }, { id: "sunglasses", label: qsTr("Sunglasses") }
+    ]
+
+    // The wardrobe choice as it stands today: a choice from an older Lumo (a
+    // witch hat, a beanie…) is no longer in the wardrobe and acts as "auto".
+    function outfitChoice(choice) {
+        if (choice === "" || choice === "auto") return choice
+        for (const o of outfits) if (o.id === choice) return choice
+        return "auto"
+    }
+
+    // What Lumo actually wears for a wardrobe choice ("" for nothing).
+    function outfitFor(choice, musicPlaying) {
+        const c = outfitChoice(choice)
+        if (c === "auto") return musicPlaying ? "headphones" : ""
+        return c
     }
 
     function statusColor(status) {

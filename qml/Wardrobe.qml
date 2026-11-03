@@ -1,6 +1,7 @@
 import QtQuick
 
 // Pick Lumo's outfit. Resting on a tile lets you try it on (`trying`).
+// "Auto" puts the headphones on while music plays, so its tile wears them.
 Flow {
     id: wardrobe
     property string current: "auto"
@@ -8,14 +9,7 @@ Flow {
     property color mascotColor: Ui.accent
     signal picked(string outfit)
 
-    readonly property var outfits: [
-        { id: "auto", label: qsTr("Seasonal") }, { id: "", label: qsTr("None") },
-        { id: "witch", label: qsTr("Witch hat") }, { id: "santa", label: qsTr("Santa hat") },
-        { id: "party", label: qsTr("Party hat") }, { id: "crown", label: qsTr("Crown") },
-        { id: "sunglasses", label: qsTr("Sunglasses") }, { id: "bow", label: qsTr("Bow") },
-        { id: "headphones", label: qsTr("Headphones") }, { id: "grad", label: qsTr("Graduation") },
-        { id: "flower", label: qsTr("Flower") }, { id: "beanie", label: qsTr("Beanie") }
-    ]
+    readonly property var outfits: Ui.outfits
 
     spacing: 8
 
@@ -24,7 +18,7 @@ Flow {
         Rectangle {
             id: tile
             required property var modelData
-            readonly property bool chosen: wardrobe.current === modelData.id
+            readonly property bool chosen: Ui.outfitChoice(wardrobe.current) === modelData.id
             width: 78; height: 82; radius: 12
             color: chosen ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.18) : tileHover.hovered ? Ui.cardHover : "#121216"
             border.width: chosen ? 1.5 : 1
@@ -39,7 +33,7 @@ Flow {
                 size: 34
                 color: wardrobe.mascotColor
                 alive: false
-                outfit: tile.modelData.id === "auto" ? Ui.seasonal(new Date(), false) : tile.modelData.id
+                outfit: tile.modelData.id === "auto" ? "headphones" : tile.modelData.id
                 enabled: false
             }
             Text {

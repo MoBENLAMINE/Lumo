@@ -23,7 +23,7 @@ src/
 qml/
   Island.qml        the island: rest · compact · open · dictation, springs and reactions
   Mascot.qml        the character, drawn with scene-graph items and Animators
-  Outfit.qml        its clothes, drawn with Qt Quick Shapes
+  Outfit.qml        its clothes, drawn with Qt Quick Shapes (behind the body and in front of it)
   …                 cards, chat, settings
 hook/lumo-hook.c    the relay
 ```

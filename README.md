@@ -38,7 +38,7 @@ they're done. It's written from scratch in C++ and Qt Quick (no web view): the i
 | **Plan usage** | Your 5-hour and weekly Claude limits, read from your Claude account. |
 | **Cloud sessions** | Your Claude Code sessions running on claude.ai/code: working, needs you, done or failed. ↗ opens one in the browser. Approvals stay on claude.ai, as the hooks never run there. |
 | **Music** | What's playing in any MPRIS player (Spotify, browsers, VLC…) with controls; Lumo dances. |
-| **Lumo** | Blinks, follows your pointer, gets dizzy if you poke it too much, celebrates when an agent finishes, waves a "!" when it needs you — each with its own synthesized sound. Ten outfits, seasonal by default. |
+| **Lumo** | A cousin of Claude's Clawd with a glowing screen for a face: its light turns cyan while an agent works, amber when it needs you, and smiles when it's done. Blinks, follows your pointer, gets dizzy if you poke it too much, celebrates when an agent finishes — each with its own synthesized sound. Eight outfits: crown, Moroccan tarbouche, lion, engineering student, engineer, military dress uniform, sunglasses, and headphones that go on by themselves when music plays. |
 | **Instinct** | Hands chat answers, sessions and dictations to the Instinct assistant through you (WhatsApp, pre-filled — you press Send). |
 
 <table>

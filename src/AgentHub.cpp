@@ -69,8 +69,8 @@ AgentHub::AgentHub(QObject *parent)
 
 QString AgentHub::agentColor(const QString &agent) const {
     static const QHash<QString, QString> colors = {
-        {QString(), QStringLiteral("#E8875F")},       {QStringLiteral("claude"), QStringLiteral("#E8875F")},
-        {QStringLiteral("claude-desktop"), QStringLiteral("#E8875F")},
+        {QString(), QStringLiteral("#D97757")},       {QStringLiteral("claude"), QStringLiteral("#D97757")},
+        {QStringLiteral("claude-desktop"), QStringLiteral("#D97757")},
         {QStringLiteral("codex"), QStringLiteral("#3DD68C")}, {QStringLiteral("gemini"), QStringLiteral("#6EA8FE")},
         {QStringLiteral("antigravity"), QStringLiteral("#8AB4F8")},
         {QStringLiteral("cursor"), QStringLiteral("#C9CDD4")}, {QStringLiteral("copilot"), QStringLiteral("#B48CFF")},
