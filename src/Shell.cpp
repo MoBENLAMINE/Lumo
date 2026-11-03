@@ -1,6 +1,7 @@
 #include "Shell.h"
 
 #include <QAction>
+#include <algorithm>
 #include <QApplication>
 #include <QDesktopServices>
 #include <QDir>
@@ -13,6 +14,7 @@
 #include <QPainterPath>
 #include <QQuickWindow>
 #include <QRegion>
+#include <QScreen>
 #include <QSettings>
 #include <QSystemTrayIcon>
 #include <QTimer>
@@ -66,8 +68,10 @@ void Shell::attach(QQuickWindow *island) {
     } else {
         // X11 fallback: a frameless always-on-top tool window at the top centre.
         island->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool | Qt::WindowDoesNotAcceptFocus);
-        if (QScreen *screen = QGuiApplication::primaryScreen())
-            island->setPosition(screen->geometry().center().x() - island->width() / 2, screen->geometry().top());
+    }
+    if (QScreen *screen = targetScreen()) {
+        island->setScreen(screen);
+        if (!m_layerShell) island->setPosition(screen->geometry().center().x() - island->width() / 2, screen->geometry().top());
     }
     island->setColor(Qt::transparent);
     // If the compositor dropped the surface (its screen was unplugged or
@@ -82,7 +86,21 @@ void Shell::attach(QQuickWindow *island) {
         });
     };
     connect(island, &QWindow::visibleChanged, this, [reshow](bool visible) { if (!visible) reshow(); });
-    connect(qApp, &QGuiApplication::screenRemoved, this, reshow);
+    connect(qApp, &QGuiApplication::screenRemoved, this, [this, reshow] {
+        emit screensChanged();
+        reshow();
+        // The chosen screen went away: the primary one takes the island meanwhile.
+        QTimer::singleShot(500, this, &Shell::moveToScreen);
+    });
+    // The chosen screen is back, or the primary one changed: follow it.
+    connect(qApp, &QGuiApplication::screenAdded, this, [this] {
+        emit screensChanged();
+        QTimer::singleShot(500, this, &Shell::moveToScreen);
+    });
+    connect(qApp, &QGuiApplication::primaryScreenChanged, this, [this] {
+        emit screensChanged();
+        moveToScreen();
+    });
     setInputRect(QRectF(island->width() / 2.0 - 130, 0, 260, 4));
     island->show();
 }
@@ -169,6 +187,60 @@ void Shell::setAlwaysShow(bool on) {
 }
 
 bool Shell::showUsage() const { return QSettings().value(QStringLiteral("island/showUsage"), true).toBool(); }
+
+QString Shell::screenName() const { return QSettings().value(QStringLiteral("island/screen")).toString(); }
+
+void Shell::setScreenName(const QString &name) {
+    if (name == screenName()) return;
+    QSettings().setValue(QStringLiteral("island/screen"), name);
+    emit screenChanged();
+    moveToScreen();
+}
+
+QVariantList Shell::screens() const {
+    QVariantList out;
+    QScreen *primary = QGuiApplication::primaryScreen();
+    QList<QScreen *> all = QGuiApplication::screens();
+    std::stable_partition(all.begin(), all.end(), [primary](QScreen *s) { return s == primary; });
+    for (QScreen *s : std::as_const(all)) {
+        // "Dell U2723QE · HDMI-A-1": the monitor first, then the connector.
+        const QString what = (s->manufacturer() + QLatin1Char(' ') + s->model()).trimmed();
+        out << QVariantMap{{QStringLiteral("name"), s->name()},
+                           {QStringLiteral("label"), what.isEmpty() || what == s->name() ? s->name() : what + QStringLiteral(" · ") + s->name()}};
+    }
+    return out;
+}
+
+QScreen *Shell::targetScreen() const {
+    const QString name = screenName();
+    if (!name.isEmpty())
+        for (QScreen *s : QGuiApplication::screens())
+            if (s->name() == name) return s;
+    return QGuiApplication::primaryScreen();
+}
+
+void Shell::moveToScreen() {
+    if (!m_island) return;
+    QScreen *screen = targetScreen();
+    if (!screen || m_island->screen() == screen) return;
+    const bool shown = m_island->isVisible();
+    if (shown) m_island->hide();
+    m_island->setScreen(screen);
+    if (!m_layerShell) m_island->setPosition(screen->geometry().center().x() - m_island->width() / 2, screen->geometry().top());
+    if (shown) {
+        m_lastMask = {};
+        m_island->show();
+        emit resurfaced();
+    }
+}
+
+bool Shell::greeting() const { return QSettings().value(QStringLiteral("island/greeting"), true).toBool(); }
+
+void Shell::setGreeting(bool on) {
+    if (on == greeting()) return;
+    QSettings().setValue(QStringLiteral("island/greeting"), on);
+    emit greetingChanged();
+}
 
 void Shell::setShowUsage(bool on) {
     if (on == showUsage()) return;

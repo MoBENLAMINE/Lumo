@@ -79,16 +79,20 @@ Item {
                 font.pixelSize: Ui.small
             }
             // stop (keep) / cancel
-            Text {
+            IconButton {
                 visible: bar.st === "handsfree"
                 anchors.verticalCenter: parent.verticalCenter
-                text: "✓"; color: Ui.good; font.pixelSize: Ui.title; font.weight: Font.Bold
-                TapHandler { onTapped: dictation.toggle() }
+                size: 24; iconSize: 15; filled: false
+                icon: Ui.icons.check
+                tint: Ui.good
+                onClicked: dictation.toggle()
             }
-            Text {
+            IconButton {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "✕"; color: Ui.faint; font.pixelSize: Ui.body
-                TapHandler { onTapped: dictation.cancel() }
+                size: 24; iconSize: 13; filled: false
+                icon: Ui.icons.close
+                tint: Ui.faint
+                onClicked: dictation.cancel()
             }
         }
 

@@ -37,13 +37,12 @@ Window {
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
     // What Lumo wears: your pick, or the season's (headphones while music plays).
-    property var today: new Date()
-    Timer { interval: 3600000; repeat: true; running: true; onTriggered: win.today = new Date() }
-    readonly property string outfit: shell.outfit === "auto" ? Ui.seasonal(today, music.playing && shell.showMusic) : shell.outfit
+    readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false
     function openWardrobe() { showWardrobe = true; openIsland("agents", true) }
     readonly property string mode: dictating ? "dictation"
                                  : (hoverOpen || pinned || hasRequests) ? "open"
+                                 : greeting ? "greeting"
                                  : (activeMood || callingYou || (peek && !resting)) ? "compact"
                                  : resting ? "rest" : "hidden"
     // The window only takes the pointer inside the island (its input region),
@@ -86,7 +85,34 @@ Window {
     }
     onTabChanged: if (tab === "chat" && mode === "open") focusChat()
     // After the shell has set up the surface, so the pill takes the pointer at once.
-    Component.onCompleted: Qt.callLater(updateMask)
+    Component.onCompleted: { Qt.callLater(updateMask); greetAtStart.start() }
+
+    // ------------------------------------------------------------ greeting
+    // Lumo says hello when it starts: the island opens, light bursts out of it,
+    // Lumo pops up, smiles and waves, then the island goes back to what it was.
+    // A request or a dictation comes first; a click skips it.
+    property bool greeting: false
+    property int greetBurst: 0
+    function greet() { greetFx.restart() }
+    function endGreeting() { greetFx.stop(); helloMascot.mood = "idle"; greeting = false }
+    Timer { id: greetAtStart; interval: 600; onTriggered: if (shell.greeting) win.greet() }
+    SequentialAnimation {
+        id: greetFx
+        ScriptAction { script: { helloMascot.scale = 0; helloMascot.opacity = 0; helloMascot.mood = "idle"; win.greeting = true } }
+        // let the island open first
+        PauseAnimation { duration: 280 }
+        ScriptAction { script: { sounds.play("hello"); win.greetBurst++ } }
+        ParallelAnimation {
+            NumberAnimation { target: helloMascot; property: "scale"; from: 0.2; to: 1; duration: 520; easing.type: Easing.OutBack; easing.overshoot: 2 }
+            NumberAnimation { target: helloMascot; property: "opacity"; from: 0; to: 1; duration: 180 }
+        }
+        PauseAnimation { duration: 150 }
+        ScriptAction { script: helloMascot.mood = "happy" }
+        PauseAnimation { duration: 850 }
+        ScriptAction { script: { helloMascot.mood = "idle"; helloMascot.wave() } }
+        PauseAnimation { duration: 1500 }
+        ScriptAction { script: win.greeting = false }
+    }
 
     Timer { id: openTimer; interval: 260; onTriggered: win.hoverOpen = true }
     Timer {
@@ -171,11 +197,13 @@ Window {
 
     // ------------------------------------------------------------ geometry
     readonly property real targetW: mode === "open" ? Ui.openWidth
+                                   : mode === "greeting" ? 340
                                    : mode === "compact" ? Math.max(232, Math.min(470, compactRow.implicitWidth + 30))
                                    : mode === "dictation" ? Math.max(200, Math.min(520, dictationBar.implicitWidth + 32))
                                    : mode === "rest" ? Math.max(232, Math.min(470, restRow.implicitWidth + 30))
                                    : 160
     readonly property real targetH: mode === "open" ? Math.min(win.maxOpenH, openCol.implicitHeight + 28)
+                                   : mode === "greeting" ? 148
                                    : mode === "compact" || mode === "dictation" ? Ui.compactHeight
                                    : mode === "rest" ? Ui.compactHeight : 0
     property real bodyW: targetW
@@ -233,20 +261,24 @@ Window {
         // the bottom ones show, like a notch.
         Rectangle {
             id: body
-            readonly property real r: win.mode === "open" ? 28 : 19
+            readonly property real r: win.mode === "open" || win.mode === "greeting" ? 28 : 19
             x: (win.width - win.bodyW) / 2
             y: -r
             width: win.bodyW
             height: Math.max(0, win.bodyH) + r
             radius: r
-            color: Ui.island
+            gradient: Gradient {
+                GradientStop { position: 0; color: Ui.island }
+                GradientStop { position: 1; color: Ui.islandLow }
+            }
             opacity: win.bodyH > 1 ? 1 : 0
             antialiasing: true
             Behavior on radius { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
 
             border.width: 1
             border.color: win.hasRequests || win.callingYou ? Qt.rgba(Ui.warn.r, Ui.warn.g, Ui.warn.b, 0.45)
-                        : win.mood === "happy" ? Qt.rgba(Ui.good.r, Ui.good.g, Ui.good.b, 0.45) : "#1C1C21"
+                        : win.mood === "happy" ? Qt.rgba(Ui.good.r, Ui.good.g, Ui.good.b, 0.45)
+                        : Qt.rgba(hub.headlineColor.r, hub.headlineColor.g, hub.headlineColor.b, 0.22)
             Behavior on border.color { ColorAnimation { duration: 300 } }
             transform: Translate { x: win.shakeX }
 
@@ -265,6 +297,61 @@ Window {
             height: Math.max(0, win.bodyH)
             clip: true
             transform: Translate { x: win.shakeX }
+
+            // ---------------- greeting
+            Item {
+                id: greetLayer
+                anchors.fill: parent
+                opacity: win.mode === "greeting" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { OpacityAnimator { duration: win.mode === "greeting" ? 200 : 260 } }
+
+                // a field of light bursting out of Lumo, then drifting away
+                Repeater {
+                    model: 30
+                    Rectangle {
+                        id: star
+                        required property int index
+                        readonly property real angle: index * 2.399963 // the golden angle: an even spread
+                        readonly property real reach: 46 + (index * 37 % 120)
+                        readonly property real cx: greetLayer.width / 2
+                        readonly property real cy: greetLayer.height / 2 + 6
+                        width: index % 5 === 0 ? 4 : 2.5
+                        height: width
+                        radius: width / 2
+                        color: index % 3 === 0 ? Ui.accent : index % 3 === 1 ? Ui.glow : "white"
+                        x: cx; y: cy
+                        opacity: 0
+                        Connections { target: win; function onGreetBurstChanged() { starFly.restart() } }
+                        SequentialAnimation {
+                            id: starFly
+                            PauseAnimation { duration: (star.index % 6) * 40 }
+                            ParallelAnimation {
+                                NumberAnimation { target: star; property: "x"; from: star.cx; to: star.cx + Math.cos(star.angle) * star.reach * 1.5; duration: 1700; easing.type: Easing.OutCubic }
+                                NumberAnimation { target: star; property: "y"; from: star.cy; to: star.cy + Math.sin(star.angle) * star.reach * 0.55; duration: 1700; easing.type: Easing.OutCubic }
+                                SequentialAnimation {
+                                    NumberAnimation { target: star; property: "opacity"; to: 0.95; duration: 120 }
+                                    PauseAnimation { duration: 500 }
+                                    NumberAnimation { target: star; property: "opacity"; to: 0; duration: 1080; easing.type: Easing.InQuad }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Mascot {
+                    id: helloMascot
+                    size: 64
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 8
+                    color: Ui.accent
+                    outfit: win.outfit
+                    alive: win.mode === "greeting"
+                    scale: 0
+                    opacity: 0
+                }
+                TapHandler { onTapped: win.endGreeting() }
+            }
 
             // ---------------- compact
             Item {
@@ -338,13 +425,13 @@ Window {
                             }
                         }
                     }
-                    Text {
+                    Icon {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: win.mood === "happy"
-                        text: "✓"
-                        color: Ui.good
-                        font.pixelSize: Ui.title
-                        font.weight: Font.Bold
+                        path: Ui.icons.check
+                        tint: Ui.good
+                        size: 16
+                        stroke: 2.4
                     }
                 }
             }
@@ -461,7 +548,7 @@ Window {
                             mood: win.mood === "idle" && win.tab === "chat" && chat.busy ? "working" : win.mood
                             badge: hub.requests.count > 0
                             outfit: wardrobePanel.trying !== "" && win.showWardrobe
-                                    ? (wardrobePanel.trying === "auto" ? Ui.seasonal(win.today, false) : wardrobePanel.trying) : win.outfit
+                                    ? Ui.outfitFor(wardrobePanel.trying, true) : win.outfit
                             onWardrobeRequested: win.showWardrobe = !win.showWardrobe
                             dancing: win.dancing && win.mode === "open"
                             alive: win.mode === "open"
@@ -473,7 +560,8 @@ Window {
                             Layout.fillWidth: true
                             Text {
                                 text: hub.requests.count ? qsTr("Lumo needs you") : hub.workingCount ? (hub.workingCount === 1 ? qsTr("1 agent working") : qsTr("%1 agents working").arg(hub.workingCount)) : qsTr("All quiet")
-                                color: Ui.text
+                                color: hub.requests.count ? Ui.warn : Ui.text
+                                Behavior on color { ColorAnimation { duration: 200 } }
                                 font.pixelSize: Ui.title
                                 font.weight: Font.DemiBold
                             }
@@ -493,10 +581,12 @@ Window {
                             radius: 15
                             color: Ui.card
                             Rectangle { // sliding highlight
+                                id: tabHighlight
+                                property Item target: null
                                 y: 3; height: 24; radius: 12
                                 color: Ui.line
-                                x: win.tab === "agents" ? agentsTab.x + 3 : chatTab.x + 3
-                                width: win.tab === "agents" ? agentsTab.width : chatTab.width
+                                x: target ? target.x + 3 : 3
+                                width: target ? target.width : 0
                                 Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                                 Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                             }
@@ -504,21 +594,48 @@ Window {
                                 id: tabs
                                 x: 3
                                 anchors.verticalCenter: parent.verticalCenter
-                                Text {
-                                    id: agentsTab
-                                    text: qsTr("Agents") + (hub.sessions.count ? "  " + hub.sessions.count : "")
-                                    color: win.tab === "agents" ? Ui.text : Ui.dim
-                                    font.pixelSize: Ui.body
-                                    leftPadding: 12; rightPadding: 12; topPadding: 5; bottomPadding: 5
-                                    TapHandler { onTapped: win.tab = "agents" }
-                                }
-                                Text {
-                                    id: chatTab
-                                    text: qsTr("Chat")
-                                    color: win.tab === "chat" ? Ui.text : Ui.dim
-                                    font.pixelSize: Ui.body
-                                    leftPadding: 12; rightPadding: 12; topPadding: 5; bottomPadding: 5
-                                    TapHandler { onTapped: win.tab = "chat" }
+                                Repeater {
+                                    model: [{ id: "agents", label: qsTr("Agents") }, { id: "chat", label: qsTr("Chat") }]
+                                    Item {
+                                        id: tabItem
+                                        required property var modelData
+                                        readonly property bool current: win.tab === modelData.id
+                                        readonly property int count: modelData.id === "agents" ? hub.sessions.count : 0
+                                        width: tabRow.implicitWidth + 24
+                                        height: 24
+                                        onCurrentChanged: if (current) tabHighlight.target = tabItem
+                                        Component.onCompleted: if (current) tabHighlight.target = tabItem
+                                        Row {
+                                            id: tabRow
+                                            anchors.centerIn: parent
+                                            spacing: 6
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: tabItem.modelData.label
+                                                color: tabItem.current || tabHover.hovered ? Ui.text : Ui.dim
+                                                font.pixelSize: Ui.body
+                                                font.weight: tabItem.current ? Font.DemiBold : Font.Normal
+                                            }
+                                            Rectangle {
+                                                visible: tabItem.count > 0
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: Math.max(18, countText.implicitWidth + 10)
+                                                height: 16
+                                                radius: 8
+                                                color: tabItem.current ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.25) : Ui.line
+                                                Text {
+                                                    id: countText
+                                                    anchors.centerIn: parent
+                                                    text: tabItem.count
+                                                    color: tabItem.current ? Ui.accent : Ui.dim
+                                                    font.pixelSize: 10
+                                                    font.weight: Font.DemiBold
+                                                }
+                                            }
+                                        }
+                                        HoverHandler { id: tabHover; cursorShape: Qt.PointingHandCursor }
+                                        TapHandler { onTapped: win.tab = tabItem.modelData.id }
+                                    }
                                 }
                             }
                         }
@@ -531,56 +648,30 @@ Window {
                             UsageRing { size: 28; label: "7d"; percent: hub.sevenDay; resetsAt: hub.sevenDayReset }
                         }
 
-                        Rectangle {
-                            width: 30; height: 30; radius: 15
-                            color: eyeHover.hovered ? Ui.cardHover : Ui.card
-                            Text {
-                                anchors.centerIn: parent
-                                text: shell.alwaysShow ? "👁" : "🙈"
-                                font.pixelSize: 14
+                        Row {
+                            spacing: 6
+                            IconButton {
+                                icon: shell.alwaysShow ? Ui.icons.eye : Ui.icons.eyeOff
+                                tip: shell.alwaysShow ? qsTr("Hide when idle") : qsTr("Always show")
+                                onClicked: shell.alwaysShow = !shell.alwaysShow
                             }
-                            HoverHandler { id: eyeHover }
-                            TapHandler { onTapped: shell.alwaysShow = !shell.alwaysShow }
-                            Rectangle { // tooltip
-                                visible: eyeHover.hovered
-                                z: 10
-                                anchors.top: parent.bottom
-                                anchors.topMargin: 6
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                width: eyeTip.implicitWidth + 16; height: eyeTip.implicitHeight + 10
-                                radius: 6; color: Ui.cardHover; border.color: Ui.line
-                                Text {
-                                    id: eyeTip
-                                    anchors.centerIn: parent
-                                    color: Ui.text; font.pixelSize: Ui.small
-                                    text: shell.alwaysShow ? qsTr("Hide when idle") : qsTr("Always show")
-                                }
+                            IconButton {
+                                visible: dictation.enabled
+                                icon: Ui.icons.mic
+                                tip: qsTr("Dictate")
+                                onClicked: { win.closeIsland(); dictation.toggle() }
                             }
-                        }
-                        Rectangle {
-                            visible: dictation.enabled
-                            width: 30; height: 30; radius: 15
-                            color: micHover.hovered ? Ui.cardHover : Ui.card
-                            Text { anchors.centerIn: parent; text: "🎙"; font.pixelSize: 14 }
-                            HoverHandler { id: micHover }
-                            TapHandler { onTapped: { win.closeIsland(); dictation.toggle() } }
-                        }
-                        Column {
-                            spacing: 2
-                            Text {
-                                text: sounds.muted ? "🔇" : "🔊"
-                                font.pixelSize: 13
-                                opacity: muteHover.hovered ? 1 : 0.6
-                                HoverHandler { id: muteHover }
-                                TapHandler { onTapped: sounds.muted = !sounds.muted }
+                            IconButton {
+                                icon: sounds.muted ? Ui.icons.volumeOff : Ui.icons.volume
+                                tip: sounds.muted ? qsTr("Sounds off") : qsTr("Sounds on")
+                                active: sounds.muted
+                                activeTint: Ui.faint
+                                onClicked: sounds.muted = !sounds.muted
                             }
-                            Text {
-                                text: "⚙"
-                                color: Ui.dim
-                                font.pixelSize: 15
-                                opacity: gearHover.hovered ? 1 : 0.6
-                                HoverHandler { id: gearHover }
-                                TapHandler { onTapped: shell.settingsRequested() }
+                            IconButton {
+                                icon: Ui.icons.gear
+                                tip: qsTr("Settings")
+                                onClicked: shell.settingsRequested()
                             }
                         }
                     }
@@ -616,11 +707,12 @@ Window {
                                     Item {
                                         width: parent.width; height: 20
                                         Text { text: qsTr("Wardrobe — rest on an outfit to try it on"); color: Ui.text; font.pixelSize: Ui.body; font.weight: Font.DemiBold }
-                                        Text {
+                                        IconButton {
                                             anchors.right: parent.right
-                                            text: "✕"; color: wardClose.hovered ? Ui.text : Ui.faint; font.pixelSize: 12
-                                            HoverHandler { id: wardClose; cursorShape: Qt.PointingHandCursor }
-                                            TapHandler { onTapped: win.showWardrobe = false }
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 24; iconSize: 13; filled: false
+                                            icon: Ui.icons.close
+                                            onClicked: win.showWardrobe = false
                                         }
                                     }
                                     Wardrobe {
@@ -770,7 +862,7 @@ Window {
                     width: index % 3 === 0 ? 6.5 : 4.5
                     height: width
                     radius: width / 2
-                    color: ["#3DD68C", "#FFD866", "#E8875F", "#FFFFFF"][index % 4]
+                    color: ["#3DD68C", "#FFD866", "#D97757", "#8FE3FF"][index % 4]
                     opacity: 0
                     Connections { target: win; function onBurstChanged() { fly.restart() } }
                     ParallelAnimation {
@@ -795,5 +887,6 @@ Window {
         transientParent: null
         onPreviewFinished: win.previewFinished()
         onPreviewNeedsYou: win.previewNeedsYou()
+        onPreviewGreeting: win.greet()
     }
 }

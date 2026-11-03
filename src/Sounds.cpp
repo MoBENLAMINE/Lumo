@@ -1,7 +1,9 @@
 #include "Sounds.h"
 
+#include <QAudioDevice>
 #include <QDir>
 #include <QFile>
+#include <QMediaDevices>
 #include <QSettings>
 #include <QSoundEffect>
 #include <QStandardPaths>
@@ -98,6 +100,18 @@ Sounds::Sounds(QObject *parent) : QObject(parent) {
         fx->setVolume(float(m_volume));
         m_effects.insert(it.key(), fx);
     }
+    // A new default output (the sound server came up, headphones were
+    // plugged in, you picked another one): the sounds go there.
+    m_devices = new QMediaDevices(this);
+    connect(m_devices, &QMediaDevices::audioOutputsChanged, this, &Sounds::followDefaultOutput);
+    followDefaultOutput();
+}
+
+void Sounds::followDefaultOutput() {
+    const QAudioDevice out = QMediaDevices::defaultAudioOutput();
+    if (out.isNull()) return; // no output yet: keep what we have until one shows up
+    for (auto *fx : std::as_const(m_effects))
+        if (fx->audioDevice() != out) fx->setAudioDevice(out);
 }
 
 void Sounds::setMuted(bool m) {
@@ -116,5 +130,9 @@ void Sounds::setVolume(double v) {
 
 void Sounds::play(const QString &name) {
     if (m_muted) return;
-    if (auto *fx = m_effects.value(name)) fx->play();
+    auto *fx = m_effects.value(name);
+    if (!fx) return;
+    // The default output may have changed without a notice reaching us.
+    followDefaultOutput();
+    fx->play();
 }

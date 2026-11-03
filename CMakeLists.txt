@@ -48,6 +48,7 @@ qt_add_executable(lumo
     src/Speech.cpp src/Speech.h
     src/Vocabulary.cpp src/Vocabulary.h
     src/PlanUsage.cpp src/PlanUsage.h
+    src/CloudSessions.cpp src/CloudSessions.h
     src/Music.cpp src/Music.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
@@ -55,7 +56,8 @@ set_target_properties(lumo PROPERTIES
     BUILD_RPATH ${SHERPA_DIR}/lib
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
-set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton)
+target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
+set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).
@@ -103,6 +105,12 @@ qt_add_executable(test_vocabulary tests/test_vocabulary.cpp src/Vocabulary.cpp)
 target_include_directories(test_vocabulary PRIVATE src)
 target_link_libraries(test_vocabulary PRIVATE Qt6::Core Qt6::Test)
 add_test(NAME vocabulary COMMAND test_vocabulary)
+
+# Cloud sessions: the list parser and how the hub shows them (no network).
+qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/AgentHub.cpp src/Diff.cpp src/MapListModel.cpp)
+target_include_directories(test_cloud PRIVATE src)
+target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+add_test(NAME cloud COMMAND test_cloud)
 
 # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
 qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)

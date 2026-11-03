@@ -36,8 +36,10 @@ they're done. It's written from scratch in C++ and Qt Quick (no web view): the i
 | **Chat** | With Claude on **your Pro/Max subscription** through the Claude Code CLI you're signed in to — no API key — or a local Ollama model. Drop a file on the island to ask about it. |
 | **Notion** | Chat with Claude about your Notion through your claude.ai Notion connector, read-only unless you allow edits. |
 | **Plan usage** | Your 5-hour and weekly Claude limits, read from your Claude account. |
+| **Cloud sessions** | Your Claude Code sessions running on claude.ai/code: working, needs you, done or failed. ↗ opens one in Claude Desktop (or the browser). Approvals stay on claude.ai, as the hooks never run there. A switch in Settings turns the list off. |
+| **Your screen** | The island sits at the top of the screen you pick, and goes back there when you plug it in again. |
 | **Music** | What's playing in any MPRIS player (Spotify, browsers, VLC…) with controls; Lumo dances. |
-| **Lumo** | Blinks, follows your pointer, gets dizzy if you poke it too much, celebrates when an agent finishes, waves a "!" when it needs you — each with its own synthesized sound. Ten outfits, seasonal by default. |
+| **Lumo** | A cousin of Claude's Clawd with a glowing screen for a face: its light turns cyan while an agent works, amber when it needs you, and smiles when it's done. Says hello when it starts: the island opens in a burst of light and Lumo waves. Blinks, follows your pointer, gets dizzy if you poke it too much, celebrates when an agent finishes — each with its own synthesized sound. Eight outfits: crown, Moroccan tarbouche, lion, engineering student, engineer, military dress uniform, sunglasses, and headphones that go on by themselves when music plays. |
 | **Instinct** | Hands chat answers, sessions and dictations to the Instinct assistant through you (WhatsApp, pre-filled — you press Send). |
 
 <table>
@@ -93,8 +95,9 @@ Then start **Lumo** from your app menu.
 
 ## Privacy
 
-No telemetry, no account. Lumo talks only to what you use: Anthropic (through the Claude Code CLI, and its usage
-endpoint with your Claude login), your local Ollama, the Notion connector of your Claude account, and GitHub once to
+No telemetry, no account. Lumo talks only to what you use: Anthropic (through the Claude Code CLI, its usage
+endpoint, and the list of your cloud sessions, all with your Claude login; the cloud list can be switched off in
+Settings → Claude Code), your local Ollama, the Notion connector of your Claude account, and GitHub once to
 download the speech engine. Speech is recognized on your computer. Nothing is sent, published or approved without your
 click.
 

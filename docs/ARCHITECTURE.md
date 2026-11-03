@@ -11,6 +11,7 @@ src/
   Shell             the Wayland layer-shell surface, input region, tray, shortcuts, preferences
   ChatBackend       chat through `claude -p` (subscription), the Notion connector, or Ollama
   PlanUsage         5-hour / weekly usage from Anthropic with the Claude Code login
+  CloudSessions     your claude.ai/code sessions, listed every minute with the same login
   Dictation         push-to-talk: key → microphone → Parakeet → paste
   Speech            sherpa-onnx offline recognizer (Parakeet TDT 0.6B v3, int8)
   Vocabulary        your words and spoken replacements, applied to transcripts
@@ -22,7 +23,7 @@ src/
 qml/
   Island.qml        the island: rest · compact · open · dictation, springs and reactions
   Mascot.qml        the character, drawn with scene-graph items and Animators
-  Outfit.qml        its clothes, drawn with Qt Quick Shapes
+  Outfit.qml        its clothes, drawn with Qt Quick Shapes (behind the body and in front of it)
   …                 cards, chat, settings
 hook/lumo-hook.c    the relay
 ```
@@ -69,6 +70,18 @@ Audio comes from the system's default source (`pactl get-default-source`) at 16 
 the speakers are muted. Parakeet loads on a worker thread when you press the key and leaves memory after 5 idle
 minutes. The text goes through `Vocabulary`, then onto the clipboard (`wl-copy`) and into the app in front with
 Ctrl+V — Ctrl+Shift+V in terminals — sent through the RemoteDesktop portal one key event at a time.
+
+## Cloud sessions
+
+Cloud sessions run on Anthropic's VMs. They never read `~/.claude/settings.json`, so the hook never fires for them and
+they can't reach `lumo.sock`. Instead `CloudSessions` asks `api.anthropic.com/v1/code/sessions` once a minute, with the
+login Claude Code keeps and the organization from `~/.claude.json`. That is the endpoint the Claude Code CLI itself uses
+to list them; it is not a documented public API, so a change on Anthropic's side turns the list off until Lumo follows.
+
+`AgentHub::setCloudSessions` turns each session into an island card (`cloud:<id>`): running or pending is working,
+requires action is waiting for you on claude.ai, idle is waiting for your next prompt, failed is an error. A settled
+session stays for as long as an idle local one does. Sounds play only for changes Lumo saw happen. A card that you close
+stays closed until its status changes. Approvals still happen on claude.ai.
 
 ## Chat
 

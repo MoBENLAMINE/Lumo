@@ -1,13 +1,19 @@
 import QtQuick
+import QtQuick.Shapes
 
-// Lumo: a soft squircle with big eyes. Everything is plain scene-graph items
-// moved by Animators, so it stays smooth even when the GUI thread is busy,
-// and every loop stops when `alive` is false (0 % CPU while hidden).
+// Lumo: a small glowing companion, a cousin of Claude's own Clawd. A glossy,
+// blocky body in the agent's colour with little arms and four stubby legs, a
+// soft aura, and a dark screen for a face, where the eyes and mouth are drawn
+// in light. Each mood changes the shape and the colour of that light.
+//
+// Everything is plain scene-graph items moved by Animators, so it stays smooth
+// when the GUI thread is busy, and every loop stops when `alive` is false
+// (0 % CPU while hidden). Outfits share the same s × s coordinates (Outfit.qml).
 Item {
     id: mascot
 
     property real size: 32
-    property color color: "#E8875F"
+    property color color: "#D97757"
     // idle | working | alert | happy | sad | waiting | dizzy
     property string mood: "idle"
     property bool alive: true
@@ -38,13 +44,23 @@ Item {
 
     // Claude finished: a jump with a full spin.
     function celebrate() { spin.restart() }
+    // Hello: the right arm rises and waves three times.
+    function wave() { waveAnim.restart() }
+    property bool waving: false
 
     width: size
     height: size
 
-    readonly property string face: dizzyTimer.running ? "dizzy" : mood
+    readonly property string face: dizzyTimer.running ? "dizzy" : annoyed && mood !== "happy" ? "annoyed" : mood
     property int pokes: 0
     property bool annoyed: false
+
+    // The light the face is drawn with.
+    readonly property color light: face === "working" ? "#8FE3FF"
+                                 : face === "alert" ? "#FFC85C"
+                                 : face === "sad" ? "#8FB0FF"
+                                 : "#EEF8FF"
+    readonly property color bodyColor: face === "sad" ? Qt.darker(color, 1.35) : color
 
     function poke() {
         pokes += 1
@@ -63,48 +79,197 @@ Item {
     Timer { id: annoyedTimer; interval: 1600; onTriggered: mascot.annoyed = false }
     Timer { id: dizzyTimer; interval: 2600 }
 
+    // ------------------------------------------------------------ ground shadow
+    // Only where Lumo is big enough to stand on something.
+    Rectangle {
+        visible: mascot.size >= 34
+        width: mascot.size * 0.62
+        height: Math.max(3, mascot.size * 0.08)
+        radius: height / 2
+        x: (mascot.width - width) / 2
+        y: mascot.height - height * 0.35
+        color: "black"
+        opacity: 0.32
+        // smaller while Lumo is up in the air
+        scale: 1 + hop.y / mascot.size
+    }
+
     // ------------------------------------------------------------ body
     Item {
         id: holder
         anchors.fill: parent
         transformOrigin: Item.Bottom
 
+        // aura: Lumo glows in its own colour, brighter when something happens
+        Item {
+            id: aura
+            z: -2
+            anchors.fill: parent
+            readonly property bool lively: mascot.face === "working" || mascot.face === "alert" || mascot.face === "happy"
+            // soft rings of light, fading out: no hard edge
+            Repeater {
+                model: [[1.42, 0.035], [1.28, 0.05], [1.16, 0.07]]
+                Rectangle {
+                    required property var modelData
+                    anchors.centerIn: parent
+                    width: mascot.size * modelData[0]; height: width
+                    radius: width / 2
+                    color: mascot.bodyColor
+                    opacity: modelData[1]
+                }
+            }
+            SequentialAnimation on scale {
+                running: mascot.alive && aura.lively
+                loops: Animation.Infinite
+                onRunningChanged: if (!running) aura.scale = 1
+                NumberAnimation { to: 1.08; duration: mascot.face === "alert" ? 420 : 900; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 1.0; duration: mascot.face === "alert" ? 420 : 900; easing.type: Easing.InOutSine }
+            }
+        }
+
+        // what is worn behind the body: a mane, ears
+        Outfit {
+            z: -1
+            s: mascot.size
+            name: mascot.outfit
+            back: true
+            visible: name.length > 0
+        }
+
+        // arms: little nubs on both sides (the right one rises to wave)
+        Repeater {
+            model: 2
+            Rectangle {
+                required property int index
+                visible: !(index === 1 && mascot.waving)
+                z: -0.5
+                x: (index === 0 ? 0.0 : 0.86) * mascot.size
+                y: 0.5 * mascot.size
+                width: 0.14 * mascot.size; height: 0.14 * mascot.size
+                radius: width * 0.3
+                color: Qt.darker(mascot.bodyColor, 1.08)
+                antialiasing: true
+            }
+        }
+        // four stubby legs, Clawd-style
+        Repeater {
+            model: [0.2, 0.34, 0.57, 0.71]
+            Rectangle {
+                required property var modelData
+                z: -0.5
+                x: modelData * mascot.size
+                y: 0.8 * mascot.size
+                width: 0.09 * mascot.size; height: 0.17 * mascot.size
+                radius: width * 0.35
+                color: Qt.darker(mascot.bodyColor, 1.18)
+                antialiasing: true
+            }
+        }
+
+        // the waving arm, pivoting at the body's right edge
+        Rectangle {
+            id: waveArm
+            z: 1
+            visible: mascot.waving
+            x: 0.9 * mascot.size
+            y: 0.5 * mascot.size
+            width: 0.28 * mascot.size; height: 0.15 * mascot.size
+            radius: height * 0.42
+            transformOrigin: Item.Left
+            rotation: 0
+            color: Qt.darker(mascot.bodyColor, 1.08)
+            border.width: Math.max(1, mascot.size * 0.015)
+            border.color: Qt.rgba(1, 1, 1, 0.18)
+            antialiasing: true
+        }
+        SequentialAnimation {
+            id: waveAnim
+            PropertyAction { target: mascot; property: "waving"; value: true }
+            NumberAnimation { target: waveArm; property: "rotation"; from: 0; to: -55; duration: 220; easing.type: Easing.OutBack }
+            SequentialAnimation {
+                loops: 3
+                NumberAnimation { target: waveArm; property: "rotation"; to: -100; duration: 170; easing.type: Easing.InOutSine }
+                NumberAnimation { target: waveArm; property: "rotation"; to: -45; duration: 170; easing.type: Easing.InOutSine }
+            }
+            NumberAnimation { target: waveArm; property: "rotation"; to: 0; duration: 220; easing.type: Easing.InQuad }
+            PropertyAction { target: mascot; property: "waving"; value: false }
+        }
+
         Rectangle {
             id: body
-            anchors.fill: parent
-            anchors.margins: mascot.size * 0.04
-            radius: width * 0.38
+            x: mascot.size * 0.06
+            y: mascot.size * 0.04
+            width: mascot.size * 0.88
+            height: mascot.size * 0.82
+            radius: width * 0.26
             antialiasing: true
             gradient: Gradient {
-                GradientStop { position: 0; color: Qt.lighter(mascot.face === "sad" ? Qt.darker(mascot.color, 1.4) : mascot.color, 1.18) }
-                GradientStop { position: 1; color: mascot.face === "sad" ? Qt.darker(mascot.color, 1.5) : mascot.color }
+                GradientStop { position: 0; color: Qt.lighter(mascot.bodyColor, 1.14) }
+                GradientStop { position: 0.55; color: mascot.bodyColor }
+                GradientStop { position: 1; color: Qt.darker(mascot.bodyColor, 1.22) }
             }
-            Behavior on radius { NumberAnimation { duration: 200 } }
+            border.width: Math.max(1, mascot.size * 0.022)
+            border.color: Qt.rgba(1, 1, 1, 0.22)
 
-            // cheeks
+            // gloss
             Rectangle {
-                width: mascot.size * 0.14; height: width * 0.6; radius: height / 2
-                color: "#FF8FA3"; opacity: mascot.face === "happy" ? 0.7 : 0.25
-                x: mascot.size * 0.1; y: mascot.size * 0.58
-                Behavior on opacity { OpacityAnimator { duration: 200 } }
+                x: mascot.size * 0.16; y: mascot.size * 0.05
+                width: mascot.size * 0.28; height: mascot.size * 0.085
+                radius: height / 2
+                rotation: -12
+                color: "white"
+                opacity: 0.32
+                antialiasing: true
             }
+        }
+
+        // ------------------------------------------------------------ face screen
+        Rectangle {
+            id: visor
+            x: mascot.size * 0.15
+            y: mascot.size * 0.26
+            width: mascot.size * 0.70
+            height: mascot.size * 0.42
+            radius: height * 0.46
+            antialiasing: true
+            gradient: Gradient {
+                GradientStop { position: 0; color: mascot.face === "sad" ? "#1A1D2B" : "#1D1D27" }
+                GradientStop { position: 1; color: "#0B0B10" }
+            }
+            border.width: Math.max(1, mascot.size * 0.02)
+            border.color: Qt.rgba(0, 0, 0, 0.35)
+
+            // glass reflection along the top
             Rectangle {
-                width: mascot.size * 0.14; height: width * 0.6; radius: height / 2
-                color: "#FF8FA3"; opacity: mascot.face === "happy" ? 0.7 : 0.25
-                x: body.width - width - mascot.size * 0.1; y: mascot.size * 0.58
-                Behavior on opacity { OpacityAnimator { duration: 200 } }
+                x: parent.width * 0.16; y: parent.height * 0.1
+                width: parent.width * 0.5; height: Math.max(1, parent.height * 0.08)
+                radius: height / 2
+                color: "white"
+                opacity: 0.08
+            }
+
+            // blush, when happy
+            Repeater {
+                model: 2
+                Rectangle {
+                    required property int index
+                    width: mascot.size * 0.085; height: mascot.size * 0.045
+                    radius: height / 2
+                    x: index === 0 ? visor.width * 0.08 : visor.width * 0.92 - width
+                    y: visor.height * 0.66
+                    color: "#FF8FA3"
+                    opacity: mascot.face === "happy" ? 0.6 : 0
+                    Behavior on opacity { OpacityAnimator { duration: 200 } }
+                }
             }
         }
 
         // ------------------------------------------------------------ eyes
         Item {
             id: eyes
-            width: mascot.size * 0.6
-            height: mascot.size * 0.32
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: mascot.size * 0.28
+            anchors.fill: parent
 
-            // Pupil offset in -1..1, from lookAt or the wander timer.
+            // Gaze offset in -1..1, from lookAt or the wander timer.
             property real gx: 0
             property real gy: 0
             Behavior on gx { SmoothedAnimation { velocity: 6 } }
@@ -113,7 +278,7 @@ Item {
             function aim() {
                 if (mascot.face === "working") return
                 if (mascot.lookAt) {
-                    const dx = mascot.lookAt.x - mascot.width / 2, dy = mascot.lookAt.y - mascot.height * 0.42
+                    const dx = mascot.lookAt.x - mascot.width / 2, dy = mascot.lookAt.y - mascot.height * 0.45
                     const d = Math.max(1, Math.sqrt(dx * dx + dy * dy))
                     const k = Math.min(1, d / (mascot.size * 2.5))
                     gx = dx / d * k
@@ -129,8 +294,8 @@ Item {
                 interval: mascot.face === "working" ? 650 : 1800 + Math.random() * 1800
                 onTriggered: {
                     if (mascot.face === "working") {
-                        eyes.gx = eyes.gx > 0 ? -0.7 : 0.7
-                        eyes.gy = 0.45
+                        eyes.gx = eyes.gx > 0 ? -0.8 : 0.8
+                        eyes.gy = 0.3
                     } else if (mascot.face === "waiting" || mascot.face === "alert") {
                         eyes.gx = 0; eyes.gy = 0.15
                     } else {
@@ -145,87 +310,95 @@ Item {
                 Item {
                     id: eye
                     required property int index
-                    width: eyes.width * 0.36
-                    height: eyes.height
-                    x: index === 0 ? 0 : eyes.width - width
+                    readonly property real cx: mascot.size * (index === 0 ? 0.355 : 0.645)
+                    readonly property real cy: mascot.size * 0.455
+                    readonly property real w: mascot.size * 0.115
+                    readonly property real h: mascot.size * 0.19
+                    x: cx - w / 2 + eyes.gx * mascot.size * 0.045
+                    y: cy - h / 2 + eyes.gy * mascot.size * 0.035
+                    width: w
+                    height: h
 
-                    // open eye
+                    // the soft light around the eye
                     Rectangle {
-                        id: white
-                        anchors.fill: parent
+                        anchors.centerIn: parent
+                        width: eye.w * 2.1; height: eye.h * 1.5
                         radius: width / 2
-                        color: "white"
+                        color: mascot.light
+                        opacity: mascot.face === "happy" || mascot.face === "dizzy" ? 0 : 0.16
+                    }
+
+                    // open eye: a capsule of light
+                    Rectangle {
+                        id: lens
+                        anchors.centerIn: parent
+                        visible: mascot.face !== "happy" && mascot.face !== "dizzy"
+                        width: mascot.face === "sad" ? eye.w * 1.3 : eye.w
+                        height: mascot.face === "annoyed" ? eye.h * 0.26
+                              : mascot.face === "sad" ? eye.h * 0.42
+                              : mascot.face === "working" ? eye.h * 0.78
+                              : eye.h
+                        radius: Math.min(width, height) * (mascot.face === "sad" || mascot.face === "annoyed" ? 0.5 : 0.34)
+                        rotation: mascot.face === "sad" ? (eye.index === 0 ? -16 : 16) : 0
+                        scale: mascot.face === "alert" ? 1.18 : 1
+                        color: mascot.light
                         antialiasing: true
-                        visible: mascot.face !== "happy"
-                        transformOrigin: Item.Center
-                        scale: 1
-
-                        Rectangle {
-                            id: pupil
-                            width: parent.width * 0.58
-                            height: width * 1.1
-                            radius: width / 2
-                            color: "#141418"
-                            antialiasing: true
-                            x: (parent.width - width) / 2 + eyes.gx * (parent.width - width) * 0.45
-                            y: (parent.height - height) / 2 + eyes.gy * (parent.height - height) * 0.45
-
-                            Rectangle { // glint
-                                width: parent.width * 0.32; height: width; radius: width / 2
-                                color: "white"; x: parent.width * 0.52; y: parent.height * 0.14
-                            }
-                            RotationAnimator on rotation {
-                                running: mascot.alive && mascot.face === "dizzy"
-                                from: eye.index === 0 ? 0 : 360; to: eye.index === 0 ? 360 : 0
-                                duration: 500; loops: Animation.Infinite
-                            }
-                            transform: Translate {
-                                x: mascot.face === "dizzy" ? (eye.index === 0 ? 1 : -1) * white.width * 0.12 : 0
-                            }
-                        }
-
-                        // eyelid, for blinks and annoyance
-                        Rectangle {
-                            width: parent.width + 2
-                            x: -1
-                            height: mascot.annoyed || mascot.face === "sad" ? parent.height * 0.42 : 0
-                            color: Qt.lighter(mascot.color, 1.12)
-                            Behavior on height { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
-                        }
+                        Behavior on height { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
+                        Behavior on width { NumberAnimation { duration: 140 } }
+                        Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
+                        Behavior on color { ColorAnimation { duration: 200 } }
                     }
 
                     // happy eye: ∩
-                    Item {
-                        anchors.fill: parent
+                    Shape {
+                        anchors.centerIn: parent
+                        width: eye.w * 1.5; height: eye.h * 0.7
                         visible: mascot.face === "happy"
-                        clip: true
-                        Rectangle {
-                            width: parent.width; height: width
-                            y: parent.height * 0.2
-                            radius: width / 2
-                            color: "transparent"
-                            border.color: "#141418"
-                            border.width: Math.max(2, mascot.size * 0.06)
-                            antialiasing: true
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            fillColor: "transparent"
+                            strokeColor: mascot.light
+                            strokeWidth: Math.max(1.4, mascot.size * 0.045)
+                            capStyle: ShapePath.RoundCap
+                            startX: 0; startY: eye.h * 0.62
+                            PathQuad { x: eye.w * 1.5; y: eye.h * 0.62; controlX: eye.w * 0.75; controlY: -eye.h * 0.3 }
                         }
-                        Rectangle { // hide the lower half of the ring
-                            width: parent.width; height: parent.height
-                            y: parent.height * 0.2 + parent.width / 2
-                            color: Qt.lighter(mascot.color, 1.05)
+                    }
+
+                    // dizzy eye: a spinning ×
+                    Item {
+                        anchors.centerIn: parent
+                        width: eye.w * 1.6; height: width
+                        visible: mascot.face === "dizzy"
+                        Repeater {
+                            model: 2
+                            Rectangle {
+                                required property int index
+                                anchors.centerIn: parent
+                                width: parent.width; height: Math.max(1.4, mascot.size * 0.04)
+                                radius: height / 2
+                                rotation: index === 0 ? 45 : -45
+                                color: mascot.light
+                            }
+                        }
+                        RotationAnimator on rotation {
+                            running: mascot.alive && mascot.face === "dizzy"
+                            from: eye.index === 0 ? 0 : 360; to: eye.index === 0 ? 360 : 0
+                            duration: 700; loops: Animation.Infinite
                         }
                     }
                 }
             }
 
-            // blink: squash both eyes vertically, on the render thread
+            // blink: squash the eyes vertically, on the render thread
             transform: Scale {
                 id: blinkScale
-                origin.y: eyes.height / 2
+                origin.y: mascot.size * 0.455
                 yScale: 1
             }
             SequentialAnimation {
                 id: blink
-                NumberAnimation { target: blinkScale; property: "yScale"; to: 0.08; duration: 70 }
+                NumberAnimation { target: blinkScale; property: "yScale"; to: 0.1; duration: 70 }
                 NumberAnimation { target: blinkScale; property: "yScale"; to: 1; duration: 110 }
             }
             Timer {
@@ -236,19 +409,61 @@ Item {
             }
         }
 
-        // mouth
-        Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: mascot.size * 0.66
-            width: mascot.face === "alert" ? mascot.size * 0.14 : mascot.face === "happy" ? mascot.size * 0.22 : mascot.size * 0.12
-            height: mascot.face === "alert" ? width : mascot.face === "happy" ? mascot.size * 0.1 : mascot.size * 0.04
-            radius: mascot.face === "happy" ? height / 2 : width / 2
-            color: "#141418"
-            opacity: 0.85
-            Behavior on width { NumberAnimation { duration: 160 } }
-            Behavior on height { NumberAnimation { duration: 160 } }
+        // ------------------------------------------------------------ mouth
+        Item {
+            id: mouth
+            readonly property real cx: mascot.size * 0.5
+            readonly property real cy: mascot.size * 0.585
+            x: cx - width / 2
+            y: cy - height / 2
+            width: mascot.size * 0.18
+            height: mascot.size * 0.08
+
+            // a short line of light
+            Rectangle {
+                anchors.centerIn: parent
+                visible: mascot.face !== "happy" && mascot.face !== "sad" && mascot.face !== "alert" && mascot.face !== "dizzy"
+                width: mascot.face === "working" ? mascot.size * 0.06 : mascot.size * 0.09
+                height: Math.max(1.2, mascot.size * 0.028)
+                radius: height / 2
+                color: mascot.light
+                opacity: 0.85
+                Behavior on width { NumberAnimation { duration: 160 } }
+            }
+            // surprised / dizzy: a small ring
+            Rectangle {
+                anchors.centerIn: parent
+                visible: mascot.face === "alert" || mascot.face === "dizzy"
+                width: mascot.size * 0.075; height: width
+                radius: width / 2
+                color: "transparent"
+                border.width: Math.max(1.2, mascot.size * 0.024)
+                border.color: mascot.light
+            }
+            // smile or frown
+            Shape {
+                anchors.fill: parent
+                visible: mascot.face === "happy" || mascot.face === "sad"
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: mascot.light
+                    strokeWidth: Math.max(1.3, mascot.size * 0.032)
+                    capStyle: ShapePath.RoundCap
+                    readonly property bool smile: mascot.face === "happy"
+                    startX: mouth.width * (smile ? 0.1 : 0.28)
+                    startY: mouth.height * (smile ? 0.25 : 0.8)
+                    PathQuad {
+                        x: mouth.width * (mascot.face === "happy" ? 0.9 : 0.72)
+                        y: mouth.height * (mascot.face === "happy" ? 0.25 : 0.8)
+                        controlX: mouth.width * 0.5
+                        controlY: mouth.height * (mascot.face === "happy" ? 1.15 : 0.05)
+                    }
+                }
+            }
         }
 
+        // what is worn on top
         Outfit {
             z: 5
             s: mascot.size
@@ -317,7 +532,10 @@ Item {
         radius: width / 2
         x: mascot.width - width * 0.7
         y: -height * 0.25
-        color: "#F5C451"
+        gradient: Gradient {
+            GradientStop { position: 0; color: "#FFD978" }
+            GradientStop { position: 1; color: "#F2A93B" }
+        }
         border.color: "#0A0A0C"
         border.width: 1.5
         scale: mascot.badge ? 1 : 0
