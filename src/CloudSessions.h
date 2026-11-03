@@ -49,6 +49,7 @@ private:
 
     QNetworkAccessManager m_net;
     QTimer m_timer;
+    QTimer m_soon; // the quick look while a session is active; restarted, never stacked
     QDateTime m_quietUntil;
     int m_backoffMs = 0;
     bool m_busy = false;

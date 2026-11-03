@@ -121,6 +121,8 @@ CloudSessions::CloudSessions(QObject *parent) : QObject(parent) {
     m_timer.setInterval(kEveryMs);
     connect(&m_timer, &QTimer::timeout, this, [this] { refresh(); });
     m_timer.start();
+    m_soon.setSingleShot(true);
+    connect(&m_soon, &QTimer::timeout, this, [this] { refresh(); });
     QTimer::singleShot(2000, this, [this] { refresh(); });
 }
 
@@ -199,6 +201,6 @@ void CloudSessions::ask(const QString &token, const QString &org) {
         const bool active = std::any_of(sessions.cbegin(), sessions.cend(), [](const CloudSession &s) {
             return s.status == QLatin1String("running") || s.status == QLatin1String("pending") || s.status == QLatin1String("requires_action");
         });
-        if (active) QTimer::singleShot(kActiveMs, this, [this] { refresh(); });
+        if (active) m_soon.start(kActiveMs);
     });
 }
