@@ -148,6 +148,26 @@ Window {
         HoverHandler { cursorShape: Qt.PointingHandCursor }
     }
 
+    component LumoField: TextField {
+        id: field
+        color: Ui.text
+        placeholderTextColor: Ui.faint
+        font.pixelSize: Ui.body
+        background: Rectangle {
+            implicitHeight: 34
+            radius: 8
+            color: settings.bg
+            border.color: field.activeFocus ? Ui.accent : settings.groupLine
+        }
+    }
+
+    // "org.kde.konsole" → "Konsole"
+    function appName(app) {
+        if (!app || app === "other") return qsTr("Other apps")
+        const last = app.split(".").pop()
+        return last.charAt(0).toUpperCase() + last.slice(1)
+    }
+
     component LumoCombo: ComboBox {
         id: c
         implicitWidth: 240
@@ -832,21 +852,24 @@ Window {
                     }
 
                     Group {
-                        title: qsTr("Your words")
+                        title: qsTr("Statistics")
+                        footer: qsTr("Time saved counts typing at 40 words a minute. Everything is counted on this computer.")
                         Pane {
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 10
+                                spacing: 8
                                 Repeater {
                                     model: [
                                         { v: dictation.wordsToday, l: qsTr("today") },
                                         { v: dictation.totalWords, l: qsTr("in all") },
-                                        { v: dictation.wordsPerMinute, l: qsTr("words / min") }
+                                        { v: dictation.wordsPerMinute, l: qsTr("words / min") },
+                                        { v: dictation.minutesSaved, l: qsTr("min saved") },
+                                        { v: dictation.streak, l: qsTr("days in a row") }
                                     ]
                                     Rectangle {
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        implicitHeight: 74
+                                        implicitHeight: 70
                                         radius: 10
                                         color: settings.bg
                                         border.color: settings.groupLine
@@ -857,12 +880,242 @@ Window {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                                 text: Number(modelData.v).toLocaleString(Qt.locale(), "f", 0)
                                                 color: Ui.text
-                                                font.pixelSize: 24
+                                                font.pixelSize: 22
                                                 font.weight: Font.Bold
                                             }
                                             Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.l; color: Ui.dim; font.pixelSize: Ui.small }
                                         }
                                     }
+                                }
+                            }
+                        }
+                        // the last two weeks, a bar a day
+                        Pane {
+                            Item {
+                                id: chart
+                                property var days: dictation.dailyWords(14)
+                                readonly property int most: Math.max(1, ...days.map(d => d.words))
+                                Connections { target: dictation; function onHistoryChanged() { chart.days = dictation.dailyWords(14) } }
+                                Layout.fillWidth: true
+                                implicitHeight: 112
+                                Text { text: qsTr("Words a day"); color: Ui.dim; font.pixelSize: Ui.small }
+                                Row {
+                                    id: bars
+                                    anchors.bottom: parent.bottom
+                                    width: parent.width
+                                    spacing: 6
+                                    Repeater {
+                                        model: chart.days
+                                        // a fixed-height cell, the bar standing on its bottom
+                                        Item {
+                                        id: cell
+                                        required property var modelData
+                                        required property int index
+                                        width: (bars.width - 13 * bars.spacing) / 14
+                                        height: 92
+                                        Column {
+                                            readonly property var modelData: cell.modelData
+                                            readonly property int index: cell.index
+                                            anchors.bottom: parent.bottom
+                                            width: parent.width
+                                            spacing: 4
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                visible: modelData.words > 0 && modelData.words === chart.most
+                                                text: modelData.words
+                                                color: Ui.dim
+                                                font.pixelSize: 10
+                                            }
+                                            Rectangle {
+                                                width: parent.width
+                                                height: Math.max(3, 56 * modelData.words / chart.most)
+                                                radius: 3
+                                                color: index === 13 ? Ui.accent : Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, modelData.words > 0 ? 0.45 : 0.15)
+                                            }
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: modelData.day
+                                                color: index === 13 ? Ui.text : Ui.faint
+                                                font.pixelSize: 10
+                                            }
+                                        }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // where you dictate
+                        Pane {
+                            visible: dictation.apps.length > 0
+                            Text { text: qsTr("Where you dictate"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Repeater {
+                                model: dictation.apps
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 10
+                                    Text {
+                                        Layout.preferredWidth: 130
+                                        text: settings.appName(modelData.app)
+                                        color: Ui.text
+                                        font.pixelSize: Ui.body
+                                        elide: Text.ElideRight
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 6
+                                        radius: 3
+                                        color: settings.track
+                                        Rectangle {
+                                            width: parent.width * modelData.words / Math.max(1, dictation.apps[0].words)
+                                            height: parent.height; radius: 3
+                                            color: Ui.accent
+                                        }
+                                    }
+                                    Text {
+                                        Layout.preferredWidth: 70
+                                        horizontalAlignment: Text.AlignRight
+                                        text: qsTr("%1 words").arg(Number(modelData.words).toLocaleString(Qt.locale(), "f", 0))
+                                        color: Ui.dim
+                                        font.pixelSize: Ui.small
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Dictionary")
+                        footer: qsTr("Words are always spelled your way, in any case and even when Parakeet hears them a little wrong. A replacement swaps a phrase you say for a text, wherever it comes up.")
+                        Pane {
+                            Text { text: qsTr("Your words"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 6
+                                visible: dictation.vocabulary.words.length > 0
+                                Repeater {
+                                    model: dictation.vocabulary.words
+                                    Rectangle {
+                                        required property string modelData
+                                        width: chipText.implicitWidth + 36; height: 28; radius: 14
+                                        color: settings.bg
+                                        border.color: settings.groupLine
+                                        Text { id: chipText; x: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData; color: Ui.text; font.pixelSize: Ui.body }
+                                        Text {
+                                            anchors.right: parent.right; anchors.rightMargin: 10
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "✕"; color: chipX.hovered ? Ui.text : Ui.faint; font.pixelSize: 10
+                                            HoverHandler { id: chipX; cursorShape: Qt.PointingHandCursor }
+                                            TapHandler { onTapped: dictation.vocabulary.removeWord(modelData) }
+                                        }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                LumoField { id: newWord; Layout.fillWidth: true; placeholderText: qsTr("A name or a word, e.g. Parakeet"); onAccepted: addWordBtn.clicked() }
+                                ActionButton { id: addWordBtn; text: qsTr("Add"); onClicked: { dictation.vocabulary.addWord(newWord.text); newWord.text = "" } }
+                            }
+                        }
+                        Pane {
+                            Text { text: qsTr("Replacements"); color: Ui.dim; font.pixelSize: Ui.small }
+                            Repeater {
+                                model: dictation.vocabulary.replacements
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Text { text: "« " + modelData.spoken + " »"; color: Ui.text; font.pixelSize: Ui.body }
+                                    Text { text: "→"; color: Ui.faint; font.pixelSize: Ui.body }
+                                    Text { Layout.fillWidth: true; text: modelData.text; color: Ui.dim; font.pixelSize: Ui.body; elide: Text.ElideRight }
+                                    ActionButton { implicitHeight: 26; text: qsTr("Remove"); onClicked: dictation.vocabulary.removeReplacement(modelData.spoken) }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                LumoField { id: newSpoken; Layout.fillWidth: true; placeholderText: qsTr("You say, e.g. my email") }
+                                LumoField { id: newWritten; Layout.fillWidth: true; placeholderText: qsTr("Lumo writes, e.g. me@example.com"); onAccepted: addRepBtn.clicked() }
+                                ActionButton {
+                                    id: addRepBtn
+                                    text: qsTr("Add")
+                                    onClicked: { dictation.vocabulary.addReplacement(newSpoken.text, newWritten.text); newSpoken.text = ""; newWritten.text = "" }
+                                }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Snippets")
+                        footer: qsTr("Say only the short phrase, and the whole text is pasted, untouched, line breaks and all.")
+                        Pane {
+                            Repeater {
+                                model: dictation.vocabulary.snippets
+                                RowLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Text { text: "« " + modelData.trigger + " »"; color: Ui.text; font.pixelSize: Ui.body }
+                                    Text { text: "→"; color: Ui.faint; font.pixelSize: Ui.body }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.text.split("\n")[0] + (modelData.text.indexOf("\n") >= 0 ? " …" : "")
+                                        color: Ui.dim; font.pixelSize: Ui.body; elide: Text.ElideRight
+                                    }
+                                    ActionButton { implicitHeight: 26; text: qsTr("Remove"); onClicked: dictation.vocabulary.removeSnippet(modelData.trigger) }
+                                }
+                            }
+                            LumoField { id: newTrigger; Layout.fillWidth: true; placeholderText: qsTr("The phrase you say, e.g. sign off") }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 84
+                                radius: 8
+                                color: settings.bg
+                                border.color: snippetText.activeFocus ? Ui.accent : settings.groupLine
+                                TextArea {
+                                    id: snippetText
+                                    anchors.fill: parent
+                                    placeholderText: qsTr("The text Lumo pastes, on as many lines as you like")
+                                    placeholderTextColor: Ui.faint
+                                    color: Ui.text
+                                    font.pixelSize: Ui.body
+                                    wrapMode: TextEdit.Wrap
+                                    background: null
+                                }
+                            }
+                            ActionButton {
+                                Layout.alignment: Qt.AlignRight
+                                text: qsTr("Add snippet")
+                                onClicked: { dictation.vocabulary.addSnippet(newTrigger.text, snippetText.text); newTrigger.text = ""; snippetText.text = "" }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Styles")
+                        footer: qsTr("Natural and Polished hand your words to Claude through the `claude` CLI on your plan, then paste the result; it takes a few seconds, and if Claude can't, your words are pasted as said. As said keeps everything on this computer.")
+                        SettingRow {
+                            title: qsTr("Clean-up")
+                            description: qsTr("As said pastes your words as Parakeet heard them. Natural removes the ums and repeats. Polished also smooths the sentences.")
+                            LumoCombo {
+                                model: [qsTr("As said"), qsTr("Natural"), qsTr("Polished")]
+                                currentIndex: Math.max(0, ["said", "natural", "polished"].indexOf(dictation.style))
+                                onActivated: (i) => dictation.style = ["said", "natural", "polished"][i]
+                            }
+                        }
+                        Repeater {
+                            model: dictation.apps
+                            SettingRow {
+                                required property var modelData
+                                visible: modelData.app !== "other"
+                                title: settings.appName(modelData.app)
+                                description: qsTr("In this app only")
+                                LumoCombo {
+                                    readonly property var ids: ["", "said", "natural", "polished"]
+                                    model: [qsTr("Default"), qsTr("As said"), qsTr("Natural"), qsTr("Polished")]
+                                    currentIndex: Math.max(0, ids.indexOf(dictation.appStyles[modelData.app] || ""))
+                                    onActivated: (i) => dictation.setAppStyle(modelData.app, ids[i])
                                 }
                             }
                         }

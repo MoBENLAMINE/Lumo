@@ -57,6 +57,9 @@ It's native through and through: C++20 and Qt Quick, no web view. The island ani
   [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), about 0.1 s per second of speech, on your computer.
 - **Thoughtful**: speakers muted while it listens, your clipboard given back, your words always spelled your way,
   spoken shortcuts.
+- **Your words, your way**: a dictionary, snippets (say a short phrase, paste a whole text), an optional clean-up by
+  Claude on your plan (as said, natural or polished, per app), and statistics: words, time saved, days in a row,
+  words a day and where you dictate.
 
 ### Claude, one hover away
 

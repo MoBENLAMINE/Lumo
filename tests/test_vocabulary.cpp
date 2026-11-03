@@ -33,6 +33,24 @@ private slots:
         Vocabulary again;
         QCOMPARE(again.replacements().size(), 2);
     }
+    void snippets() {
+        Vocabulary v;
+        const QString signOff = QStringLiteral("Best regards,\nMohammed");
+        v.addSnippet(QStringLiteral("sign off"), signOff);
+        // Whatever the case and punctuation Parakeet gives the trigger.
+        QCOMPARE(v.snippet(QStringLiteral("Sign off.")), signOff);
+        QCOMPARE(v.snippet(QStringLiteral("  SIGN, OFF! ")), signOff);
+        // Only when the trigger is all that was said.
+        QVERIFY(v.snippet(QStringLiteral("please sign off now")).isEmpty());
+        QVERIFY(v.snippet(QString()).isEmpty());
+        // The same trigger again replaces it; kept across restarts.
+        v.addSnippet(QStringLiteral("Sign off"), QStringLiteral("Cheers"));
+        Vocabulary again;
+        QCOMPARE(again.snippets().size(), 1);
+        QCOMPARE(again.snippet(QStringLiteral("sign off")), QStringLiteral("Cheers"));
+        again.removeSnippet(QStringLiteral("SIGN OFF"));
+        QVERIFY(again.snippets().isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(TestVocabulary)

@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QMediaDevices>
 #include <QProcess>
 #include <QRegularExpression>
@@ -15,7 +16,9 @@
 #include <QStandardPaths>
 
 #include <linux/input-event-codes.h>
+#include <algorithm>
 #include <cmath>
+#include <memory>
 
 #include "ActiveWindow.h"
 #include "EvdevKey.h"
@@ -387,20 +390,87 @@ void Dictation::stopRecording(bool keep) {
 // ---------------------------------------------------------------- result
 
 void Dictation::onTranscribed(quint64 ticket, const QString &heard, const QString &error) {
-    const QString text = m_vocabulary->apply(heard);
     if (ticket != m_ticket) return;
     if (!error.isEmpty()) {
         setState(QStringLiteral("error"), error);
         return;
     }
+    // A snippet's trigger and nothing else: its whole text, untouched.
+    const QString snippet = m_vocabulary->snippet(heard);
+    if (!snippet.isEmpty()) {
+        finish(snippet);
+        return;
+    }
+    const QString text = m_vocabulary->apply(heard);
     if (text.isEmpty()) {
         setState(QStringLiteral("error"), tr("Didn't catch that."));
         return;
     }
+    const QString style = styleFor(m_app);
+    if (style == QLatin1String("natural") || style == QLatin1String("polished")) polish(text, style);
+    else finish(text);
+}
+
+void Dictation::finish(const QString &text) {
     m_lastText = text;
     record(text, 0);
     setState(QStringLiteral("done"));
     paste(text);
+}
+
+void Dictation::polish(const QString &text, const QString &style) {
+    static const QString natural = QStringLiteral(
+        "You clean up dictated text. Remove filler words (um, uh, euh, like), false starts and words said twice; "
+        "fix punctuation and capital letters. Keep the speaker's own words, language, tone and meaning. Never "
+        "translate, never add anything, never answer or comment: reply with the cleaned text only.");
+    static const QString polished = QStringLiteral(
+        "You turn dictated text into well-written text. Remove filler words and false starts, fix grammar, "
+        "punctuation and capital letters, and make the sentences read smoothly. Keep the same language, tone and "
+        "meaning, and keep names, numbers and technical terms exactly. Never translate, never add facts, never "
+        "answer or comment: reply with the text only.");
+    setState(QStringLiteral("transcribing"), tr("Polishing…"));
+    const quint64 ticket = m_ticket;
+    auto *proc = new QProcess(this);
+    // Your Pro/Max plan, never an API key that would be billed instead.
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    for (const char *var : {"ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX"})
+        env.remove(QString::fromLatin1(var));
+    proc->setProcessEnvironment(env);
+    proc->setWorkingDirectory(QDir::homePath());
+    // No tools, no hooks (it would show up as a session), no MCP: just the words.
+    const QStringList args{QStringLiteral("-p"), QStringLiteral("--output-format"), QStringLiteral("text"),
+                           QStringLiteral("--model"), QStringLiteral("haiku"),
+                           QStringLiteral("--system-prompt"), style == QLatin1String("polished") ? polished : natural,
+                           QStringLiteral("--tools"), QString(), QStringLiteral("--disable-slash-commands"),
+                           QStringLiteral("--setting-sources"), QString(), QStringLiteral("--strict-mcp-config")};
+    auto settled = std::make_shared<bool>(false);
+    // Whatever goes wrong, your words still get pasted, as said.
+    auto settle = [this, ticket, text, settled](const QString &polishedText) {
+        if (*settled) return;
+        *settled = true;
+        if (ticket != m_ticket) return; // you have dictated again since
+        finish(polishedText.isEmpty() ? text : polishedText);
+    };
+    connect(proc, &QProcess::finished, this, [proc, settle](int code, QProcess::ExitStatus status) {
+        const QString out = QString::fromUtf8(proc->readAllStandardOutput()).trimmed();
+        proc->deleteLater();
+        if (status != QProcess::NormalExit || code != 0) qInfo("dictation: Claude couldn't polish the words (%d)", code);
+        settle(status == QProcess::NormalExit && code == 0 ? out : QString());
+    });
+    connect(proc, &QProcess::errorOccurred, this, [proc, settle](QProcess::ProcessError e) {
+        if (e != QProcess::FailedToStart) return;
+        qInfo("dictation: `claude` isn't installed; pasting as said");
+        proc->deleteLater();
+        settle(QString());
+    });
+    QTimer::singleShot(25000, proc, [proc, settle] {
+        qInfo("dictation: Claude took too long; pasting as said");
+        settle(QString());
+        proc->kill();
+    });
+    proc->start(QStringLiteral("claude"), args);
+    proc->write(text.toUtf8());
+    proc->closeWriteChannel();
 }
 
 void Dictation::paste(const QString &text) {
@@ -451,6 +521,7 @@ void Dictation::setState(const QString &s, const QString &message) {
 void Dictation::record(const QString &text, double) {
     const int words = countWords(text);
     m_totalWords += words;
+    m_appWords[m_app.isEmpty() ? QStringLiteral("other") : m_app] += words;
     m_history.prepend(QVariantMap{{QStringLiteral("text"), text},
                                   {QStringLiteral("app"), m_app},
                                   {QStringLiteral("words"), words},
@@ -469,6 +540,76 @@ int Dictation::wordsToday() const {
 
 int Dictation::wordsPerMinute() const { return m_totalSeconds > 5 ? int(m_totalWords / (m_totalSeconds / 60)) : 0; }
 
+namespace {
+int dailyCount(const QSettings &s, const QDate &day) {
+    return s.value(QStringLiteral("dictation/daily/") + day.toString(Qt::ISODate), 0).toInt();
+}
+}
+
+int Dictation::streak() const {
+    const QSettings s;
+    QDate day = QDate::currentDate();
+    if (dailyCount(s, day) == 0) day = day.addDays(-1); // today isn't over yet
+    int n = 0;
+    while (n < 3660 && dailyCount(s, day) > 0) {
+        ++n;
+        day = day.addDays(-1);
+    }
+    return n;
+}
+
+int Dictation::minutesSaved() const { return std::max(0, int(m_totalWords / 40.0 - m_totalSeconds / 60.0)); }
+
+QVariantList Dictation::apps() const {
+    QList<QPair<QString, int>> all;
+    for (auto it = m_appWords.cbegin(); it != m_appWords.cend(); ++it) all << qMakePair(it.key(), it.value());
+    std::sort(all.begin(), all.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
+    QVariantList out;
+    for (const auto &[app, words] : all) {
+        if (out.size() == 8) break;
+        out << QVariantMap{{QStringLiteral("app"), app}, {QStringLiteral("words"), words}};
+    }
+    return out;
+}
+
+QVariantList Dictation::dailyWords(int days) const {
+    const QSettings s;
+    QVariantList out;
+    const QDate today = QDate::currentDate();
+    for (int i = days - 1; i >= 0; --i) {
+        const QDate day = today.addDays(-i);
+        out << QVariantMap{{QStringLiteral("date"), day.toString(Qt::ISODate)},
+                           {QStringLiteral("day"), QLocale().dayName(day.dayOfWeek(), QLocale::NarrowFormat)},
+                           {QStringLiteral("words"), dailyCount(s, day)}};
+    }
+    return out;
+}
+
+QString Dictation::style() const { return QSettings().value(QStringLiteral("dictation/style"), QStringLiteral("said")).toString(); }
+
+void Dictation::setStyle(const QString &style) {
+    if (style == this->style()) return;
+    QSettings().setValue(QStringLiteral("dictation/style"), style);
+    emit styleChanged();
+}
+
+QVariantMap Dictation::appStyles() const {
+    return QJsonDocument::fromJson(QSettings().value(QStringLiteral("dictation/appStyles")).toByteArray()).object().toVariantMap();
+}
+
+void Dictation::setAppStyle(const QString &app, const QString &style) {
+    QVariantMap styles = appStyles();
+    if (style.isEmpty()) styles.remove(app);
+    else styles.insert(app, style);
+    QSettings().setValue(QStringLiteral("dictation/appStyles"), QJsonDocument(QJsonObject::fromVariantMap(styles)).toJson(QJsonDocument::Compact));
+    emit styleChanged();
+}
+
+QString Dictation::styleFor(const QString &app) const {
+    const QString own = appStyles().value(app).toString();
+    return own.isEmpty() ? style() : own;
+}
+
 void Dictation::loadHistory() {
     QFile f(historyPath());
     if (!f.open(QIODevice::ReadOnly)) return;
@@ -476,6 +617,8 @@ void Dictation::loadHistory() {
     m_history = o.value(QStringLiteral("history")).toArray().toVariantList();
     m_totalWords = o.value(QStringLiteral("totalWords")).toInt();
     m_totalSeconds = o.value(QStringLiteral("totalSeconds")).toDouble();
+    const QJsonObject apps = o.value(QStringLiteral("apps")).toObject();
+    for (auto it = apps.begin(); it != apps.end(); ++it) m_appWords.insert(it.key(), it.value().toInt());
     if (!m_history.isEmpty()) m_lastText = m_history.first().toMap().value(QStringLiteral("text")).toString();
 }
 
@@ -483,9 +626,12 @@ void Dictation::saveHistory() {
     QDir().mkpath(QFileInfo(historyPath()).absolutePath());
     QSaveFile f(historyPath());
     if (!f.open(QIODevice::WriteOnly)) return;
+    QJsonObject apps;
+    for (auto it = m_appWords.cbegin(); it != m_appWords.cend(); ++it) apps.insert(it.key(), it.value());
     f.write(QJsonDocument(QJsonObject{{QStringLiteral("history"), QJsonArray::fromVariantList(m_history)},
                                       {QStringLiteral("totalWords"), m_totalWords},
-                                      {QStringLiteral("totalSeconds"), m_totalSeconds}})
+                                      {QStringLiteral("totalSeconds"), m_totalSeconds},
+                                      {QStringLiteral("apps"), apps}})
                 .toJson(QJsonDocument::Compact));
     f.commit();
 }

@@ -28,6 +28,12 @@ int distance(const QString &a, const QString &b) {
 // Short words only match exactly (in any case), or "lump" would become "Lumo".
 int tolerance(const QString &word) { return word.size() >= 8 ? 2 : word.size() >= 6 ? 1 : 0; }
 
+// What a trigger is compared as: lower case, no punctuation, single spaces.
+QString key(const QString &s) {
+    static const QRegularExpression punctuation(QStringLiteral("[^\\w\\s]"), QRegularExpression::UseUnicodePropertiesOption);
+    return QString(s).remove(punctuation).simplified().toLower();
+}
+
 QString escapedPhrase(const QString &phrase) {
     // Whole words, any spacing between them.
     QStringList parts;
@@ -44,6 +50,39 @@ Vocabulary::Vocabulary(QObject *parent) : QObject(parent) {
         const QJsonObject o = v.toObject();
         m_replacements << qMakePair(o.value(QStringLiteral("spoken")).toString(), o.value(QStringLiteral("text")).toString());
     }
+    for (const auto &v : QJsonDocument::fromJson(s.value(QStringLiteral("dictation/snippets")).toByteArray()).array()) {
+        const QJsonObject o = v.toObject();
+        m_snippets << qMakePair(o.value(QStringLiteral("trigger")).toString(), o.value(QStringLiteral("text")).toString());
+    }
+}
+
+QVariantList Vocabulary::snippets() const {
+    QVariantList out;
+    for (const auto &[trigger, text] : m_snippets)
+        out << QVariantMap{{QStringLiteral("trigger"), trigger}, {QStringLiteral("text"), text}};
+    return out;
+}
+
+void Vocabulary::addSnippet(const QString &triggerRaw, const QString &text) {
+    const QString trigger = triggerRaw.simplified();
+    if (key(trigger).isEmpty() || text.trimmed().isEmpty()) return;
+    m_snippets.removeIf([&](const auto &sn) { return key(sn.first) == key(trigger); });
+    m_snippets << qMakePair(trigger, text);
+    save();
+}
+
+void Vocabulary::removeSnippet(const QString &trigger) {
+    const auto before = m_snippets.size();
+    m_snippets.removeIf([&](const auto &sn) { return key(sn.first) == key(trigger); });
+    if (m_snippets.size() != before) save();
+}
+
+QString Vocabulary::snippet(const QString &heard) const {
+    const QString said = key(heard);
+    if (said.isEmpty()) return {};
+    for (const auto &[trigger, text] : m_snippets)
+        if (key(trigger) == said) return text;
+    return {};
 }
 
 QVariantList Vocabulary::replacements() const {
@@ -60,6 +99,10 @@ void Vocabulary::save() {
     for (const auto &[spoken, text] : m_replacements)
         list.append(QJsonObject{{QStringLiteral("spoken"), spoken}, {QStringLiteral("text"), text}});
     s.setValue(QStringLiteral("dictation/replacements"), QJsonDocument(list).toJson(QJsonDocument::Compact));
+    QJsonArray snippetList;
+    for (const auto &[trigger, text] : m_snippets)
+        snippetList.append(QJsonObject{{QStringLiteral("trigger"), trigger}, {QStringLiteral("text"), text}});
+    s.setValue(QStringLiteral("dictation/snippets"), QJsonDocument(snippetList).toJson(QJsonDocument::Compact));
     emit changed();
 }
 

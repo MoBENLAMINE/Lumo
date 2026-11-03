@@ -41,6 +41,16 @@ class Dictation : public QObject {
     Q_PROPERTY(int wordsToday READ wordsToday NOTIFY historyChanged)
     Q_PROPERTY(int totalWords READ totalWords NOTIFY historyChanged)
     Q_PROPERTY(int wordsPerMinute READ wordsPerMinute NOTIFY historyChanged)
+    // Days in a row with something dictated, ending today or yesterday.
+    Q_PROPERTY(int streak READ streak NOTIFY historyChanged)
+    // Minutes saved against typing at 40 words a minute.
+    Q_PROPERTY(int minutesSaved READ minutesSaved NOTIFY historyChanged)
+    // Where you dictate: [{ app, words }], most words first.
+    Q_PROPERTY(QVariantList apps READ apps NOTIFY historyChanged)
+    // An optional clean-up by Claude, through the `claude` CLI on your plan:
+    // "said" (as said: off), "natural" or "polished". Per app if you like.
+    Q_PROPERTY(QString style READ style WRITE setStyle NOTIFY styleChanged)
+    Q_PROPERTY(QVariantMap appStyles READ appStyles NOTIFY styleChanged)
     Q_PROPERTY(Speech *speech READ speech CONSTANT)
     Q_PROPERTY(Vocabulary *vocabulary READ vocabulary CONSTANT)
     // Silence the computer's sound while listening, so only your voice is heard.
@@ -66,6 +76,17 @@ public:
     int wordsToday() const;
     int totalWords() const { return m_totalWords; }
     int wordsPerMinute() const;
+    int streak() const;
+    int minutesSaved() const;
+    QVariantList apps() const;
+    // The last `days` days, oldest first: [{ date, day, words }].
+    Q_INVOKABLE QVariantList dailyWords(int days) const;
+    QString style() const;
+    void setStyle(const QString &style);
+    QVariantMap appStyles() const;
+    // "" puts the app back on the default style.
+    Q_INVOKABLE void setAppStyle(const QString &app, const QString &style);
+    Q_INVOKABLE QString styleFor(const QString &app) const;
     Speech *speech() const { return m_speech; }
     Vocabulary *vocabulary() const { return m_vocabulary; }
     bool muteOutput() const { return m_muteOutput; }
@@ -93,6 +114,7 @@ signals:
     void sound(const QString &name);
     void microphoneChanged();
     void muteOutputChanged();
+    void styleChanged();
 
 private:
     void setupKey();
@@ -106,6 +128,10 @@ private:
     void readAudio();
     void onTranscribed(quint64 ticket, const QString &text, const QString &error);
     void paste(const QString &text);
+    // The words are ready: keep them, count them, paste them.
+    void finish(const QString &text);
+    // Asks Claude to clean the words up in `style`, then finishes; as said if it can't.
+    void polish(const QString &text, const QString &style);
     void setState(const QString &s, const QString &message = {});
     void record(const QString &text, double seconds);
     void loadHistory();
@@ -138,6 +164,7 @@ private:
     QString m_app;
 
     QVariantList m_history;
+    QHash<QString, int> m_appWords;
     int m_totalWords = 0;
     double m_totalSeconds = 0;
 };
