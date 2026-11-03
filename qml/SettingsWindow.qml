@@ -489,6 +489,17 @@ Window {
                             Toggle { on: shell.alwaysShow; onToggled: (v) => shell.alwaysShow = v }
                         }
                         SettingRow {
+                            title: qsTr("Screen")
+                            description: qsTr("Where the island sits. If that screen is unplugged, the primary one takes it until it's back.")
+                            LumoCombo {
+                                readonly property var choices: [{ name: "", label: qsTr("Primary screen") }].concat(shell.screens)
+                                model: choices.map(c => c.label)
+                                currentIndex: Math.max(0, choices.findIndex(c => c.name === shell.screen))
+                                onActivated: (i) => shell.screen = choices[i].name
+                                Layout.maximumWidth: 300
+                            }
+                        }
+                        SettingRow {
                             title: qsTr("Show Claude usage")
                             description: qsTr("Your 5-hour and weekly limits, read from your Claude account every 5 minutes.")
                             Toggle { on: shell.showUsage; onToggled: (v) => shell.showUsage = v }

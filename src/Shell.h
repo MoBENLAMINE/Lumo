@@ -3,8 +3,10 @@
 #include <QObject>
 #include <QPointer>
 #include <QRectF>
+#include <QVariantList>
 
 class QQuickWindow;
+class QScreen;
 class QSystemTrayIcon;
 
 // The island's window plumbing: a Wayland layer-shell surface at the top of
@@ -18,6 +20,10 @@ class Shell : public QObject {
     Q_PROPERTY(bool alwaysShow READ alwaysShow WRITE setAlwaysShow NOTIFY alwaysShowChanged)
     // The 5-hour / weekly Claude usage rings in the island.
     Q_PROPERTY(bool showUsage READ showUsage WRITE setShowUsage NOTIFY showUsageChanged)
+    // The screen the island sits on, by name ("DP-1"…); "" is the primary screen.
+    Q_PROPERTY(QString screen READ screenName WRITE setScreenName NOTIFY screenChanged)
+    // The screens to pick from: [{ name, label }], the primary one first.
+    Q_PROPERTY(QVariantList screens READ screens NOTIFY screensChanged)
     // Lumo says hello when it starts: the island opens and Lumo waves.
     Q_PROPERTY(bool greeting READ greeting WRITE setGreeting NOTIFY greetingChanged)
     Q_PROPERTY(bool showMusic READ showMusic WRITE setShowMusic NOTIFY showMusicChanged)
@@ -40,6 +46,9 @@ public:
     bool showUsage() const;
     bool greeting() const;
     void setGreeting(bool on);
+    QString screenName() const;
+    void setScreenName(const QString &name);
+    QVariantList screens() const;
     bool showMusic() const { return flag(QStringLiteral("island/showMusic")); }
     void setShowMusic(bool on) { setFlag(QStringLiteral("island/showMusic"), on, &Shell::showMusicChanged); }
     bool dance() const { return flag(QStringLiteral("island/dance")); }
@@ -69,6 +78,8 @@ signals:
     void alwaysShowChanged();
     void showUsageChanged();
     void greetingChanged();
+    void screenChanged();
+    void screensChanged();
     void showMusicChanged();
     void danceChanged();
     void outfitChanged();
@@ -82,6 +93,11 @@ private:
     // On/off preferences, on by default.
     bool flag(const QString &key) const;
     void setFlag(const QString &key, bool on, void (Shell::*changed)());
+    // The chosen screen if it is plugged in, else the primary one.
+    QScreen *targetScreen() const;
+    // Puts the island on targetScreen(). A layer-shell surface is bound to its
+    // screen when it is mapped, so it is hidden, moved and shown again.
+    void moveToScreen();
 
     QPointer<QQuickWindow> m_island;
     QSystemTrayIcon *m_tray = nullptr;
