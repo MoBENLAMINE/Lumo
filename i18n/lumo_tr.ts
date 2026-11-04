@@ -377,7 +377,7 @@ Sormak için buraya bir dosya bırak.</translation>
     </message>
     <message>
         <source>Lumo needs you</source>
-        <translation>Lumo'nun sana ihtiyacı var</translation>
+        <translation>Lumo seni bekliyor</translation>
     </message>
     <message>
         <source>1 agent working</source>

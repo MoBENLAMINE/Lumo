@@ -612,6 +612,11 @@ Window {
                                 Behavior on color { ColorAnimation { duration: 200 } }
                                 font.pixelSize: Ui.title
                                 font.weight: Font.DemiBold
+                                // A long title (French, German…) shortens instead of
+                                // widening the header, which pushed the whole island
+                                // past its right edge.
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
                             }
                             Text {
                                 text: win.dizzyNotice ? qsTr("Back in three seconds.") : hub.headline || qsTr("Your agents show up here.")

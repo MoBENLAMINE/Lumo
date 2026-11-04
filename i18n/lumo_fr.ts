@@ -377,7 +377,7 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     </message>
     <message>
         <source>Lumo needs you</source>
-        <translation>Lumo a besoin de vous</translation>
+        <translation>Lumo vous attend</translation>
     </message>
     <message>
         <source>1 agent working</source>
