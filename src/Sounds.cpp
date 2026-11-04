@@ -87,6 +87,25 @@ const QHash<QString, std::vector<Note>> &recipes() {
             {3.05, .30, note(22), note(19), .05}, {3.15, .25, note(15), note(15), .06},
             {3.30, .55, note(10), note(-2), .12},
         }},
+        // Lumo says goodbye when you quit it: follows Island.qml's farewellFx. A soft swell
+        // as the island opens; a pop as Lumo appears (0.18 s); the arm rises (0.5 s); a
+        // falling "bye" on each wave (0.85, 1.19, 1.53 s); a wink (2.0 s); the light gathers
+        // back into Lumo as it shrinks away (2.45 s); a last low note as the island closes.
+        {QStringLiteral("bye"), {
+            {0.00, .35, note(-9), note(3), .12}, {0.04, .30, note(-2), note(10), .06},
+            {0.18, .09, note(15), note(22), .22},
+            {0.50, .22, note(3), note(12), .12},
+            {0.85, .14, note(19), note(14), .22}, {0.99, .18, note(31), note(31), .05},
+            {1.19, .14, note(17), note(12), .22}, {1.33, .18, note(29), note(29), .05},
+            {1.53, .20, note(15), note(10), .24}, {1.70, .22, note(27), note(27), .05},
+            // a soft bed under the waves
+            {0.90, .80, note(3), note(3), .04}, {1.70, .80, note(-2), note(-2), .04},
+            {2.00, .06, note(19), note(26), .18}, {2.07, .22, note(31), note(31), .08},
+            {2.45, .14, note(34), note(34), .08}, {2.53, .14, note(31), note(31), .07}, {2.61, .14, note(27), note(27), .07},
+            {2.69, .14, note(22), note(22), .06}, {2.77, .16, note(19), note(19), .06},
+            {2.45, .50, note(10), note(-14), .12},
+            {3.00, .60, note(-2), note(-2), .08}, {3.00, .70, note(-9), note(-9), .05},
+        }},
         {QStringLiteral("attention"), {{0, .22, note(12), note(12), .4}, {.16, .4, note(19), note(19), .4}}},
         {QStringLiteral("done"), {{0, .14, note(3), note(3), .3}, {.07, .14, note(7), note(7), .3}, {.14, .14, note(10), note(10), .3}, {.21, .45, note(15), note(15), .35}}},
         {QStringLiteral("error"), {{0, .22, note(5), note(5), .35}, {.14, .4, note(0), note(-1), .35}}},

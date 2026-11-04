@@ -328,4 +328,14 @@ QString Shell::sendToInstinct(const QString &text) {
     return tr("WhatsApp is open with the text — review it and press Send.");
 }
 
-void Shell::quit() { QCoreApplication::quit(); }
+void Shell::quit() {
+    if (m_leaving) {   // asked twice (Quit clicked again): don't wait
+        quitNow();
+        return;
+    }
+    m_leaving = true;
+    emit farewellRequested();
+    QTimer::singleShot(4500, this, &Shell::quitNow);
+}
+
+void Shell::quitNow() { QCoreApplication::quit(); }

@@ -451,6 +451,10 @@ Drop a file here to ask about it.</source>
         <source>Connect Claude Code…</source>
         <translation>连接 Claude Code…</translation>
     </message>
+    <message>
+        <source>See you soon!</source>
+        <translation>回头见！</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -861,10 +865,6 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Sounds</source>
         <translation>声音</translation>
-    </message>
-    <message>
-        <source>Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
-        <translation>将名为 hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send 或 reply 的 WAV 放入 ~/.config/lumo/sounds/ 即可替换声音。</translation>
     </message>
     <message>
         <source>Play sounds</source>
@@ -1381,6 +1381,10 @@ Drop a file here to ask about it.</source>
     <message>
         <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
         <translation>踩着节拍：Lumo 只在内存中聆听电脑正在播放的声音来找到节拍，不会录制任何内容。</translation>
+    </message>
+    <message>
+        <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
+        <translation>将名为 hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send 或 reply 的 WAV 放入 ~/.config/lumo/sounds/ 即可替换声音。</translation>
     </message>
 </context>
 <context>

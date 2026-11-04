@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Lumo says goodbye when you quit it: the island opens, Lumo waves with "See you soon!", winks, then spins
+  away into the light as the island closes, with its own "bye" sound. A click quits at once.
 - Music from a player that starts after Lumo (a browser tab, Zen, Firefox…) now shows up and makes Lumo
   dance; before, Lumo only saw players that were already there when it started.
 - A new Lumo, a cousin of Claude's Clawd: a blocky body in Claude's terracotta with little arms and four

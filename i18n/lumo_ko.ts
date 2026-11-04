@@ -451,6 +451,10 @@ Drop a file here to ask about it.</source>
         <source>Connect Claude Code…</source>
         <translation>Claude Code 연결…</translation>
     </message>
+    <message>
+        <source>See you soon!</source>
+        <translation>또 만나요!</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -861,10 +865,6 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Sounds</source>
         <translation>소리</translation>
-    </message>
-    <message>
-        <source>Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
-        <translation>hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send 또는 reply라는 이름의 WAV를 ~/.config/lumo/sounds/에 넣으면 소리를 바꿀 수 있어요.</translation>
     </message>
     <message>
         <source>Play sounds</source>
@@ -1381,6 +1381,10 @@ Drop a file here to ask about it.</source>
     <message>
         <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
         <translation>박자에 맞춰: Lumo는 컴퓨터에서 나오는 소리를 메모리에서만 들으며 박자를 찾아요. 아무것도 녹음하지 않아요.</translation>
+    </message>
+    <message>
+        <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
+        <translation>hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send 또는 reply라는 이름의 WAV를 ~/.config/lumo/sounds/에 넣으면 소리를 바꿀 수 있어요.</translation>
     </message>
 </context>
 <context>

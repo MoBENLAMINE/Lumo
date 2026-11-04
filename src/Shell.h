@@ -75,9 +75,13 @@ public:
     Q_INVOKABLE void setInputRect(const QRectF &rect);
     // Lets the island take keyboard focus (for the chat field) or give it back.
     Q_INVOKABLE void setKeyboard(bool on);
+    // Quit Lumo: the island says goodbye first (farewellRequested), then calls
+    // quitNow(). If it doesn't within a few seconds, Lumo quits anyway.
     Q_INVOKABLE void quit();
+    Q_INVOKABLE void quitNow();
 
 signals:
+    void farewellRequested();
     void autostartChanged();
     void alwaysShowChanged();
     void showUsageChanged();
@@ -95,6 +99,7 @@ signals:
     void resurfaced();
 
 private:
+    bool m_leaving = false;
     // On/off preferences, on by default.
     bool flag(const QString &key) const;
     void setFlag(const QString &key, bool on, void (Shell::*changed)());

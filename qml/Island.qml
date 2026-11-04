@@ -42,7 +42,9 @@ Window {
     readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false
     function openWardrobe() { showWardrobe = true; openIsland("agents", true) }
-    readonly property string mode: dictating ? "dictation"
+    readonly property string mode: leaving ? "hidden"
+                                 : farewell ? "greeting"
+                                 : dictating ? "dictation"
                                  : (hoverOpen || pinned || hasRequests) ? "open"
                                  : greeting ? "greeting"
                                  : (activeMood || callingYou || (peek && !resting)) ? "compact"
@@ -148,6 +150,50 @@ Window {
         ScriptAction { script: { helloMascot.mood = "idle"; helloMascot.wave() } }
         PauseAnimation { duration: 1500 }
         ScriptAction { script: win.greeting = false }
+    }
+
+    // ------------------------------------------------------------ farewell
+    // Quitting Lumo for good: the island opens, Lumo waves goodbye, smiles,
+    // then shrinks into the light, the island closes, and Lumo quits.
+    // A click quits at once. The "bye" sound follows it (Sounds.cpp).
+    property bool farewell: false
+    property bool leaving: false
+    property int byeBurst: 0
+    function sayGoodbye() {
+        if (farewell) { shell.quitNow(); return }
+        greetFx.stop(); sounds.stop("greet")
+        settings.close()
+        hoverOpen = false; pinned = false
+        farewellFx.restart()
+    }
+    Connections { target: shell; function onFarewellRequested() { win.sayGoodbye() } }
+    SequentialAnimation {
+        id: farewellFx
+        // The "bye" sound follows these steps: change one here, change Sounds.cpp too.
+        ScriptAction { script: { helloMascot.scale = 0; helloMascot.opacity = 0; helloMascot.mood = "idle"; win.farewell = true; sounds.play("bye") } }
+        PauseAnimation { duration: 180 }
+        ParallelAnimation {
+            NumberAnimation { target: helloMascot; property: "scale"; from: 0.3; to: 1; duration: 320; easing.type: Easing.OutBack }
+            NumberAnimation { target: helloMascot; property: "opacity"; from: 0; to: 1; duration: 140 }
+        }
+        ScriptAction { script: helloMascot.wave() }
+        PauseAnimation { duration: 1500 }
+        ScriptAction { script: helloMascot.express("wink", 600) }
+        PauseAnimation { duration: 450 }
+        // into the light
+        ScriptAction { script: win.byeBurst++ }
+        ParallelAnimation {
+            NumberAnimation { target: helloMascot; property: "scale"; to: 0; duration: 460; easing.type: Easing.InBack; easing.overshoot: 2.2 }
+            NumberAnimation { target: helloMascot; property: "rotation"; from: 0; to: -200; duration: 460; easing.type: Easing.InQuad }
+            SequentialAnimation {
+                PauseAnimation { duration: 300 }
+                NumberAnimation { target: helloMascot; property: "opacity"; to: 0; duration: 160 }
+            }
+        }
+        PauseAnimation { duration: 120 }
+        ScriptAction { script: win.leaving = true }   // the island closes
+        PauseAnimation { duration: 480 }
+        ScriptAction { script: shell.quitNow() }
     }
 
     Timer { id: openTimer; interval: 260; onTriggered: win.hoverOpen = true }
@@ -360,6 +406,21 @@ Window {
                         x: cx; y: cy
                         opacity: 0
                         Connections { target: win; function onGreetBurstChanged() { starFly.restart() } }
+                        // goodbye: the light gathers back into Lumo
+                        Connections { target: win; function onByeBurstChanged() { starFly.stop(); starIn.restart() } }
+                        SequentialAnimation {
+                            id: starIn
+                            PauseAnimation { duration: (star.index % 6) * 25 }
+                            ParallelAnimation {
+                                NumberAnimation { target: star; property: "x"; from: star.cx + Math.cos(star.angle) * star.reach * 1.5; to: star.cx; duration: 520; easing.type: Easing.InCubic }
+                                NumberAnimation { target: star; property: "y"; from: star.cy + Math.sin(star.angle) * star.reach * 0.55; to: star.cy; duration: 520; easing.type: Easing.InCubic }
+                                SequentialAnimation {
+                                    NumberAnimation { target: star; property: "opacity"; from: 0; to: 0.95; duration: 160 }
+                                    PauseAnimation { duration: 260 }
+                                    NumberAnimation { target: star; property: "opacity"; to: 0; duration: 100 }
+                                }
+                            }
+                        }
                         SequentialAnimation {
                             id: starFly
                             PauseAnimation { duration: (star.index % 6) * 40 }
@@ -387,7 +448,18 @@ Window {
                     scale: 0
                     opacity: 0
                 }
-                TapHandler { onTapped: win.endGreeting() }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 9
+                    text: qsTr("See you soon!")
+                    color: Ui.text
+                    font.pixelSize: Ui.body
+                    font.weight: Font.DemiBold
+                    opacity: win.farewell && !win.leaving && helloMascot.scale > 0.6 ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 220 } }
+                }
+                TapHandler { onTapped: win.farewell ? shell.quitNow() : win.endGreeting() }
             }
 
             // ---------------- compact
