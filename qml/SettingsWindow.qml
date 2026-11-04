@@ -735,7 +735,7 @@ Window {
 
                     Group {
                         title: qsTr("Sounds")
-                        footer: qsTr("Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.")
+                        footer: qsTr("Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.")
                         SettingRow {
                             title: qsTr("Play sounds")
                             Toggle { on: !sounds.muted; onToggled: (v) => sounds.muted = !v }

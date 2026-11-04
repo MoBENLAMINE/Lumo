@@ -451,6 +451,10 @@ Drop a file here to ask about it.</source>
         <source>Connect Claude Code…</source>
         <translation>Claude Code जोड़ें…</translation>
     </message>
+    <message>
+        <source>See you soon!</source>
+        <translation>फिर मिलेंगे!</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -861,10 +865,6 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Sounds</source>
         <translation>आवाज़ें</translation>
-    </message>
-    <message>
-        <source>Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
-        <translation>~/.config/lumo/sounds/ में hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send या reply नाम की WAV रखकर कोई आवाज़ बदलें।</translation>
     </message>
     <message>
         <source>Play sounds</source>
@@ -1381,6 +1381,10 @@ Drop a file here to ask about it.</source>
     <message>
         <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
         <translation>ताल पर: ताल ढूँढने के लिए Lumo आपके कंप्यूटर पर बज रही चीज़ को केवल मेमोरी में सुनता है। कुछ भी रिकॉर्ड नहीं होता।</translation>
+    </message>
+    <message>
+        <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
+        <translation>~/.config/lumo/sounds/ में hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send या reply नाम की WAV रखकर कोई आवाज़ बदलें।</translation>
     </message>
 </context>
 <context>

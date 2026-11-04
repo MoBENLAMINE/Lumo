@@ -451,6 +451,10 @@ Zieh eine Datei hierher, um danach zu fragen.</translation>
         <source>Connect Claude Code…</source>
         <translation>Claude Code verbinden…</translation>
     </message>
+    <message>
+        <source>See you soon!</source>
+        <translation>Bis bald!</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -861,10 +865,6 @@ Zieh eine Datei hierher, um danach zu fragen.</translation>
     <message>
         <source>Sounds</source>
         <translation>Töne</translation>
-    </message>
-    <message>
-        <source>Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
-        <translation>Ersetze einen Ton, indem du eine WAV namens hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send oder reply in ~/.config/lumo/sounds/ ablegst.</translation>
     </message>
     <message>
         <source>Play sounds</source>
@@ -1381,6 +1381,10 @@ Zieh eine Datei hierher, um danach zu fragen.</translation>
     <message>
         <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
         <translation>Im Takt: Lumo hört, was dein Computer abspielt, um ihn zu finden – nur im Speicher. Nichts wird aufgenommen.</translation>
+    </message>
+    <message>
+        <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
+        <translation>Ersetze einen Ton, indem du eine WAV namens hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send oder reply in ~/.config/lumo/sounds/ ablegst.</translation>
     </message>
 </context>
 <context>

@@ -451,6 +451,10 @@ Drop a file here to ask about it.</source>
         <source>Connect Claude Code…</source>
         <translation>Claude Code を接続…</translation>
     </message>
+    <message>
+        <source>See you soon!</source>
+        <translation>またね！</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -861,10 +865,6 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Sounds</source>
         <translation>サウンド</translation>
-    </message>
-    <message>
-        <source>Replace a sound by dropping a WAV named hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
-        <translation>hello, greet, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send または reply という名前の WAV を ~/.config/lumo/sounds/ に置くと、そのサウンドを置き換えられます。</translation>
     </message>
     <message>
         <source>Play sounds</source>
@@ -1381,6 +1381,10 @@ Drop a file here to ask about it.</source>
     <message>
         <source>On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.</source>
         <translation>ビートに合わせて：Lumo はコンピューターで流れている音をメモリ上だけで聞いてビートを見つけます。何も録音しません。</translation>
+    </message>
+    <message>
+        <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
+        <translation>hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send または reply という名前の WAV を ~/.config/lumo/sounds/ に置くと、そのサウンドを置き換えられます。</translation>
     </message>
 </context>
 <context>
