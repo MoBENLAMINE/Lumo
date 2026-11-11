@@ -837,11 +837,60 @@ Window {
                         title: qsTr("Resting pill")
                         footer: qsTr("CPU, memory and network are read every 5 seconds only while the pill shows them.")
                         SettingRow {
+                            title: qsTr("Long pill")
+                            description: qsTr("A wider resting pill with the items you pick, in your order.")
+                            Toggle { on: prefs.longPill; onToggled: (v) => prefs.longPill = v }
+                        }
+                        // the long pill's items: reorder, take off, add
+                        Repeater {
+                            model: prefs.longPill ? prefs.longPillItems : []
+                            SettingRow {
+                                id: itemRow
+                                required property int index
+                                required property string modelData
+                                title: (settings.pillChoices.find(c => c.id === modelData) || { label: modelData }).label
+                                IconButton {
+                                    size: 26; iconSize: 13; icon: Ui.icons.chevronUp; tip: qsTr("Move up")
+                                    visible: itemRow.index > 0
+                                    onClicked: {
+                                        const l = prefs.longPillItems.slice()
+                                        l.splice(itemRow.index - 1, 0, l.splice(itemRow.index, 1)[0])
+                                        prefs.longPillItems = l
+                                    }
+                                }
+                                IconButton {
+                                    size: 26; iconSize: 13; icon: Ui.icons.chevronDown; tip: qsTr("Move down")
+                                    visible: itemRow.index < prefs.longPillItems.length - 1
+                                    onClicked: {
+                                        const l = prefs.longPillItems.slice()
+                                        l.splice(itemRow.index + 1, 0, l.splice(itemRow.index, 1)[0])
+                                        prefs.longPillItems = l
+                                    }
+                                }
+                                IconButton {
+                                    size: 26; iconSize: 12; icon: Ui.icons.close; tip: qsTr("Take off")
+                                    onClicked: prefs.longPillItems = prefs.longPillItems.filter((x, i) => i !== itemRow.index)
+                                }
+                            }
+                        }
+                        SettingRow {
+                            visible: prefs.longPill
+                            title: qsTr("Add an item")
+                            LumoCombo {
+                                readonly property var remaining: settings.pillChoices.filter(c => c.id && prefs.longPillItems.indexOf(c.id) < 0)
+                                model: [qsTr("Choose…")].concat(remaining.map(c => c.label))
+                                currentIndex: 0
+                                onActivated: (i) => { if (i > 0) prefs.longPillItems = prefs.longPillItems.concat([remaining[i - 1].id]); currentIndex = 0 }
+                                Layout.maximumWidth: 200
+                            }
+                        }
+                        SettingRow {
+                            visible: !prefs.longPill
                             title: qsTr("Clock")
                             Toggle { on: prefs.pillClock; onToggled: (v) => prefs.pillClock = v }
                         }
                         Repeater {
-                            model: 2
+                            model: prefs.longPill ? 0 : 2
                             SettingRow {
                                 required property int index
                                 title: index === 0 ? qsTr("First item") : qsTr("Second item")
