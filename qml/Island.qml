@@ -61,7 +61,7 @@ Window {
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
     // Listen to the music only while Lumo dances to it or the visualizer shows.
-    readonly property bool visualizing: prefs.visualizer && music.playing && ((win.mode === "open" && win.tab === "media") || fullscreenPlayer.visible)
+    readonly property bool visualizing: prefs.visualizer && music.playing && ((win.mode === "open" && win.tab === "media") || fullscreenPlayer.visible || (dashboard.visible && prefs.dashboardTiles.indexOf("media") >= 0))
     Binding { target: beat; property: "active"; value: (win.dancing || win.visualizing) && win.visible }
     // Lumo's accent: Claude's, KDE's, the wallpaper's, yours, or the album's
     // while music plays.
@@ -1286,6 +1286,12 @@ Window {
     }
 
     FullscreenPlayer { id: fullscreenPlayer }
+    Dashboard {
+        id: dashboard
+        timers: win.timerObject
+        onFullscreenRequested: { dashboard.close(); fullscreenPlayer.open() }
+    }
+    Connections { target: shell; function onDashboardRequested() { win.closeIsland(); dashboard.open() } }
 
     SettingsWindow {
         id: settings

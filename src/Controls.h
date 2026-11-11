@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QVariantList>
 
+#include <algorithm>
 #include <functional>
 
 class QProcess;
@@ -92,6 +93,8 @@ public:
     Q_INVOKABLE void disconnectWifi();
     Q_INVOKABLE void forgetNetwork(const QString &ssid);
 
+    // as SystemStats::hold: live while any view holds it
+    Q_INVOKABLE void hold(bool on) { m_holders = std::max(0, m_holders + (on ? 1 : -1)); setLive(m_holders > 0); }
     Q_INVOKABLE void setVolume(int percent);
     Q_INVOKABLE void toggleMute();
     Q_INVOKABLE void setMicVolume(int percent);
@@ -127,6 +130,7 @@ private:
     void stopSubscribe();
 
     bool m_live = false;
+    int m_holders = 0;
     QProcess *m_subscribe = nullptr;
     QTimer m_soon;   // gathers a burst of pactl events into one read
     int m_reading = 0;

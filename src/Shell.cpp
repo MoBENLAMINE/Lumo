@@ -164,6 +164,7 @@ void Shell::setupTray() {
     connect(always, &QAction::toggled, this, &Shell::setAlwaysShow);
     connect(this, &Shell::alwaysShowChanged, always, [this, always] { always->setChecked(alwaysShow()); });
     QAction *chat = menu->addAction(QString(), this, &Shell::chatRequested);
+    QAction *dashboard = menu->addAction(QString(), this, &Shell::dashboardRequested);
     QAction *prefs = menu->addAction(QString(), this, &Shell::settingsRequested);
     menu->addSeparator();
     QAction *quit = menu->addAction(QString(), this, &Shell::quit);
@@ -171,6 +172,7 @@ void Shell::setupTray() {
         open->setText(tr("Open island"));
         always->setText(tr("Always show island"));
         chat->setText(tr("Chat"));
+        dashboard->setText(tr("Dashboard"));
         prefs->setText(tr("Settings…"));
         quit->setText(tr("Quit Lumo"));
     };

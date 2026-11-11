@@ -974,6 +974,64 @@ Window {
                     }
 
                     Group {
+                        title: qsTr("Dashboard")
+                        footer: qsTr("Also in Lumo's menu in the system tray. Esc closes it; nothing in it runs once it's closed.")
+                        SettingRow {
+                            title: qsTr("A whole screen of tiles")
+                            description: qsTr("The clock, Today, Music, System, Controls and Tools side by side.")
+                            ActionButton { text: qsTr("Open"); onClicked: shell.dashboardRequested() }
+                        }
+                        SettingRow {
+                            title: qsTr("Screen")
+                            LumoCombo {
+                                readonly property var choices: [{ name: "", label: qsTr("The screen in front") }].concat(shell.screens)
+                                model: choices.map(c => c.label)
+                                currentIndex: Math.max(0, choices.findIndex(c => c.name === prefs.dashboardScreen))
+                                onActivated: (i) => prefs.dashboardScreen = choices[i].name
+                                Layout.maximumWidth: 260
+                            }
+                        }
+                        Repeater {
+                            model: prefs.dashboardTiles
+                            SettingRow {
+                                id: tileRow
+                                required property int index
+                                required property string modelData
+                                title: ({ clock: qsTr("Clock"), today: qsTr("Today"), media: qsTr("Music"), system: qsTr("System"),
+                                          controls: qsTr("Controls"), tools: qsTr("Tools") })[modelData] || modelData
+                                IconButton {
+                                    size: 26; iconSize: 13; icon: Ui.icons.chevronUp; tip: qsTr("Move up")
+                                    visible: tileRow.index > 0
+                                    onClicked: { const l = prefs.dashboardTiles.slice(); l.splice(tileRow.index - 1, 0, l.splice(tileRow.index, 1)[0]); prefs.dashboardTiles = l }
+                                }
+                                IconButton {
+                                    size: 26; iconSize: 13; icon: Ui.icons.chevronDown; tip: qsTr("Move down")
+                                    visible: tileRow.index < prefs.dashboardTiles.length - 1
+                                    onClicked: { const l = prefs.dashboardTiles.slice(); l.splice(tileRow.index + 1, 0, l.splice(tileRow.index, 1)[0]); prefs.dashboardTiles = l }
+                                }
+                                IconButton {
+                                    size: 26; iconSize: 12; icon: Ui.icons.close; tip: qsTr("Take off")
+                                    onClicked: prefs.dashboardTiles = prefs.dashboardTiles.filter((x, i) => i !== tileRow.index)
+                                }
+                            }
+                        }
+                        SettingRow {
+                            id: addTile
+                            readonly property var remaining: ["clock", "today", "media", "system", "controls", "tools"].filter(t => prefs.dashboardTiles.indexOf(t) < 0)
+                            visible: remaining.length > 0
+                            title: qsTr("Add a tile")
+                            LumoCombo {
+                                readonly property var names: ({ clock: qsTr("Clock"), today: qsTr("Today"), media: qsTr("Music"), system: qsTr("System"),
+                                                                controls: qsTr("Controls"), tools: qsTr("Tools") })
+                                model: [qsTr("Choose…")].concat(addTile.remaining.map(t => names[t]))
+                                currentIndex: 0
+                                onActivated: (i) => { if (i > 0) prefs.dashboardTiles = prefs.dashboardTiles.concat([addTile.remaining[i - 1]]); currentIndex = 0 }
+                                Layout.maximumWidth: 200
+                            }
+                        }
+                    }
+
+                    Group {
                         title: qsTr("Calendar")
                         footer: qsTr("Your events from the private iCal links of your calendars (Google Calendar: Settings → your calendar → Secret address in iCal format; Outlook and iCloud have one too). They stay on this computer; holidays come from Nager.Date.")
                         SettingRow {

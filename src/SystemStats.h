@@ -6,6 +6,8 @@
 #include <QTimer>
 #include <QVariantList>
 
+#include <algorithm>
+
 class QNetworkAccessManager;
 
 // CPU, GPU, memory, the busiest processes and network use, read from /proc and
@@ -61,6 +63,9 @@ public:
     QString uptime() const;
 
     // "1.2 MB/s", "340 KB/s"
+    // Each view showing the stats holds them while it shows: they run while
+    // anything holds them (the island's page and the dashboard at once).
+    Q_INVOKABLE void hold(bool on) { m_holders = std::max(0, m_holders + (on ? 1 : -1)); setLive(m_holders > 0); }
     Q_INVOKABLE QString rate(double bytesPerSecond) const;
     Q_INVOKABLE QString size(double bytes) const;
 
@@ -80,6 +85,7 @@ private:
     void refreshAddresses();
 
     bool m_live = false, m_light = false;
+    int m_holders = 0;
     QTimer m_timer;
     QElapsedTimer m_since;
     // cpu

@@ -9,6 +9,7 @@ ColumnLayout {
     spacing: 10
 
     onLiveChanged: if (live) { weather.want(); calendar.want() }
+    Component.onCompleted: if (live) { weather.want(); calendar.want() }
     property date picked: new Date()
 
     property date now: new Date()

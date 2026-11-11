@@ -18,8 +18,9 @@ ColumnLayout {
         if (sheet === "wifi") controls.scanNetworks()
     }
 
-    onLiveChanged: controls.live = live
-    Component.onDestruction: { controls.setScanning(false); controls.live = false }
+    onLiveChanged: controls.hold(live)
+    Component.onCompleted: if (live) controls.hold(true)
+    Component.onDestruction: { controls.setScanning(false); if (live) controls.hold(false) }
 
     function profileLabel(p) {
         return p === "power-saver" ? qsTr("Power saver") : p === "performance" ? qsTr("Performance") : qsTr("Balanced")

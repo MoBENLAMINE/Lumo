@@ -35,6 +35,9 @@ class Prefs : public QObject {
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY changed)
     Q_PROPERTY(QColor customBackground READ customBackground WRITE setCustomBackground NOTIFY changed)
     Q_PROPERTY(double opacity READ opacity WRITE setOpacity NOTIFY changed)
+    // The dashboard: a whole screen of tiles, in your order, on the screen you pick
+    Q_PROPERTY(QStringList dashboardTiles READ dashboardTiles WRITE setDashboardTiles NOTIFY changed)
+    Q_PROPERTY(QString dashboardScreen READ dashboardScreen WRITE setDashboardScreen NOTIFY changed)
 public:
     explicit Prefs(QObject *parent = nullptr);
 
@@ -64,6 +67,10 @@ public:
     QColor customBackground() const;
     void setCustomBackground(const QColor &color);
     double opacity() const;
+    QStringList dashboardTiles() const;
+    void setDashboardTiles(const QStringList &tiles);
+    QString dashboardScreen() const;
+    void setDashboardScreen(const QString &name);
     void setOpacity(double value);
 
     // Every setting, into one .ini file (Settings → General → Backup).

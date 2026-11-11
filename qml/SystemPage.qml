@@ -8,8 +8,9 @@ ColumnLayout {
     property bool live: false
     spacing: 10
 
-    onLiveChanged: systemStats.live = live
-    Component.onDestruction: systemStats.live = false
+    onLiveChanged: systemStats.hold(live)
+    Component.onCompleted: if (live) systemStats.hold(true)
+    Component.onDestruction: if (live) systemStats.hold(false)
 
     component Gauge: Rectangle {
         id: g
@@ -46,7 +47,7 @@ ColumnLayout {
             font.weight: Font.DemiBold
         }
         Text {
-            anchors.right: parent.right; anchors.rightMargin: 12; y: 12
+            anchors.right: parent.right; anchors.rightMargin: 12; y: 36
             text: g.detail
             color: Ui.faint
             font.pixelSize: Ui.small

@@ -84,7 +84,7 @@ elseif(LUMO_TS)
     message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
 endif()
 set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap
-    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage FullscreenPlayer)
+    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage FullscreenPlayer Dashboard)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).

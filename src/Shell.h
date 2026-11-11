@@ -101,6 +101,7 @@ signals:
     void toggleRequested();
     void chatRequested();
     void settingsRequested();
+    void dashboardRequested();
     void resurfaced();
 
 private:

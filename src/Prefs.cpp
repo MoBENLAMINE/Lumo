@@ -69,6 +69,14 @@ void Prefs::setCustomBackground(const QColor &color) { QSettings().setValue(QStr
 double Prefs::opacity() const { return std::clamp(QSettings().value(QStringLiteral("look/opacity"), 1.0).toDouble(), 0.5, 1.0); }
 void Prefs::setOpacity(double value) { QSettings().setValue(QStringLiteral("look/opacity"), std::clamp(value, 0.5, 1.0)); emit changed(); }
 
+QStringList Prefs::dashboardTiles() const {
+    return QSettings().value(QStringLiteral("dashboard/tiles"), QStringList{QStringLiteral("clock"), QStringLiteral("today"),
+        QStringLiteral("media"), QStringLiteral("system"), QStringLiteral("controls"), QStringLiteral("tools")}).toStringList();
+}
+void Prefs::setDashboardTiles(const QStringList &tiles) { QSettings().setValue(QStringLiteral("dashboard/tiles"), tiles); emit changed(); }
+QString Prefs::dashboardScreen() const { return QSettings().value(QStringLiteral("dashboard/screen")).toString(); }
+void Prefs::setDashboardScreen(const QString &name) { QSettings().setValue(QStringLiteral("dashboard/screen"), name); emit changed(); }
+
 // ------------------------------------------------------------ accent
 
 void Prefs::updateAccent() {
