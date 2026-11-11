@@ -1,6 +1,8 @@
 #pragma once
 
+#include <QColor>
 #include <QObject>
+#include <QTimer>
 #include <QPointer>
 #include <QRectF>
 #include <QVariantList>
@@ -36,6 +38,8 @@ class Shell : public QObject {
     Q_PROPERTY(QString instinctNumber READ instinctNumber WRITE setInstinctNumber NOTIFY instinctNumberChanged)
     // KWin blurs what's behind the island (the glass theme), where it can.
     Q_PROPERTY(bool blur READ blur WRITE setBlur NOTIFY blurChanged)
+    // Lumo's accent: its icon takes it, in the tray, the windows and the launcher.
+    Q_PROPERTY(QColor accent READ accent WRITE setAccent NOTIFY accentChanged)
 public:
     explicit Shell(QObject *parent = nullptr);
 
@@ -63,6 +67,8 @@ public:
     void setOutfit(const QString &outfit);
     QString instinctNumber() const;
     bool blur() const { return m_blur; }
+    QColor accent() const { return m_accent; }
+    void setAccent(const QColor &color);
     void setBlur(bool on);
     void setInstinctNumber(const QString &number);
 
@@ -87,6 +93,7 @@ public:
 signals:
     void farewellRequested();
     void blurChanged();
+    void accentChanged();
     void autostartChanged();
     void alwaysShowChanged();
     void showUsageChanged();
@@ -107,6 +114,9 @@ signals:
 private:
     bool m_leaving = false;
     bool m_blur = false;
+    QColor m_accent = QColor(0xD9, 0x77, 0x57);
+    QTimer m_iconSoon;
+    void writeLauncherIcon();
     void applyBlur();
     // On/off preferences, on by default.
     bool flag(const QString &key) const;

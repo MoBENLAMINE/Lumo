@@ -140,14 +140,14 @@ Window {
                 Text {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: music.title
+                    text: lyrics.title || music.title
                     color: "white"; font.pixelSize: Math.max(22, fs.height * 0.034); font.weight: Font.Bold
                     elide: Text.ElideRight
                 }
                 Text {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: music.artist
+                    text: lyrics.artist || music.artist
                     color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: Math.max(15, fs.height * 0.02)
                     elide: Text.ElideRight
                 }
@@ -256,6 +256,12 @@ Window {
             spacing: 10
             opacity: fs.idle ? 0 : 1
             Behavior on opacity { NumberAnimation { duration: 400 } }
+            Text {
+                visible: lyrics.enabled && lyrics.state === "none" && music.title.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("No lyrics found for this song")
+                color: Qt.rgba(1, 1, 1, 0.6); font.pixelSize: 13
+            }
             Text {
                 visible: lyrics.offset !== 0
                 anchors.verticalCenter: parent.verticalCenter

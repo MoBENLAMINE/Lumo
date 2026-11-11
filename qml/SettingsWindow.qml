@@ -1686,7 +1686,7 @@ Window {
                                 Mascot {
                                     anchors.centerIn: parent
                                     size: 88
-                                    alive: settings.visible && settings.page === 4
+                                    alive: settings.visible && settings.page === 5
                                     mood: hub.mood
                                     outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
                                 }

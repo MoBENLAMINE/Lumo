@@ -70,6 +70,8 @@ Window {
         value: prefs.accentSource === "album" && music.playing && music.hasColor ? music.color : prefs.accent
     }
     Binding { target: Ui; property: "reduceMotion"; value: prefs.reduceMotion }
+    // Lumo's icon takes the accent too (but not each album's: that would redraw it every song)
+    Binding { target: shell; property: "accent"; value: prefs.accent }
     Binding { target: Ui; property: "theme"; value: prefs.theme }
     Binding { target: Ui; property: "customBackground"; value: prefs.customBackground }
     Binding { target: Ui; property: "surfaceOpacity"; value: prefs.opacity }
@@ -651,7 +653,7 @@ Window {
                         id: miniMascot
                         size: 24
                         anchors.verticalCenter: parent.verticalCenter
-                        color: hub.headlineColor
+                        color: Ui.lumoColor(hub.headlineColor)
                         mood: win.mood === "idle" ? (win.callingYou ? "waiting" : "idle") : win.mood
                         badge: win.mood === "alert" || win.callingYou
                         outfit: win.outfit
@@ -699,7 +701,7 @@ Window {
                             model: 3
                             Rectangle {
                                 required property int index
-                                width: 4; height: 4; radius: 2; color: hub.headlineColor
+                                width: 4; height: 4; radius: 2; color: Ui.lumoColor(hub.headlineColor)
                                 SequentialAnimation on opacity {
                                     running: win.mode === "compact" && win.mood === "working"
                                     loops: Animation.Infinite
@@ -896,7 +898,7 @@ Window {
                         Mascot {
                             id: mascot
                             size: 40
-                            color: hub.headlineColor
+                            color: Ui.lumoColor(hub.headlineColor)
                             mood: win.mood === "idle" && win.tab === "chat" && chat.busy ? "thinking" : win.mood
                             badge: hub.requests.count > 0
                             outfit: wardrobePanel.trying !== "" && win.showWardrobe
@@ -975,6 +977,7 @@ Window {
                     // ---- the pages: icons, and the name of the one you're on
                     Rectangle {
                         id: rail
+                        z: 6   // its names show above it, over the header
                         Layout.fillWidth: true
                         implicitHeight: 34
                         radius: 17
@@ -1033,7 +1036,7 @@ Window {
                                     Rectangle {
                                         visible: railHover.hovered && !railItem.current
                                         z: 10
-                                        anchors.top: parent.bottom; anchors.topMargin: 6
+                                        anchors.bottom: parent.top; anchors.bottomMargin: 6
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: railTip.implicitWidth + 14; height: railTip.implicitHeight + 8
                                         radius: 6
@@ -1265,7 +1268,7 @@ Window {
                     width: index % 3 === 0 ? 6.5 : 4.5
                     height: width
                     radius: width / 2
-                    color: ["#3DD68C", "#FFD866", "#D97757", "#8FE3FF"][index % 4]
+                    color: ["#3DD68C", "#FFD866", Ui.accent, "#8FE3FF"][index % 4]
                     opacity: 0
                     Connections { target: win; function onBurstChanged() { if (!Ui.reduceMotion) fly.restart() } }
                     ParallelAnimation {

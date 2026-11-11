@@ -29,7 +29,7 @@ void Lyrics::setEnabled(bool on) {
     QSettings().setValue(QStringLiteral("music/lyrics"), on);
     emit settingsChanged();
     if (on && m_active) lookUp();
-    if (!on) { m_lines.clear(); m_plain.clear(); m_state = QStringLiteral("off"); emit linesChanged(); }
+    if (!on) { m_lines.clear(); m_plain.clear(); m_lookedUp.clear(); m_state = QStringLiteral("off"); emit linesChanged(); }
 }
 
 void Lyrics::setActive(bool on) {

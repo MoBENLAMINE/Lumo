@@ -32,6 +32,9 @@ private slots:
         c = Lyrics::cleanSong(QStringLiteral("Life Is Good (feat. Drake)"), QStringLiteral("Future, Drake"));
         QCOMPARE(c.first, QStringLiteral("Future"));
         QCOMPARE(c.second, QStringLiteral("Life Is Good"));
+        c = Lyrics::cleanSong(QStringLiteral("SHAW - CARAPACE (CLIP OFFICIEL)"), QStringLiteral("SHAW"));
+        QCOMPARE(c.first, QStringLiteral("SHAW"));
+        QCOMPARE(c.second, QStringLiteral("CARAPACE"));
         c = Lyrics::cleanSong(QStringLiteral("Bohemian Rhapsody (Remastered 2011)"), QStringLiteral("Queen - Topic"));
         QCOMPARE(c.first, QStringLiteral("Queen"));
         QCOMPARE(c.second, QStringLiteral("Bohemian Rhapsody"));

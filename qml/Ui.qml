@@ -185,6 +185,12 @@ QtObject {
     }
 
     // The locale's short time, never with seconds ("14:05", "2:05 PM").
+    // Lumo's color for an agent's: Claude's own terracotta becomes your accent,
+    // the other agents keep theirs.
+    function lumoColor(agentColor) {
+        return Qt.colorEqual(agentColor, "#D97757") ? accent : agentColor
+    }
+
     function timeFormat() {
         return Qt.locale().timeFormat(Locale.ShortFormat).replace(/[:.]ss/, "").replace(/ t$/, "").trim()
     }

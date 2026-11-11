@@ -535,6 +535,10 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Leave (Esc)</source>
         <translation>Quitter (Échap)</translation>
     </message>
+    <message>
+        <source>No lyrics found for this song</source>
+        <translation>Aucune parole trouvée pour cette chanson</translation>
+    </message>
 </context>
 <context>
     <name>HoldShortcut</name>

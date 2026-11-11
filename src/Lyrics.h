@@ -18,6 +18,9 @@ class Lyrics : public QObject {
     // looking | synced | plain | none | off
     Q_PROPERTY(QString state READ state NOTIFY linesChanged)
     Q_PROPERTY(QString plain READ plain NOTIFY linesChanged)
+    // the song's name without what video sites add ("(Official Video)"…)
+    Q_PROPERTY(QString title READ title NOTIFY linesChanged)
+    Q_PROPERTY(QString artist READ artist NOTIFY linesChanged)
     // a nudge for lyrics that run early or late, in ms ([ and ] in the player)
     Q_PROPERTY(int offset READ offset WRITE setOffset NOTIFY offsetChanged)
 public:
@@ -30,6 +33,8 @@ public:
     QVariantList lines() const { return m_lines; }
     QString state() const { return m_state; }
     QString plain() const { return m_plain; }
+    QString title() const { return m_title; }
+    QString artist() const { return m_artist; }
     int offset() const { return m_offset; }
     void setOffset(int ms) { if (ms == m_offset) return; m_offset = ms; emit offsetChanged(); }
 
