@@ -13,6 +13,7 @@
 #include <QProcess>
 
 #include <algorithm>
+#include <QDBusConnection>
 #include <cmath>
 #include <functional>
 #include <memory>
@@ -65,6 +66,7 @@ Controls::Controls(QObject *parent) : QObject(parent) {
     connect(&m_soon, &QTimer::timeout, this, &Controls::readAudio);
     qDBusRegisterMetaType<ManagedObjects>();
     qDBusRegisterMetaType<QMap<QString, QVariantMap>>();
+    qDBusRegisterMetaType<QList<QDBusObjectPath>>();
 }
 
 Controls::~Controls() { stopSubscribe(); }
@@ -344,8 +346,9 @@ void Controls::readRadios() {
 
 void Controls::onRadioChanged(const QDBusMessage &message) {
     if (message.arguments().size() < 2) return;
-    const QString iface = message.arguments().at(0).toString();
-    const QVariantMap changed = qdbus_cast<QVariantMap>(message.arguments().at(1));
+    // InterfacesAdded(o path, a{sa{sv}}): its first argument is a path, not an interface
+    const QString iface = message.member() == QLatin1String("InterfacesAdded") ? QString() : message.arguments().at(0).toString();
+    const QVariantMap changed = iface.isEmpty() ? QVariantMap() : qdbus_cast<QVariantMap>(message.arguments().at(1));
     if (iface == kNM) {
         if (changed.contains(QStringLiteral("WirelessEnabled"))) m_wifi = changed.value(QStringLiteral("WirelessEnabled")).toBool();
         if (changed.contains(QStringLiteral("WirelessHardwareEnabled")))
@@ -354,6 +357,14 @@ void Controls::onRadioChanged(const QDBusMessage &message) {
     } else if (iface == QLatin1String("org.bluez.Adapter1") && changed.contains(QStringLiteral("Powered"))) {
         m_bluetooth = changed.value(QStringLiteral("Powered")).toBool();
         emit radiosChanged();
+    } else if (m_live && (iface == QLatin1String("org.bluez.Device1") || iface == QLatin1String("org.bluez.Battery1")
+                          || message.member() == QLatin1String("InterfacesAdded"))) {
+        // a device connected, its battery moved, or a new one was found: read
+        // them again, once for a burst of changes
+        m_devicesSoon.setSingleShot(true);
+        m_devicesSoon.setInterval(300);
+        connect(&m_devicesSoon, &QTimer::timeout, this, &Controls::readDevices, Qt::UniqueConnection);
+        m_devicesSoon.start();
     }
 }
 
@@ -375,4 +386,232 @@ void Controls::setPowerProfile(const QString &profile) {
     m_profile = profile;
     setDBusProperty(true, m_profilesService, m_profilesPath, m_profilesService, QStringLiteral("ActiveProfile"), profile, this);
     emit radiosChanged();
+}
+
+// ------------------------------------------------------------ Bluetooth devices
+
+void Controls::readDevices() {
+    call(true, kBluez, QStringLiteral("/"), QStringLiteral("org.freedesktop.DBus.ObjectManager"), QStringLiteral("GetManagedObjects"), {},
+         this, [this](const QDBusMessage &r) {
+             if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
+             const ManagedObjects objects = qdbus_cast<ManagedObjects>(r.arguments().first());
+             QVariantList list;
+             for (auto it = objects.begin(); it != objects.end(); ++it) {
+                 const auto dev = it.value().find(QStringLiteral("org.bluez.Device1"));
+                 if (dev == it.value().end()) continue;
+                 const QVariantMap &d = *dev;
+                 // unnamed strangers nearby aren't worth a line
+                 const QString name = d.value(QStringLiteral("Alias"), d.value(QStringLiteral("Name"))).toString();
+                 const bool paired = d.value(QStringLiteral("Paired")).toBool();
+                 if (!paired && !d.contains(QStringLiteral("Name"))) continue;
+                 const auto battery = it.value().find(QStringLiteral("org.bluez.Battery1"));
+                 list.append(QVariantMap{{QStringLiteral("path"), it.key().path()},
+                                         {QStringLiteral("name"), name},
+                                         {QStringLiteral("icon"), d.value(QStringLiteral("Icon")).toString()},
+                                         {QStringLiteral("paired"), paired},
+                                         {QStringLiteral("connected"), d.value(QStringLiteral("Connected")).toBool()},
+                                         {QStringLiteral("battery"), battery != it.value().end()
+                                              ? int(battery->value(QStringLiteral("Percentage")).toUInt()) : -1}});
+             }
+             // connected first, then paired, then the new ones
+             std::stable_sort(list.begin(), list.end(), [](const QVariant &a, const QVariant &b) {
+                 const auto rank = [](const QVariantMap &m) {
+                     return m.value(QStringLiteral("connected")).toBool() ? 0 : m.value(QStringLiteral("paired")).toBool() ? 1 : 2;
+                 };
+                 return rank(a.toMap()) < rank(b.toMap());
+             });
+             m_devices = list;
+             emit devicesChanged();
+         });
+}
+
+void Controls::setScanning(bool on) {
+    if (m_adapter.isEmpty() || on == m_scanning) return;
+    m_scanning = on;
+    call(true, kBluez, m_adapter, QStringLiteral("org.bluez.Adapter1"), on ? QStringLiteral("StartDiscovery") : QStringLiteral("StopDiscovery"),
+         {}, this);
+    if (on) {
+        // a scan costs radio time and battery: half a minute is plenty
+        m_scanStop.setSingleShot(true);
+        m_scanStop.setInterval(30000);
+        connect(&m_scanStop, &QTimer::timeout, this, [this] { setScanning(false); }, Qt::UniqueConnection);
+        m_scanStop.start();
+        // new finds show up as they come
+        QDBusConnection::systemBus().connect(kBluez, QStringLiteral("/"), QStringLiteral("org.freedesktop.DBus.ObjectManager"),
+                                             QStringLiteral("InterfacesAdded"), this, SLOT(onRadioChanged(QDBusMessage)));
+    } else {
+        m_scanStop.stop();
+    }
+    emit devicesChanged();
+}
+
+void Controls::connectDevice(const QString &path) {
+    // a device not paired yet is paired first, and trusted so it comes back by itself
+    bool paired = false;
+    for (const QVariant &v : std::as_const(m_devices))
+        if (v.toMap().value(QStringLiteral("path")) == path) paired = v.toMap().value(QStringLiteral("paired")).toBool();
+    const QString dev = QStringLiteral("org.bluez.Device1");
+    auto connectIt = [this, path, dev] {
+        call(true, kBluez, path, dev, QStringLiteral("Connect"), {}, this, [this](const QDBusMessage &) { readDevices(); });
+    };
+    if (paired) { connectIt(); return; }
+    call(true, kBluez, path, dev, QStringLiteral("Pair"), {}, this, [this, path, dev, connectIt](const QDBusMessage &r) {
+        if (r.type() != QDBusMessage::ReplyMessage) { readDevices(); return; }
+        setDBusProperty(true, kBluez, path, dev, QStringLiteral("Trusted"), true, this);
+        connectIt();
+    });
+}
+
+void Controls::disconnectDevice(const QString &path) {
+    call(true, kBluez, path, QStringLiteral("org.bluez.Device1"), QStringLiteral("Disconnect"), {}, this,
+         [this](const QDBusMessage &) { readDevices(); });
+}
+
+void Controls::forgetDevice(const QString &path) {
+    if (m_adapter.isEmpty()) return;
+    call(true, kBluez, m_adapter, QStringLiteral("org.bluez.Adapter1"), QStringLiteral("RemoveDevice"),
+         {QVariant::fromValue(QDBusObjectPath(path))}, this, [this](const QDBusMessage &) { readDevices(); });
+}
+
+// ------------------------------------------------------------ Wi-Fi networks
+
+void Controls::withWifiDevice(std::function<void()> then) {
+    if (!m_wifiDevice.isEmpty()) { then(); return; }
+    call(true, kNM, kNMPath, kNM, QStringLiteral("GetDevices"), {}, this, [this, then](const QDBusMessage &r) {
+        if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
+        const auto devices = qdbus_cast<QList<QDBusObjectPath>>(r.arguments().first());
+        auto left = std::make_shared<int>(devices.size());
+        for (const QDBusObjectPath &d : devices) {
+            call(true, kNM, d.path(), kProps, QStringLiteral("Get"), {QStringLiteral("org.freedesktop.NetworkManager.Device"), QStringLiteral("DeviceType")},
+                 this, [this, d, then, left](const QDBusMessage &r) {
+                     --*left;
+                     if (m_wifiDevice.isEmpty() && r.type() == QDBusMessage::ReplyMessage && !r.arguments().isEmpty()
+                         && unwrap(r.arguments().first()).toUInt() == 2) {   // NM_DEVICE_TYPE_WIFI
+                         m_wifiDevice = d.path();
+                         then();
+                     }
+                 });
+        }
+    });
+}
+
+void Controls::scanNetworks() {
+    withWifiDevice([this] {
+        call(true, kNM, m_wifiDevice, QStringLiteral("org.freedesktop.NetworkManager.Device.Wireless"), QStringLiteral("RequestScan"),
+             {QVariantMap()}, this);
+        readNetworks();
+        // the scan takes a few seconds: read again once it has had time
+        QTimer::singleShot(4000, this, &Controls::readNetworks);
+    });
+    // which networks are saved (to join them without a password, or forget them)
+    call(true, kNM, QStringLiteral("/org/freedesktop/NetworkManager/Settings"), QStringLiteral("org.freedesktop.NetworkManager.Settings"),
+         QStringLiteral("ListConnections"), {}, this, [this](const QDBusMessage &r) {
+             if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
+             m_saved.clear();
+             for (const QDBusObjectPath &c : qdbus_cast<QList<QDBusObjectPath>>(r.arguments().first())) {
+                 call(true, kNM, c.path(), QStringLiteral("org.freedesktop.NetworkManager.Settings.Connection"), QStringLiteral("GetSettings"), {},
+                      this, [this, c](const QDBusMessage &r) {
+                          if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
+                          const auto settings = qdbus_cast<QMap<QString, QVariantMap>>(r.arguments().first());
+                          const QByteArray ssid = settings.value(QStringLiteral("802-11-wireless")).value(QStringLiteral("ssid")).toByteArray();
+                          if (ssid.isEmpty()) return;
+                          m_saved.insert(QString::fromUtf8(ssid), c.path());
+                          for (QVariant &v : m_networks) {
+                              QVariantMap m = v.toMap();
+                              if (m.value(QStringLiteral("ssid")) == QString::fromUtf8(ssid)) { m[QStringLiteral("saved")] = true; v = m; }
+                          }
+                          emit networksChanged();
+                      });
+             }
+         });
+}
+
+void Controls::readNetworks() {
+    if (m_wifiDevice.isEmpty()) return;
+    const QString wireless = QStringLiteral("org.freedesktop.NetworkManager.Device.Wireless");
+    call(true, kNM, m_wifiDevice, kProps, QStringLiteral("Get"), {wireless, QStringLiteral("ActiveAccessPoint")}, this,
+         [this, wireless](const QDBusMessage &r) {
+             const QString active = r.type() == QDBusMessage::ReplyMessage && !r.arguments().isEmpty()
+                                        ? unwrap(r.arguments().first()).value<QDBusObjectPath>().path() : QString();
+             call(true, kNM, m_wifiDevice, wireless, QStringLiteral("GetAllAccessPoints"), {}, this, [this, active](const QDBusMessage &r) {
+                 if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
+                 const auto aps = qdbus_cast<QList<QDBusObjectPath>>(r.arguments().first());
+                 auto found = std::make_shared<QHash<QString, QVariantMap>>();
+                 auto left = std::make_shared<int>(aps.size());
+                 if (aps.isEmpty()) { m_networks.clear(); emit networksChanged(); return; }
+                 for (const QDBusObjectPath &ap : aps) {
+                     call(true, kNM, ap.path(), kProps, QStringLiteral("GetAll"), {QStringLiteral("org.freedesktop.NetworkManager.AccessPoint")}, this,
+                          [this, ap, active, found, left](const QDBusMessage &r) {
+                              if (r.type() == QDBusMessage::ReplyMessage && !r.arguments().isEmpty()) {
+                                  const QVariantMap p = qdbus_cast<QVariantMap>(r.arguments().first());
+                                  const QString ssid = QString::fromUtf8(p.value(QStringLiteral("Ssid")).toByteArray());
+                                  const int strength = p.value(QStringLiteral("Strength")).toInt();
+                                  const bool secured = p.value(QStringLiteral("WpaFlags")).toUInt() || p.value(QStringLiteral("RsnFlags")).toUInt()
+                                                       || (p.value(QStringLiteral("Flags")).toUInt() & 1);
+                                  // one line per network: its strongest access point
+                                  if (!ssid.isEmpty() && (!found->contains(ssid) || found->value(ssid).value(QStringLiteral("strength")).toInt() < strength))
+                                      found->insert(ssid, {{QStringLiteral("ssid"), ssid}, {QStringLiteral("strength"), strength},
+                                                           {QStringLiteral("secured"), secured},
+                                                           {QStringLiteral("active"), ap.path() == active || found->value(ssid).value(QStringLiteral("active")).toBool()},
+                                                           {QStringLiteral("saved"), m_saved.contains(ssid)}});
+                              }
+                              if (--*left) return;
+                              QVariantList list;
+                              for (const QVariantMap &m : found->values()) list.append(m);
+                              std::sort(list.begin(), list.end(), [](const QVariant &a, const QVariant &b) {
+                                  const QVariantMap x = a.toMap(), y = b.toMap();
+                                  if (x.value(QStringLiteral("active")) != y.value(QStringLiteral("active"))) return x.value(QStringLiteral("active")).toBool();
+                                  return x.value(QStringLiteral("strength")).toInt() > y.value(QStringLiteral("strength")).toInt();
+                              });
+                              m_networks = list;
+                              emit networksChanged();
+                          });
+                 }
+             });
+         });
+}
+
+void Controls::joinNetwork(const QString &ssid, const QString &password) {
+    m_joining = ssid;
+    m_wifiError.clear();
+    emit networksChanged();
+    withWifiDevice([this, ssid, password] {
+        auto done = [this](const QDBusMessage &r) {
+            if (r.type() != QDBusMessage::ReplyMessage) m_wifiError = r.errorMessage();
+            m_joining.clear();
+            emit networksChanged();
+            QTimer::singleShot(2500, this, &Controls::readNetworks);
+        };
+        if (m_saved.contains(ssid) && password.isEmpty()) {
+            call(true, kNM, kNMPath, kNM, QStringLiteral("ActivateConnection"),
+                 {QVariant::fromValue(QDBusObjectPath(m_saved.value(ssid))), QVariant::fromValue(QDBusObjectPath(m_wifiDevice)),
+                  QVariant::fromValue(QDBusObjectPath(QStringLiteral("/")))}, this, done);
+            return;
+        }
+        QMap<QString, QVariantMap> settings;
+        settings[QStringLiteral("802-11-wireless")] = {{QStringLiteral("ssid"), ssid.toUtf8()}};
+        if (!password.isEmpty())
+            settings[QStringLiteral("802-11-wireless-security")] = {{QStringLiteral("key-mgmt"), QStringLiteral("wpa-psk")},
+                                                                    {QStringLiteral("psk"), password}};
+        call(true, kNM, kNMPath, kNM, QStringLiteral("AddAndActivateConnection"),
+             {QVariant::fromValue(settings), QVariant::fromValue(QDBusObjectPath(m_wifiDevice)),
+              QVariant::fromValue(QDBusObjectPath(QStringLiteral("/")))}, this, done);
+    });
+}
+
+void Controls::disconnectWifi() {
+    withWifiDevice([this] {
+        call(true, kNM, m_wifiDevice, QStringLiteral("org.freedesktop.NetworkManager.Device"), QStringLiteral("Disconnect"), {}, this,
+             [this](const QDBusMessage &) { QTimer::singleShot(1000, this, &Controls::readNetworks); });
+    });
+}
+
+void Controls::forgetNetwork(const QString &ssid) {
+    const QString path = m_saved.value(ssid);
+    if (path.isEmpty()) return;
+    call(true, kNM, path, QStringLiteral("org.freedesktop.NetworkManager.Settings.Connection"), QStringLiteral("Delete"), {}, this,
+         [this, ssid](const QDBusMessage &) {
+             m_saved.remove(ssid);
+             QTimer::singleShot(800, this, &Controls::readNetworks);
+         });
 }

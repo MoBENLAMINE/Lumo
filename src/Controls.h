@@ -2,7 +2,10 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QHash>
 #include <QVariantList>
+
+#include <functional>
 
 class QProcess;
 class QDBusMessage;
@@ -37,6 +40,13 @@ class Controls : public QObject {
     Q_PROPERTY(bool hasPowerProfiles READ hasPowerProfiles NOTIFY radiosChanged)
     Q_PROPERTY(QString powerProfile READ powerProfile NOTIFY radiosChanged) // power-saver | balanced | performance
     Q_PROPERTY(QStringList powerProfiles READ powerProfiles NOTIFY radiosChanged)
+    // Bluetooth devices: [{ path, name, icon, paired, connected, battery }] (battery -1 unknown)
+    Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
+    Q_PROPERTY(bool scanning READ scanning NOTIFY devicesChanged)
+    // Wi-Fi networks: [{ ssid, strength, secured, active, saved }], strongest first
+    Q_PROPERTY(QVariantList networks READ networks NOTIFY networksChanged)
+    Q_PROPERTY(QString wifiBusy READ wifiBusy NOTIFY networksChanged)   // the SSID being joined
+    Q_PROPERTY(QString wifiError READ wifiError NOTIFY networksChanged)
 public:
     explicit Controls(QObject *parent = nullptr);
     ~Controls() override;
@@ -63,6 +73,24 @@ public:
     bool hasPowerProfiles() const { return !m_profiles.isEmpty(); }
     QString powerProfile() const { return m_profile; }
     QStringList powerProfiles() const { return m_profiles; }
+    QVariantList devices() const { return m_devices; }
+    bool scanning() const { return m_scanning; }
+    QVariantList networks() const { return m_networks; }
+    QString wifiBusy() const { return m_joining; }
+    QString wifiError() const { return m_wifiError; }
+
+    // Bluetooth: read only while the Bluetooth sheet shows; scanning stops by itself.
+    Q_INVOKABLE void readDevices();
+    Q_INVOKABLE void setScanning(bool on);
+    Q_INVOKABLE void connectDevice(const QString &path);
+    Q_INVOKABLE void disconnectDevice(const QString &path);
+    Q_INVOKABLE void forgetDevice(const QString &path);
+    // Wi-Fi: a scan, then the networks; join (with a password for a new
+    // secured one), disconnect, forget.
+    Q_INVOKABLE void scanNetworks();
+    Q_INVOKABLE void joinNetwork(const QString &ssid, const QString &password);
+    Q_INVOKABLE void disconnectWifi();
+    Q_INVOKABLE void forgetNetwork(const QString &ssid);
 
     Q_INVOKABLE void setVolume(int percent);
     Q_INVOKABLE void toggleMute();
@@ -84,6 +112,8 @@ signals:
     void audioChanged();
     void brightnessChanged();
     void radiosChanged();
+    void devicesChanged();
+    void networksChanged();
 
 private slots:
     void onRadioChanged(const QDBusMessage &message);
@@ -114,4 +144,14 @@ private:
     QString m_adapter;   // BlueZ adapter object path
     QString m_profilesService, m_profilesPath, m_profile;
     QStringList m_profiles;
+
+    QVariantList m_devices;
+    bool m_scanning = false;
+    QTimer m_scanStop, m_devicesSoon;
+    QString m_wifiDevice;                 // NetworkManager's wireless device
+    QVariantList m_networks;
+    QHash<QString, QString> m_saved;      // SSID → saved connection path
+    QString m_joining, m_wifiError;
+    void readNetworks();
+    void withWifiDevice(std::function<void()> then);
 };
