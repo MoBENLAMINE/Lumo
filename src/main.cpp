@@ -19,6 +19,15 @@
 #include "HookServer.h"
 #include "Music.h"
 #include "Beat.h"
+#include "Calendar.h"
+#include "Controls.h"
+#include "Lyrics.h"
+#include "Notifications.h"
+#include "Power.h"
+#include "Prefs.h"
+#include "SystemStats.h"
+#include "Tools.h"
+#include "Weather.h"
 #include "PlanUsage.h"
 #include "Shell.h"
 #include "Sounds.h"
@@ -90,6 +99,15 @@ int main(int argc, char *argv[]) {
     CloudSessions cloud;
     Music music;
     Beat beat;
+    SystemStats systemStats;
+    Controls controls;
+    Power power;
+    Tools tools;
+    Weather weather;
+    Notifications notifications;
+    Prefs prefs;
+    Lyrics lyrics;
+    Calendar calendar;
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/Dictation"), &dictation, QDBusConnection::ExportScriptableSlots);
 
     QObject::connect(&server, &HookServer::hookEvent, &hub, &AgentHub::onHookEvent);
@@ -120,6 +138,15 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty(QStringLiteral("planUsage"), &planUsage);
     engine.rootContext()->setContextProperty(QStringLiteral("music"), &music);
     engine.rootContext()->setContextProperty(QStringLiteral("beat"), &beat);
+    engine.rootContext()->setContextProperty(QStringLiteral("systemStats"), &systemStats);
+    engine.rootContext()->setContextProperty(QStringLiteral("controls"), &controls);
+    engine.rootContext()->setContextProperty(QStringLiteral("power"), &power);
+    engine.rootContext()->setContextProperty(QStringLiteral("tools"), &tools);
+    engine.rootContext()->setContextProperty(QStringLiteral("weather"), &weather);
+    engine.rootContext()->setContextProperty(QStringLiteral("notifications"), &notifications);
+    engine.rootContext()->setContextProperty(QStringLiteral("prefs"), &prefs);
+    engine.rootContext()->setContextProperty(QStringLiteral("lyrics"), &lyrics);
+    engine.rootContext()->setContextProperty(QStringLiteral("calendar"), &calendar);
     engine.rootContext()->setContextProperty(QStringLiteral("cloud"), &cloud);
     engine.loadFromModule("Lumo", "Island");
     if (engine.rootObjects().isEmpty()) return 1;

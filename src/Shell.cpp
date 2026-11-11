@@ -20,6 +20,9 @@
 #include <QTimer>
 
 #include <KGlobalAccel>
+#ifdef LUMO_HAVE_KWINDOWSYSTEM
+#include <KWindowEffects>
+#endif
 #include <LayerShellQt/Window>
 
 namespace {
@@ -123,6 +126,22 @@ void Shell::setInputRect(const QRectF &rect) {
     if (r == m_lastMask) return;
     m_lastMask = r;
     m_island->setMask(QRegion(r));
+    if (m_blur) applyBlur();
+}
+
+void Shell::setBlur(bool on) {
+    if (on == m_blur) return;
+    m_blur = on;
+    applyBlur();
+    emit blurChanged();
+}
+
+// Only the island's own shape is blurred, not the window around it.
+void Shell::applyBlur() {
+#ifdef LUMO_HAVE_KWINDOWSYSTEM
+    if (!m_island) return;
+    KWindowEffects::enableBlurBehind(m_island, m_blur, QRegion(m_lastMask, QRegion::Rectangle));
+#endif
 }
 
 void Shell::setKeyboard(bool on) {
@@ -145,6 +164,7 @@ void Shell::setupTray() {
     connect(always, &QAction::toggled, this, &Shell::setAlwaysShow);
     connect(this, &Shell::alwaysShowChanged, always, [this, always] { always->setChecked(alwaysShow()); });
     QAction *chat = menu->addAction(QString(), this, &Shell::chatRequested);
+    QAction *dashboard = menu->addAction(QString(), this, &Shell::dashboardRequested);
     QAction *prefs = menu->addAction(QString(), this, &Shell::settingsRequested);
     menu->addSeparator();
     QAction *quit = menu->addAction(QString(), this, &Shell::quit);
@@ -152,6 +172,7 @@ void Shell::setupTray() {
         open->setText(tr("Open island"));
         always->setText(tr("Always show island"));
         chat->setText(tr("Chat"));
+        dashboard->setText(tr("Dashboard"));
         prefs->setText(tr("Settings…"));
         quit->setText(tr("Quit Lumo"));
     };

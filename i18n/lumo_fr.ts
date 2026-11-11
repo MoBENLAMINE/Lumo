@@ -153,6 +153,13 @@
     </message>
 </context>
 <context>
+    <name>Calendar</name>
+    <message>
+        <source>A calendar link couldn't be read.</source>
+        <translation>Un lien de calendrier n'a pas pu être lu.</translation>
+    </message>
+</context>
+<context>
     <name>ChatBackend</name>
     <message>
         <source>Claude Code stopped (exit %1).</source>
@@ -243,6 +250,216 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     </message>
 </context>
 <context>
+    <name>ControlsPage</name>
+    <message>
+        <source>Power saver</source>
+        <translation>Économie d'énergie</translation>
+    </message>
+    <message>
+        <source>Performance</source>
+        <translation>Performances</translation>
+    </message>
+    <message>
+        <source>Balanced</source>
+        <translation>Équilibré</translation>
+    </message>
+    <message>
+        <source>Wi-Fi</source>
+        <translation>Wi-Fi</translation>
+    </message>
+    <message>
+        <source>No Wi-Fi</source>
+        <translation>Pas de Wi-Fi</translation>
+    </message>
+    <message>
+        <source>On</source>
+        <translation>Activé</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Désactivé</translation>
+    </message>
+    <message>
+        <source>Bluetooth</source>
+        <translation>Bluetooth</translation>
+    </message>
+    <message>
+        <source>No adapter</source>
+        <translation>Pas d'adaptateur</translation>
+    </message>
+    <message>
+        <source>Microphone</source>
+        <translation>Micro</translation>
+    </message>
+    <message>
+        <source>Muted</source>
+        <translation>Coupé</translation>
+    </message>
+    <message>
+        <source>Keep awake</source>
+        <translation>Garder éveillé</translation>
+    </message>
+    <message>
+        <source>Screen stays on</source>
+        <translation>L'écran reste allumé</translation>
+    </message>
+    <message>
+        <source>Do Not Disturb</source>
+        <translation>Ne pas déranger</translation>
+    </message>
+    <message>
+        <source>Pills are quiet</source>
+        <translation>Les pilules se taisent</translation>
+    </message>
+    <message>
+        <source>Power mode</source>
+        <translation>Mode d'énergie</translation>
+    </message>
+    <message>
+        <source>Not available</source>
+        <translation>Indisponible</translation>
+    </message>
+    <message>
+        <source>No sound server or screen brightness here.</source>
+        <translation>Pas de serveur de son ni de luminosité d'écran ici.</translation>
+    </message>
+    <message>
+        <source>1 app playing sound</source>
+        <translation>1 app joue du son</translation>
+    </message>
+    <message>
+        <source>%1 apps playing sound</source>
+        <translation>%1 apps jouent du son</translation>
+    </message>
+    <message>
+        <source>Mixer</source>
+        <translation>Mélangeur</translation>
+    </message>
+    <message>
+        <source>Charging</source>
+        <translation>En charge</translation>
+    </message>
+    <message>
+        <source>Plugged in</source>
+        <translation>Branché</translation>
+    </message>
+    <message>
+        <source>Full in %1</source>
+        <translation>Pleine dans %1</translation>
+    </message>
+    <message>
+        <source>%1 left</source>
+        <translation>%1 restantes</translation>
+    </message>
+    <message>
+        <source>Health %1%</source>
+        <translation>Santé %1%</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation>Retour</translation>
+    </message>
+    <message>
+        <source>Wi-Fi networks</source>
+        <translation>Réseaux Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Bluetooth devices</source>
+        <translation>Appareils Bluetooth</translation>
+    </message>
+    <message>
+        <source>Searching…</source>
+        <translation>Recherche…</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Recherche</translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation>Actualiser</translation>
+    </message>
+    <message>
+        <source>Joining…</source>
+        <translation>Connexion…</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <translation>Connecté</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>Oublier</translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation>Mot de passe</translation>
+    </message>
+    <message>
+        <source>Join</source>
+        <translation>Rejoindre</translation>
+    </message>
+    <message>
+        <source>Looking for networks…</source>
+        <translation>Recherche de réseaux…</translation>
+    </message>
+    <message>
+        <source>Wi-Fi is off.</source>
+        <translation>Le Wi-Fi est désactivé.</translation>
+    </message>
+    <message>
+        <source>Paired</source>
+        <translation>Appairé</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>Nouveau</translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation>Déconnecter</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Connecter</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Appairer</translation>
+    </message>
+    <message>
+        <source>No devices yet. Search to find new ones nearby.</source>
+        <translation>Aucun appareil pour l'instant. Lancez une recherche pour en trouver à proximité.</translation>
+    </message>
+    <message>
+        <source>Bluetooth is off.</source>
+        <translation>Le Bluetooth est désactivé.</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tout</translation>
+    </message>
+    <message>
+        <source>Unknown app</source>
+        <translation>App inconnue</translation>
+    </message>
+    <message>
+        <source>No app is making sound right now.</source>
+        <translation>Aucune app ne joue de son pour le moment.</translation>
+    </message>
+</context>
+<context>
+    <name>Dashboard</name>
+    <message>
+        <source>Lumo — Dashboard</source>
+        <translation>Lumo — Tableau de bord</translation>
+    </message>
+    <message>
+        <source>Close (Esc)</source>
+        <translation>Fermer (Échap)</translation>
+    </message>
+</context>
+<context>
     <name>Dictation</name>
     <message>
         <source>Copied — press Ctrl+V (%1)</source>
@@ -290,6 +507,33 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Writing it down…</source>
         <translation>Je note…</translation>
+    </message>
+</context>
+<context>
+    <name>FullscreenPlayer</name>
+    <message>
+        <source>Lumo — Now playing</source>
+        <translation>Lumo — En lecture</translation>
+    </message>
+    <message>
+        <source>Finding the lyrics…</source>
+        <translation>Recherche des paroles…</translation>
+    </message>
+    <message>
+        <source>Lyrics %1 s</source>
+        <translation>Paroles %1 s</translation>
+    </message>
+    <message>
+        <source>Hide lyrics</source>
+        <translation>Masquer les paroles</translation>
+    </message>
+    <message>
+        <source>Show lyrics</source>
+        <translation>Afficher les paroles</translation>
+    </message>
+    <message>
+        <source>Leave (Esc)</source>
+        <translation>Quitter (Échap)</translation>
     </message>
 </context>
 <context>
@@ -455,6 +699,42 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>See you soon!</source>
         <translation>À bientôt !</translation>
     </message>
+    <message>
+        <source>Charging</source>
+        <translation>En charge</translation>
+    </message>
+    <message>
+        <source>On battery</source>
+        <translation>Sur batterie</translation>
+    </message>
+    <message>
+        <source>%1 left</source>
+        <translation>%1 restantes</translation>
+    </message>
+    <message>
+        <source>Battery low</source>
+        <translation>Batterie faible</translation>
+    </message>
+    <message>
+        <source>Music</source>
+        <translation>Musique</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Aujourd'hui</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>Contrôles</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>Système</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>Outils</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -465,6 +745,40 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Keyboard access was refused.</source>
         <translation>L'accès au clavier a été refusé.</translation>
+    </message>
+</context>
+<context>
+    <name>MediaPage</name>
+    <message>
+        <source>Nothing playing</source>
+        <translation>Rien en lecture</translation>
+    </message>
+    <message>
+        <source>Shuffle</source>
+        <translation>Aléatoire</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Précédent</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Suivant</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>Répéter</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Plein écran</translation>
+    </message>
+</context>
+<context>
+    <name>Power</name>
+    <message>
+        <source>Keep awake is on</source>
+        <translation>Garder éveillé est activé</translation>
     </message>
 </context>
 <context>
@@ -1386,6 +1700,390 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
         <translation>Remplacez un son en déposant un WAV nommé hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send ou reply dans ~/.config/lumo/sounds/.</translation>
     </message>
+    <message>
+        <source>Nothing</source>
+        <translation>Rien</translation>
+    </message>
+    <message>
+        <source>Weather</source>
+        <translation>Météo</translation>
+    </message>
+    <message>
+        <source>Battery</source>
+        <translation>Batterie</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>Processeur</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation>Mémoire</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Réseau</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>Date</translation>
+    </message>
+    <message>
+        <source>Timer</source>
+        <translation>Minuteur</translation>
+    </message>
+    <message>
+        <source>Clock</source>
+        <translation>Horloge</translation>
+    </message>
+    <message>
+        <source>Widgets</source>
+        <translation>Widgets</translation>
+    </message>
+    <message>
+        <source>Lumo's look, the resting pill, the weather, notifications and the battery.</source>
+        <translation>L'apparence de Lumo, la pilule au repos, la météo, les notifications et la batterie.</translation>
+    </message>
+    <message>
+        <source>Hide during fullscreen apps</source>
+        <translation>Masquer pendant les apps en plein écran</translation>
+    </message>
+    <message>
+        <source>While a game or a video fills the screen, the island steps aside. Requests from your agents still come through.</source>
+        <translation>Quand un jeu ou une vidéo remplit l'écran, l'île s'efface. Les demandes de vos agents passent quand même.</translation>
+    </message>
+    <message>
+        <source>Visualizer</source>
+        <translation>Visualiseur</translation>
+    </message>
+    <message>
+        <source>On the Music page, a soft light swells up with the music, bass to treble.</source>
+        <translation>Sur la page Musique, une lumière douce monte avec la musique, des basses aux aigus.</translation>
+    </message>
+    <message>
+        <source>Album colors</source>
+        <translation>Couleurs de l'album</translation>
+    </message>
+    <message>
+        <source>The player takes the colors of the album art.</source>
+        <translation>Le lecteur prend les couleurs de la pochette.</translation>
+    </message>
+    <message>
+        <source>Look</source>
+        <translation>Apparence</translation>
+    </message>
+    <message>
+        <source>Accent color</source>
+        <translation>Couleur d'accent</translation>
+    </message>
+    <message>
+        <source>Lumo's color: Claude's terracotta, KDE's accent, your wallpaper's, the album art's while music plays, or your own.</source>
+        <translation>La couleur de Lumo : la terre cuite de Claude, l'accent de KDE, celle de votre fond d'écran, celle de la pochette pendant la musique, ou la vôtre.</translation>
+    </message>
+    <message>
+        <source>KDE accent</source>
+        <translation>Accent KDE</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>Fond d'écran</translation>
+    </message>
+    <message>
+        <source>Album art</source>
+        <translation>Pochette</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>Personnalisée</translation>
+    </message>
+    <message>
+        <source>Your color</source>
+        <translation>Votre couleur</translation>
+    </message>
+    <message>
+        <source>Any color, as #RRGGBB.</source>
+        <translation>N'importe quelle couleur, en #RRVVBB.</translation>
+    </message>
+    <message>
+        <source>Reduce motion</source>
+        <translation>Réduire les animations</translation>
+    </message>
+    <message>
+        <source>Calms every animation: no dancing, no bursts of light, no flips.</source>
+        <translation>Calme toutes les animations : pas de danse, pas d'éclats de lumière, pas de retournement.</translation>
+    </message>
+    <message>
+        <source>Resting pill</source>
+        <translation>Pilule au repos</translation>
+    </message>
+    <message>
+        <source>CPU, memory and network are read every 5 seconds only while the pill shows them.</source>
+        <translation>Le processeur, la mémoire et le réseau sont lus toutes les 5 secondes, seulement quand la pilule les affiche.</translation>
+    </message>
+    <message>
+        <source>First item</source>
+        <translation>Premier élément</translation>
+    </message>
+    <message>
+        <source>Second item</source>
+        <translation>Deuxième élément</translation>
+    </message>
+    <message>
+        <source>From Open-Meteo, free and without an account, for the city you type: Lumo never looks you up by your address.</source>
+        <translation>Par Open-Meteo, gratuit et sans compte, pour la ville que vous tapez : Lumo ne vous localise jamais par votre adresse.</translation>
+    </message>
+    <message>
+        <source>Show the weather</source>
+        <translation>Afficher la météo</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>Ville</translation>
+    </message>
+    <message>
+        <source>Add the country to pick between places with the same name, like Paris, Texas.</source>
+        <translation>Ajoutez le pays pour choisir entre des lieux du même nom, comme Paris, Texas.</translation>
+    </message>
+    <message>
+        <source>Casablanca</source>
+        <translation>Casablanca</translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation>Chercher</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Introuvable</translation>
+    </message>
+    <message>
+        <source>Fahrenheit</source>
+        <translation>Fahrenheit</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Notifications</translation>
+    </message>
+    <message>
+        <source>Show notifications as pills</source>
+        <translation>Afficher les notifications en pilules</translation>
+    </message>
+    <message>
+        <source>Your apps' notifications also show up in the island. Plasma keeps its own; Lumo only reads them, on this computer.</source>
+        <translation>Les notifications de vos apps apparaissent aussi dans l'île. Plasma garde les siennes ; Lumo ne fait que les lire, sur cet ordinateur.</translation>
+    </message>
+    <message>
+        <source>Do Not Disturb</source>
+        <translation>Ne pas déranger</translation>
+    </message>
+    <message>
+        <source>Quiets the pills. Battery warnings still show.</source>
+        <translation>Fait taire les pilules. Les alertes de batterie s'affichent quand même.</translation>
+    </message>
+    <message>
+        <source>Battery pills</source>
+        <translation>Pilules de batterie</translation>
+    </message>
+    <message>
+        <source>A pill when you plug in or unplug, and once when the battery runs low.</source>
+        <translation>Une pilule quand vous branchez ou débranchez, et une fois quand la batterie est faible.</translation>
+    </message>
+    <message>
+        <source>Low battery at</source>
+        <translation>Batterie faible à</translation>
+    </message>
+    <message>
+        <source>Show my public IP</source>
+        <translation>Afficher mon IP publique</translation>
+    </message>
+    <message>
+        <source>On the System page, asked from api.ipify.org at most every 10 minutes while it shows.</source>
+        <translation>Sur la page Système, demandée à api.ipify.org au plus toutes les 10 minutes pendant qu'elle s'affiche.</translation>
+    </message>
+    <message>
+        <source>Backup</source>
+        <translation>Sauvegarde</translation>
+    </message>
+    <message>
+        <source>Export settings</source>
+        <translation>Exporter les réglages</translation>
+    </message>
+    <message>
+        <source>Every setting in one file, to keep or to bring to another computer.</source>
+        <translation>Tous les réglages dans un seul fichier, à garder ou à emporter sur un autre ordinateur.</translation>
+    </message>
+    <message>
+        <source>Export…</source>
+        <translation>Exporter…</translation>
+    </message>
+    <message>
+        <source>Import settings</source>
+        <translation>Importer les réglages</translation>
+    </message>
+    <message>
+        <source>Import…</source>
+        <translation>Importer…</translation>
+    </message>
+    <message>
+        <source>Report a problem</source>
+        <translation>Signaler un problème</translation>
+    </message>
+    <message>
+        <source>Copies a short report: Lumo's version, your system and its plain settings, with your names taken out. Nothing is sent: you read it, then paste it where you choose.</source>
+        <translation>Copie un court rapport : la version de Lumo, votre système et ses réglages simples, sans vos noms. Rien n'est envoyé : vous le lisez, puis vous le collez où vous voulez.</translation>
+    </message>
+    <message>
+        <source>Copy report</source>
+        <translation>Copier le rapport</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Copié</translation>
+    </message>
+    <message>
+        <source>Lumo settings (*.ini)</source>
+        <translation>Réglages de Lumo (*.ini)</translation>
+    </message>
+    <message>
+        <source>Synced lyrics</source>
+        <translation>Paroles synchronisées</translation>
+    </message>
+    <message>
+        <source>In the fullscreen player (click the cover on the Music page). Looked up once per song on LRCLIB, and kept on this computer for the last 300 songs.</source>
+        <translation>Dans le lecteur plein écran (cliquez la pochette sur la page Musique). Cherchées une fois par chanson sur LRCLIB, et gardées sur cet ordinateur pour les 300 dernières chansons.</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Thème</translation>
+    </message>
+    <message>
+        <source>The island and Settings: dark, light, glass (the desktop shows through, blurred), your own background, or Starfall, a night sky.</source>
+        <translation>L'île et les Réglages : sombre, clair, verre (le bureau transparaît, flouté), votre propre fond, ou Starfall, un ciel de nuit.</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Sombre</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Clair</translation>
+    </message>
+    <message>
+        <source>Glass</source>
+        <translation>Verre</translation>
+    </message>
+    <message>
+        <source>Starfall</source>
+        <translation>Starfall</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>Fond</translation>
+    </message>
+    <message>
+        <source>Any color, as #RRGGBB. Text turns dark on a light one.</source>
+        <translation>N'importe quelle couleur, en #RRVVBB. Le texte devient sombre sur un fond clair.</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>Opacité</translation>
+    </message>
+    <message>
+        <source>How much of the desktop shows through.</source>
+        <translation>Combien le bureau transparaît.</translation>
+    </message>
+    <message>
+        <source>Long pill</source>
+        <translation>Pilule longue</translation>
+    </message>
+    <message>
+        <source>A wider resting pill with the items you pick, in your order.</source>
+        <translation>Une pilule au repos plus large avec les éléments que vous choisissez, dans votre ordre.</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation>Monter</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation>Descendre</translation>
+    </message>
+    <message>
+        <source>Take off</source>
+        <translation>Retirer</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Ajouter un élément</translation>
+    </message>
+    <message>
+        <source>Choose…</source>
+        <translation>Choisir…</translation>
+    </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>Tableau de bord</translation>
+    </message>
+    <message>
+        <source>Also in Lumo's menu in the system tray. Esc closes it; nothing in it runs once it's closed.</source>
+        <translation>Aussi dans le menu de Lumo dans la barre système. Échap le ferme ; rien n'y tourne une fois fermé.</translation>
+    </message>
+    <message>
+        <source>A whole screen of tiles</source>
+        <translation>Un écran entier de tuiles</translation>
+    </message>
+    <message>
+        <source>The clock, Today, Music, System, Controls and Tools side by side.</source>
+        <translation>L'horloge, Aujourd'hui, Musique, Système, Contrôles et Outils côte à côte.</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Ouvrir</translation>
+    </message>
+    <message>
+        <source>The screen in front</source>
+        <translation>L'écran devant vous</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Aujourd'hui</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>Contrôles</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>Outils</translation>
+    </message>
+    <message>
+        <source>Add a tile</source>
+        <translation>Ajouter une tuile</translation>
+    </message>
+    <message>
+        <source>Calendar</source>
+        <translation>Calendrier</translation>
+    </message>
+    <message>
+        <source>Your events from the private iCal links of your calendars (Google Calendar: Settings → your calendar → Secret address in iCal format; Outlook and iCloud have one too). They stay on this computer; holidays come from Nager.Date.</source>
+        <translation>Vos événements, depuis les liens iCal privés de vos calendriers (Google Agenda : Paramètres → votre agenda → Adresse secrète au format iCal ; Outlook et iCloud en ont un aussi). Ils restent sur cet ordinateur ; les jours fériés viennent de Nager.Date.</translation>
+    </message>
+    <message>
+        <source>Calendar links</source>
+        <translation>Liens de calendrier</translation>
+    </message>
+    <message>
+        <source>One link per line.</source>
+        <translation>Un lien par ligne.</translation>
+    </message>
+    <message>
+        <source>Holidays of</source>
+        <translation>Jours fériés de</translation>
+    </message>
+    <message>
+        <source>A two-letter country code, like MA or FR. Empty for none.</source>
+        <translation>Un code pays à deux lettres, comme MA ou FR. Vide pour aucun.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -1429,6 +2127,10 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>WhatsApp is open with the text — review it and press Send.</source>
         <translation>WhatsApp est ouvert avec le texte — relisez-le et appuyez sur Envoyer.</translation>
     </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>Tableau de bord</translation>
+    </message>
 </context>
 <context>
     <name>Speech</name>
@@ -1447,6 +2149,260 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Couldn't unpack the model.</source>
         <translation>Impossible de décompresser le modèle.</translation>
+    </message>
+</context>
+<context>
+    <name>SystemPage</name>
+    <message>
+        <source>CPU</source>
+        <translation>Processeur</translation>
+    </message>
+    <message>
+        <source>GPU · %1</source>
+        <translation>GPU · %1</translation>
+    </message>
+    <message>
+        <source>GPU</source>
+        <translation>GPU</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation>Mémoire</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Réseau</translation>
+    </message>
+    <message>
+        <source>Local %1</source>
+        <translation>Locale %1</translation>
+    </message>
+    <message>
+        <source>Public %1</source>
+        <translation>Publique %1</translation>
+    </message>
+    <message>
+        <source>Busiest programs</source>
+        <translation>Programmes les plus actifs</translation>
+    </message>
+    <message>
+        <source>Up %1</source>
+        <translation>Allumé depuis %1</translation>
+    </message>
+    <message>
+        <source>Measuring…</source>
+        <translation>Mesure…</translation>
+    </message>
+</context>
+<context>
+    <name>SystemStats</name>
+    <message>
+        <source>%1 d %2 h</source>
+        <translation>%1 j %2 h</translation>
+    </message>
+    <message>
+        <source>%1 h %2 min</source>
+        <translation>%1 h %2 min</translation>
+    </message>
+    <message>
+        <source>%1 min</source>
+        <translation>%1 min</translation>
+    </message>
+    <message>
+        <source>/s</source>
+        <translation>/s</translation>
+    </message>
+</context>
+<context>
+    <name>Timers</name>
+    <message>
+        <source>Time's up</source>
+        <translation>Temps écoulé</translation>
+    </message>
+    <message>
+        <source>Focus done: %1 rounds</source>
+        <translation>Concentration terminée : %1 tours</translation>
+    </message>
+    <message>
+        <source>Break time</source>
+        <translation>C'est la pause</translation>
+    </message>
+    <message>
+        <source>Back to focus: round %1 of %2</source>
+        <translation>Retour à la concentration : tour %1 sur %2</translation>
+    </message>
+</context>
+<context>
+    <name>TodayPage</name>
+    <message>
+        <source>H %1  L %2</source>
+        <translation>Max %1  Min %2</translation>
+    </message>
+    <message>
+        <source>Looking at the sky…</source>
+        <translation>Je regarde le ciel…</translation>
+    </message>
+    <message>
+        <source>All day</source>
+        <translation>Toute la journée</translation>
+    </message>
+    <message>
+        <source>Nothing that day.</source>
+        <translation>Rien ce jour-là.</translation>
+    </message>
+    <message>
+        <source>Nothing that day. Add your calendar's private link in Settings → Widgets → Calendar.</source>
+        <translation>Rien ce jour-là. Ajoutez le lien privé de votre calendrier dans Réglages → Widgets → Calendrier.</translation>
+    </message>
+</context>
+<context>
+    <name>Tools</name>
+    <message>
+        <source>Copied the file</source>
+        <translation>Fichier copié</translation>
+    </message>
+    <message>
+        <source>Copied the text</source>
+        <translation>Texte copié</translation>
+    </message>
+    <message>
+        <source>%1 copied</source>
+        <translation>%1 copié</translation>
+    </message>
+    <message>
+        <source>Screenshot on the shelf</source>
+        <translation>Capture sur l'étagère</translation>
+    </message>
+</context>
+<context>
+    <name>ToolsPage</name>
+    <message>
+        <source>Hold to confirm</source>
+        <translation>Maintenez pour confirmer</translation>
+    </message>
+    <message>
+        <source>Timer</source>
+        <translation>Minuteur</translation>
+    </message>
+    <message>
+        <source>Stopwatch</source>
+        <translation>Chronomètre</translation>
+    </message>
+    <message>
+        <source>Focus</source>
+        <translation>Concentration</translation>
+    </message>
+    <message>
+        <source>%1 min</source>
+        <translation>%1 min</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>Démarrer</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>Réinitialiser</translation>
+    </message>
+    <message>
+        <source>Lap</source>
+        <translation>Tour</translation>
+    </message>
+    <message>
+        <source>Lap %1</source>
+        <translation>Tour %1</translation>
+    </message>
+    <message>
+        <source>%1 min focus, %2 min break, %3 rounds</source>
+        <translation>%1 min de concentration, %2 min de pause, %3 tours</translation>
+    </message>
+    <message>
+        <source>Break</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>round %1 of %2</source>
+        <translation>tour %1 sur %2</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Reprendre</translation>
+    </message>
+    <message>
+        <source>Start focus</source>
+        <translation>Démarrer la concentration</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Arrêter</translation>
+    </message>
+    <message>
+        <source>Color picker</source>
+        <translation>Pipette</translation>
+    </message>
+    <message>
+        <source>Copies the hex code</source>
+        <translation>Copie le code hexadécimal</translation>
+    </message>
+    <message>
+        <source>Screenshot</source>
+        <translation>Capture d'écran</translation>
+    </message>
+    <message>
+        <source>Pick a region</source>
+        <translation>Choisissez une zone</translation>
+    </message>
+    <message>
+        <source>Keep awake</source>
+        <translation>Garder éveillé</translation>
+    </message>
+    <message>
+        <source>On</source>
+        <translation>Activé</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Désactivé</translation>
+    </message>
+    <message>
+        <source>Shelf</source>
+        <translation>Étagère</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Effacer</translation>
+    </message>
+    <message>
+        <source>Drop files or text on the island to keep them here. Drag them out again to drop them anywhere, or click one to copy it.</source>
+        <translation>Déposez des fichiers ou du texte sur l'île pour les garder ici. Faites-les glisser ailleurs pour les déposer n'importe où, ou cliquez pour copier.</translation>
+    </message>
+    <message>
+        <source>Keep after restart</source>
+        <translation>Garder après redémarrage</translation>
+    </message>
+    <message>
+        <source>Lock</source>
+        <translation>Verrouiller</translation>
+    </message>
+    <message>
+        <source>Sleep</source>
+        <translation>Veille</translation>
+    </message>
+    <message>
+        <source>Log out</source>
+        <translation>Déconnexion</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>Redémarrer</translation>
+    </message>
+    <message>
+        <source>Shut down</source>
+        <translation>Éteindre</translation>
     </message>
 </context>
 <context>
@@ -1513,6 +2469,62 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>%1% used · resets %2</source>
         <translation>%1 % utilisé · réinitialisation %2</translation>
+    </message>
+</context>
+<context>
+    <name>Weather</name>
+    <message>
+        <source>Type your city in Settings → Widgets → Weather.</source>
+        <translation>Tapez votre ville dans Réglages → Widgets → Météo.</translation>
+    </message>
+    <message>
+        <source>The weather can't be reached right now.</source>
+        <translation>La météo est injoignable pour le moment.</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <comment>the sky</comment>
+        <translation>Dégagé</translation>
+    </message>
+    <message>
+        <source>Mostly clear</source>
+        <translation>Plutôt dégagé</translation>
+    </message>
+    <message>
+        <source>Partly cloudy</source>
+        <translation>Partiellement nuageux</translation>
+    </message>
+    <message>
+        <source>Cloudy</source>
+        <translation>Nuageux</translation>
+    </message>
+    <message>
+        <source>Fog</source>
+        <translation>Brouillard</translation>
+    </message>
+    <message>
+        <source>Drizzle</source>
+        <translation>Bruine</translation>
+    </message>
+    <message>
+        <source>Light rain</source>
+        <translation>Pluie légère</translation>
+    </message>
+    <message>
+        <source>Rain</source>
+        <translation>Pluie</translation>
+    </message>
+    <message>
+        <source>Heavy rain</source>
+        <translation>Forte pluie</translation>
+    </message>
+    <message>
+        <source>Snow</source>
+        <translation>Neige</translation>
+    </message>
+    <message>
+        <source>Thunderstorm</source>
+        <translation>Orage</translation>
     </message>
 </context>
 </TS>

@@ -23,6 +23,8 @@ set_target_properties(sherpa PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${SHERPA_DIR}/include)
 find_package(LayerShellQt REQUIRED)
 find_package(KF6GlobalAccel REQUIRED)
+# KWin's blur behind the glass theme; without it, glass is only see-through.
+find_package(KF6WindowSystem QUIET)
 
 qt_standard_project_setup(REQUIRES 6.5)
 include(GNUInstallDirs)
@@ -51,6 +53,15 @@ qt_add_executable(lumo
     src/CloudSessions.cpp src/CloudSessions.h
     src/Music.cpp src/Music.h
     src/Beat.cpp src/Beat.h
+    src/SystemStats.cpp src/SystemStats.h
+    src/Controls.cpp src/Controls.h
+    src/Power.cpp src/Power.h
+    src/Tools.cpp src/Tools.h
+    src/Weather.cpp src/Weather.h
+    src/Notifications.cpp src/Notifications.h
+    src/Prefs.cpp src/Prefs.h src/Vivid.h
+    src/Lyrics.cpp src/Lyrics.h
+    src/Calendar.cpp src/Calendar.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -58,6 +69,10 @@ set_target_properties(lumo PROPERTIES
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
 target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
+if(KF6WindowSystem_FOUND)
+    target_link_libraries(lumo PRIVATE KF6::WindowSystem)
+    target_compile_definitions(lumo PRIVATE LUMO_HAVE_KWINDOWSYSTEM)
+endif()
 
 # Translations (i18n/lumo_<language>.ts), built into the app when Qt's
 # Linguist tools are installed; without them Lumo is in English only.
@@ -68,7 +83,8 @@ if(Qt6LinguistTools_FOUND AND LUMO_TS)
 elseif(LUMO_TS)
     message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
 endif()
-set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
+set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap
+    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage FullscreenPlayer Dashboard)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).
@@ -123,6 +139,24 @@ target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
 
+# The calendar: iCal links and how events repeat.
+qt_add_executable(test_calendar tests/test_calendar.cpp src/Calendar.cpp)
+target_include_directories(test_calendar PRIVATE src)
+target_link_libraries(test_calendar PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+add_test(NAME calendar COMMAND test_calendar)
+
+# Synced lyrics: the LRC reader and how song names are cleaned for the search.
+qt_add_executable(test_lyrics tests/test_lyrics.cpp src/Lyrics.cpp)
+target_include_directories(test_lyrics PRIVATE src)
+target_link_libraries(test_lyrics PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+add_test(NAME lyrics COMMAND test_lyrics)
+
+# Notifications as pills: how dbus-monitor's output is read.
+qt_add_executable(test_notifications tests/test_notifications.cpp src/Notifications.cpp)
+target_include_directories(test_notifications PRIVATE src)
+target_link_libraries(test_notifications PRIVATE Qt6::Core Qt6::Test)
+add_test(NAME notifications COMMAND test_notifications)
+
 # The beat tracker, on synthetic songs.
 qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
 target_include_directories(test_beat PRIVATE src)
@@ -132,4 +166,4 @@ add_test(NAME beat COMMAND test_beat)
 # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
 qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)
 target_include_directories(test_music PRIVATE src)
-target_link_libraries(test_music PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
+target_link_libraries(test_music PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::DBus Qt6::Test)
