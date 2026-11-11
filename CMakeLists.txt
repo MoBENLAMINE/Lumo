@@ -59,6 +59,7 @@ qt_add_executable(lumo
     src/Notifications.cpp src/Notifications.h
     src/Prefs.cpp src/Prefs.h src/Vivid.h
     src/Lyrics.cpp src/Lyrics.h
+    src/Calendar.cpp src/Calendar.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -131,6 +132,12 @@ qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/Agen
 target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
+
+# The calendar: iCal links and how events repeat.
+qt_add_executable(test_calendar tests/test_calendar.cpp src/Calendar.cpp)
+target_include_directories(test_calendar PRIVATE src)
+target_link_libraries(test_calendar PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+add_test(NAME calendar COMMAND test_calendar)
 
 # Synced lyrics: the LRC reader and how song names are cleaned for the search.
 qt_add_executable(test_lyrics tests/test_lyrics.cpp src/Lyrics.cpp)

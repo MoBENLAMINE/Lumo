@@ -20,4 +20,4 @@ jobs:
       - name: Build
         run: cmake --build build -j"$(nproc)"
       - name: Test
-        run: ctest --test-dir build --output-on-failure -R "hub|vocabulary|beat|notifications|lyrics"
+        run: ctest --test-dir build --output-on-failure -R "hub|vocabulary|beat|notifications|lyrics|calendar"

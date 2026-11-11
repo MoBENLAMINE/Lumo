@@ -889,6 +889,41 @@ Window {
                     }
 
                     Group {
+                        title: qsTr("Calendar")
+                        footer: qsTr("Your events from the private iCal links of your calendars (Google Calendar: Settings → your calendar → Secret address in iCal format; Outlook and iCloud have one too). They stay on this computer; holidays come from Nager.Date.")
+                        SettingRow {
+                            title: qsTr("Calendar links")
+                            description: qsTr("One link per line.")
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            implicitHeight: linksArea.implicitHeight + 24
+                            TextArea {
+                                id: linksArea
+                                x: 16; y: 4
+                                width: parent.width - 32
+                                wrapMode: TextEdit.WrapAnywhere
+                                placeholderText: "https://calendar.google.com/calendar/ical/…/basic.ics"
+                                text: calendar.links.join("\n")
+                                color: Ui.text
+                                font.pixelSize: Ui.small
+                                background: Rectangle { radius: 8; color: Ui.card; border.color: linksArea.activeFocus ? Ui.accent : settings.groupLine }
+                                onEditingFinished: calendar.links = text.split("\n")
+                            }
+                        }
+                        SettingRow {
+                            title: qsTr("Holidays of")
+                            description: qsTr("A two-letter country code, like MA or FR. Empty for none.")
+                            LumoField {
+                                text: calendar.country
+                                implicitWidth: 70
+                                maximumLength: 2
+                                onEditingFinished: calendar.country = text
+                            }
+                        }
+                    }
+
+                    Group {
                         title: qsTr("Notifications")
                         SettingRow {
                             title: qsTr("Show notifications as pills")
