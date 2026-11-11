@@ -312,7 +312,29 @@ Window {
         ScriptAction { script: shell.quitNow() }
     }
 
-    Timer { id: openTimer; interval: 260; onTriggered: win.hoverOpen = true }
+    Timer { id: openTimer; interval: 260; onTriggered: { win.tab = win.autoTab(); win.hoverOpen = true } }
+
+    // ------------------------------------------------------------ which page opens
+    // Music playing: the island opens on the Music page. Your agents come
+    // first, though: while a Claude session works, waits for you or asks
+    // something, it opens on Agents, where the music card stays on top, and
+    // the pill shows the song.
+    readonly property bool agentsBusy: hasRequests || hub.workingCount > 0 || callingYou || mood === "waiting"
+    readonly property bool musicPlaying: shell.showMusic && music.playing
+    function autoTab() {
+        if (agentsBusy) return "agents"
+        if (musicPlaying) return "media"
+        return tab === "media" ? "agents" : tab
+    }
+    // A song starts while the island is open and your agents are quiet: go to it,
+    // unless you're typing in the chat.
+    onMusicPlayingChanged: {
+        if (!musicPlaying || mode !== "open" || agentsBusy) return
+        if (tab === "chat" && chatPane.input.activeFocus) return
+        tab = "media"
+    }
+    // An agent needs you while the Music page shows: back to Agents.
+    onAgentsBusyChanged: if (agentsBusy && mode === "open" && tab === "media") tab = "agents"
     Timer {
         id: closeTimer
         interval: 600
@@ -541,7 +563,7 @@ Window {
 
             TapHandler {
                 enabled: win.mode === "compact" || win.mode === "rest"
-                onTapped: win.openIsland(win.tab, false)
+                onTapped: win.openIsland(win.autoTab(), false)
             }
         }
 
