@@ -125,7 +125,7 @@ void Calendar::fetchLinks() {
             else ++*failed;
             if (--*left) return;
             m_mine = *collected;
-            m_status = *failed ? tr("%n calendar(s) couldn't be read.", "", *failed) : QString();
+            m_status = *failed ? tr("A calendar link couldn't be read.") : QString();
             rebuild();
         });
     }

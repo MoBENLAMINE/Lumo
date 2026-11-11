@@ -153,6 +153,13 @@
     </message>
 </context>
 <context>
+    <name>Calendar</name>
+    <message>
+        <source>A calendar link couldn't be read.</source>
+        <translation>تعذّرت قراءة رابط تقويم.</translation>
+    </message>
+</context>
+<context>
     <name>ChatBackend</name>
     <message>
         <source>Claude Code stopped (exit %1).</source>
@@ -348,6 +355,109 @@ Drop a file here to ask about it.</source>
         <source>Health %1%</source>
         <translation>الصحة %1%</translation>
     </message>
+    <message>
+        <source>Back</source>
+        <translation>رجوع</translation>
+    </message>
+    <message>
+        <source>Wi-Fi networks</source>
+        <translation>شبكات Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Bluetooth devices</source>
+        <translation>أجهزة بلوتوث</translation>
+    </message>
+    <message>
+        <source>Searching…</source>
+        <translation>جارٍ البحث…</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>بحث</translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation>تحديث</translation>
+    </message>
+    <message>
+        <source>Joining…</source>
+        <translation>جارٍ الانضمام…</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <translation>متصل</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>نسيان</translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation>كلمة المرور</translation>
+    </message>
+    <message>
+        <source>Join</source>
+        <translation>انضمام</translation>
+    </message>
+    <message>
+        <source>Looking for networks…</source>
+        <translation>جارٍ البحث عن الشبكات…</translation>
+    </message>
+    <message>
+        <source>Wi-Fi is off.</source>
+        <translation>Wi-Fi متوقف.</translation>
+    </message>
+    <message>
+        <source>Paired</source>
+        <translation>مقترن</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>جديد</translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation>قطع الاتصال</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>اتصال</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>اقتران</translation>
+    </message>
+    <message>
+        <source>No devices yet. Search to find new ones nearby.</source>
+        <translation>لا أجهزة بعد. ابحث للعثور على أجهزة جديدة قريبة.</translation>
+    </message>
+    <message>
+        <source>Bluetooth is off.</source>
+        <translation>البلوتوث متوقف.</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>الكل</translation>
+    </message>
+    <message>
+        <source>Unknown app</source>
+        <translation>تطبيق غير معروف</translation>
+    </message>
+    <message>
+        <source>No app is making sound right now.</source>
+        <translation>لا يوجد تطبيق يشغّل صوتًا الآن.</translation>
+    </message>
+</context>
+<context>
+    <name>Dashboard</name>
+    <message>
+        <source>Lumo — Dashboard</source>
+        <translation>Lumo — لوحة المعلومات</translation>
+    </message>
+    <message>
+        <source>Close (Esc)</source>
+        <translation>إغلاق (Esc)</translation>
+    </message>
 </context>
 <context>
     <name>Dictation</name>
@@ -397,6 +507,33 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Writing it down…</source>
         <translation>يكتبه…</translation>
+    </message>
+</context>
+<context>
+    <name>FullscreenPlayer</name>
+    <message>
+        <source>Lumo — Now playing</source>
+        <translation>Lumo — قيد التشغيل</translation>
+    </message>
+    <message>
+        <source>Finding the lyrics…</source>
+        <translation>جارٍ العثور على الكلمات…</translation>
+    </message>
+    <message>
+        <source>Lyrics %1 s</source>
+        <translation>الكلمات %1 ث</translation>
+    </message>
+    <message>
+        <source>Hide lyrics</source>
+        <translation>إخفاء الكلمات</translation>
+    </message>
+    <message>
+        <source>Show lyrics</source>
+        <translation>إظهار الكلمات</translation>
+    </message>
+    <message>
+        <source>Leave (Esc)</source>
+        <translation>خروج (Esc)</translation>
     </message>
 </context>
 <context>
@@ -1807,6 +1944,146 @@ Drop a file here to ask about it.</source>
         <source>Lumo settings (*.ini)</source>
         <translation>إعدادات Lumo (*.ini)</translation>
     </message>
+    <message>
+        <source>Synced lyrics</source>
+        <translation>كلمات متزامنة</translation>
+    </message>
+    <message>
+        <source>In the fullscreen player (click the cover on the Music page). Looked up once per song on LRCLIB, and kept on this computer for the last 300 songs.</source>
+        <translation>في المشغل بملء الشاشة (انقر الغلاف في صفحة الموسيقى). يُبحث عنها مرة لكل أغنية على LRCLIB، وتُحفظ على هذا الحاسوب لآخر 300 أغنية.</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>السمة</translation>
+    </message>
+    <message>
+        <source>The island and Settings: dark, light, glass (the desktop shows through, blurred), your own background, or Starfall, a night sky.</source>
+        <translation>الجزيرة والإعدادات: داكنة، فاتحة، زجاج (يظهر سطح المكتب من خلفها مموّهًا)، خلفيتك الخاصة، أو Starfall، سماء ليلية.</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>داكنة</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>فاتحة</translation>
+    </message>
+    <message>
+        <source>Glass</source>
+        <translation>زجاج</translation>
+    </message>
+    <message>
+        <source>Starfall</source>
+        <translation>Starfall</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>الخلفية</translation>
+    </message>
+    <message>
+        <source>Any color, as #RRGGBB. Text turns dark on a light one.</source>
+        <translation>أي لون، بصيغة #RRGGBB. يصبح النص داكنًا على خلفية فاتحة.</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>العتامة</translation>
+    </message>
+    <message>
+        <source>How much of the desktop shows through.</source>
+        <translation>مقدار ما يظهر من سطح المكتب.</translation>
+    </message>
+    <message>
+        <source>Long pill</source>
+        <translation>الحبة الطويلة</translation>
+    </message>
+    <message>
+        <source>A wider resting pill with the items you pick, in your order.</source>
+        <translation>حبة راحة أعرض بالعناصر التي تختارها، بترتيبك.</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation>تحريك لأعلى</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation>تحريك لأسفل</translation>
+    </message>
+    <message>
+        <source>Take off</source>
+        <translation>إزالة</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>إضافة عنصر</translation>
+    </message>
+    <message>
+        <source>Choose…</source>
+        <translation>اختر…</translation>
+    </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>لوحة المعلومات</translation>
+    </message>
+    <message>
+        <source>Also in Lumo's menu in the system tray. Esc closes it; nothing in it runs once it's closed.</source>
+        <translation>موجودة أيضًا في قائمة Lumo في شريط النظام. يغلقها Esc؛ ولا يعمل فيها شيء بعد إغلاقها.</translation>
+    </message>
+    <message>
+        <source>A whole screen of tiles</source>
+        <translation>شاشة كاملة من البلاطات</translation>
+    </message>
+    <message>
+        <source>The clock, Today, Music, System, Controls and Tools side by side.</source>
+        <translation>الساعة، واليوم، والموسيقى، والنظام، وعناصر التحكم، والأدوات جنبًا إلى جنب.</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>فتح</translation>
+    </message>
+    <message>
+        <source>The screen in front</source>
+        <translation>الشاشة التي أمامك</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>اليوم</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>عناصر التحكم</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>الأدوات</translation>
+    </message>
+    <message>
+        <source>Add a tile</source>
+        <translation>إضافة بلاطة</translation>
+    </message>
+    <message>
+        <source>Calendar</source>
+        <translation>التقويم</translation>
+    </message>
+    <message>
+        <source>Your events from the private iCal links of your calendars (Google Calendar: Settings → your calendar → Secret address in iCal format; Outlook and iCloud have one too). They stay on this computer; holidays come from Nager.Date.</source>
+        <translation>أحداثك من روابط iCal الخاصة بتقاويمك (تقويم Google: الإعدادات ← تقويمك ← العنوان السري بتنسيق iCal؛ ولدى Outlook وiCloud رابط مماثل). تبقى على هذا الحاسوب؛ والعطل الرسمية من Nager.Date.</translation>
+    </message>
+    <message>
+        <source>Calendar links</source>
+        <translation>روابط التقويم</translation>
+    </message>
+    <message>
+        <source>One link per line.</source>
+        <translation>رابط واحد في كل سطر.</translation>
+    </message>
+    <message>
+        <source>Holidays of</source>
+        <translation>العطل الرسمية لـ</translation>
+    </message>
+    <message>
+        <source>A two-letter country code, like MA or FR. Empty for none.</source>
+        <translation>رمز بلد من حرفين، مثل MA أو FR. فارغ لعدم العرض.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -1849,6 +2126,10 @@ Drop a file here to ask about it.</source>
     <message>
         <source>WhatsApp is open with the text — review it and press Send.</source>
         <translation>WhatsApp مفتوح والنص جاهز — راجعه واضغط إرسال.</translation>
+    </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>لوحة المعلومات</translation>
     </message>
 </context>
 <context>
@@ -1960,6 +2241,18 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Looking at the sky…</source>
         <translation>أنظر إلى السماء…</translation>
+    </message>
+    <message>
+        <source>All day</source>
+        <translation>طوال اليوم</translation>
+    </message>
+    <message>
+        <source>Nothing that day.</source>
+        <translation>لا شيء في هذا اليوم.</translation>
+    </message>
+    <message>
+        <source>Nothing that day. Add your calendar's private link in Settings → Widgets → Calendar.</source>
+        <translation>لا شيء في هذا اليوم. أضف الرابط الخاص بتقويمك في الإعدادات ← الأدوات المصغّرة ← التقويم.</translation>
     </message>
 </context>
 <context>

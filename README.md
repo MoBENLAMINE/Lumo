@@ -78,6 +78,25 @@ It's native through and through: C++20 and Qt Quick, no web view. The island ani
 - **Instinct**: hands chat answers, sessions and dictations to the Instinct assistant through you (WhatsApp,
   pre-filled; you press Send).
 
+### Your desktop, in the island
+
+Each page works only while it shows, so Lumo stays light.
+
+- **Music**: a bigger player whose cover turns over on a new song, tinted by the album art, with a visualizer that
+  swells with the music; a **fullscreen player** with **synced lyrics** (LRCLIB), line by line.
+- **Today**: the weather for your city (Open-Meteo, no account, no IP lookup) and a **calendar** with holidays and
+  your own events from your calendars' private iCal links.
+- **Controls**: Wi-Fi and Bluetooth (with their networks and devices), microphone, keep awake, Do Not Disturb,
+  power mode; volume, microphone and brightness; the sound output; a per-app **mixer**; the battery and its health.
+- **System**: CPU, GPU, memory and network with sparklines, the busiest programs, your IPs.
+- **Tools**: timer, stopwatch and focus sessions (counted down in the pill), a color picker, a screenshot, the
+  **shelf** (drop files or text on the island), and lock, sleep, log out, restart and shut down.
+- **Pills** for the battery and, if you want, your desktop's notifications; a **resting pill** with a clock and
+  the items you pick, or a **long pill**; a **dashboard** that gives a whole screen to these pages.
+- **Looks**: dark, light, glass (blurred), your own colors or Starfall; the accent from KDE, your wallpaper or the
+  album art; reduce motion; hidden while a game or video is fullscreen.
+- **Languages**: English, French and Arabic.
+
 <br clear="right">
 
 <table>

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Ideas from Astraeus, written anew for KDE: pages in the island (Music, Today, Controls, System, Tools), a
+  fullscreen player with synced lyrics, a calendar, Wi-Fi, Bluetooth and mixer control centers, the shelf, timers,
+  battery and notification pills, a configurable resting pill and long pill, themes (light, glass, custom,
+  Starfall), an accent from KDE or the wallpaper, reduce motion, a full-screen dashboard, settings export and
+  import, and a problem report. Each page works only while it shows.
 - Lumo says goodbye when you quit it: the island opens, Lumo waves with "See you soon!", winks, then spins
   away into the light as the island closes, with its own "bye" sound. A click quits at once.
 - Music from a player that starts after Lumo (a browser tab, Zen, Firefox…) now shows up and makes Lumo

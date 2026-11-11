@@ -153,6 +153,13 @@
     </message>
 </context>
 <context>
+    <name>Calendar</name>
+    <message>
+        <source>A calendar link couldn't be read.</source>
+        <translation>Un lien de calendrier n'a pas pu être lu.</translation>
+    </message>
+</context>
+<context>
     <name>ChatBackend</name>
     <message>
         <source>Claude Code stopped (exit %1).</source>
@@ -348,6 +355,109 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Health %1%</source>
         <translation>Santé %1%</translation>
     </message>
+    <message>
+        <source>Back</source>
+        <translation>Retour</translation>
+    </message>
+    <message>
+        <source>Wi-Fi networks</source>
+        <translation>Réseaux Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Bluetooth devices</source>
+        <translation>Appareils Bluetooth</translation>
+    </message>
+    <message>
+        <source>Searching…</source>
+        <translation>Recherche…</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation>Recherche</translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation>Actualiser</translation>
+    </message>
+    <message>
+        <source>Joining…</source>
+        <translation>Connexion…</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <translation>Connecté</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>Oublier</translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation>Mot de passe</translation>
+    </message>
+    <message>
+        <source>Join</source>
+        <translation>Rejoindre</translation>
+    </message>
+    <message>
+        <source>Looking for networks…</source>
+        <translation>Recherche de réseaux…</translation>
+    </message>
+    <message>
+        <source>Wi-Fi is off.</source>
+        <translation>Le Wi-Fi est désactivé.</translation>
+    </message>
+    <message>
+        <source>Paired</source>
+        <translation>Appairé</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>Nouveau</translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation>Déconnecter</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Connecter</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Appairer</translation>
+    </message>
+    <message>
+        <source>No devices yet. Search to find new ones nearby.</source>
+        <translation>Aucun appareil pour l'instant. Lancez une recherche pour en trouver à proximité.</translation>
+    </message>
+    <message>
+        <source>Bluetooth is off.</source>
+        <translation>Le Bluetooth est désactivé.</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tout</translation>
+    </message>
+    <message>
+        <source>Unknown app</source>
+        <translation>App inconnue</translation>
+    </message>
+    <message>
+        <source>No app is making sound right now.</source>
+        <translation>Aucune app ne joue de son pour le moment.</translation>
+    </message>
+</context>
+<context>
+    <name>Dashboard</name>
+    <message>
+        <source>Lumo — Dashboard</source>
+        <translation>Lumo — Tableau de bord</translation>
+    </message>
+    <message>
+        <source>Close (Esc)</source>
+        <translation>Fermer (Échap)</translation>
+    </message>
 </context>
 <context>
     <name>Dictation</name>
@@ -397,6 +507,33 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Writing it down…</source>
         <translation>Je note…</translation>
+    </message>
+</context>
+<context>
+    <name>FullscreenPlayer</name>
+    <message>
+        <source>Lumo — Now playing</source>
+        <translation>Lumo — En lecture</translation>
+    </message>
+    <message>
+        <source>Finding the lyrics…</source>
+        <translation>Recherche des paroles…</translation>
+    </message>
+    <message>
+        <source>Lyrics %1 s</source>
+        <translation>Paroles %1 s</translation>
+    </message>
+    <message>
+        <source>Hide lyrics</source>
+        <translation>Masquer les paroles</translation>
+    </message>
+    <message>
+        <source>Show lyrics</source>
+        <translation>Afficher les paroles</translation>
+    </message>
+    <message>
+        <source>Leave (Esc)</source>
+        <translation>Quitter (Échap)</translation>
     </message>
 </context>
 <context>
@@ -1807,6 +1944,146 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Lumo settings (*.ini)</source>
         <translation>Réglages de Lumo (*.ini)</translation>
     </message>
+    <message>
+        <source>Synced lyrics</source>
+        <translation>Paroles synchronisées</translation>
+    </message>
+    <message>
+        <source>In the fullscreen player (click the cover on the Music page). Looked up once per song on LRCLIB, and kept on this computer for the last 300 songs.</source>
+        <translation>Dans le lecteur plein écran (cliquez la pochette sur la page Musique). Cherchées une fois par chanson sur LRCLIB, et gardées sur cet ordinateur pour les 300 dernières chansons.</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Thème</translation>
+    </message>
+    <message>
+        <source>The island and Settings: dark, light, glass (the desktop shows through, blurred), your own background, or Starfall, a night sky.</source>
+        <translation>L'île et les Réglages : sombre, clair, verre (le bureau transparaît, flouté), votre propre fond, ou Starfall, un ciel de nuit.</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Sombre</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Clair</translation>
+    </message>
+    <message>
+        <source>Glass</source>
+        <translation>Verre</translation>
+    </message>
+    <message>
+        <source>Starfall</source>
+        <translation>Starfall</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>Fond</translation>
+    </message>
+    <message>
+        <source>Any color, as #RRGGBB. Text turns dark on a light one.</source>
+        <translation>N'importe quelle couleur, en #RRVVBB. Le texte devient sombre sur un fond clair.</translation>
+    </message>
+    <message>
+        <source>Opacity</source>
+        <translation>Opacité</translation>
+    </message>
+    <message>
+        <source>How much of the desktop shows through.</source>
+        <translation>Combien le bureau transparaît.</translation>
+    </message>
+    <message>
+        <source>Long pill</source>
+        <translation>Pilule longue</translation>
+    </message>
+    <message>
+        <source>A wider resting pill with the items you pick, in your order.</source>
+        <translation>Une pilule au repos plus large avec les éléments que vous choisissez, dans votre ordre.</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation>Monter</translation>
+    </message>
+    <message>
+        <source>Move down</source>
+        <translation>Descendre</translation>
+    </message>
+    <message>
+        <source>Take off</source>
+        <translation>Retirer</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Ajouter un élément</translation>
+    </message>
+    <message>
+        <source>Choose…</source>
+        <translation>Choisir…</translation>
+    </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>Tableau de bord</translation>
+    </message>
+    <message>
+        <source>Also in Lumo's menu in the system tray. Esc closes it; nothing in it runs once it's closed.</source>
+        <translation>Aussi dans le menu de Lumo dans la barre système. Échap le ferme ; rien n'y tourne une fois fermé.</translation>
+    </message>
+    <message>
+        <source>A whole screen of tiles</source>
+        <translation>Un écran entier de tuiles</translation>
+    </message>
+    <message>
+        <source>The clock, Today, Music, System, Controls and Tools side by side.</source>
+        <translation>L'horloge, Aujourd'hui, Musique, Système, Contrôles et Outils côte à côte.</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Ouvrir</translation>
+    </message>
+    <message>
+        <source>The screen in front</source>
+        <translation>L'écran devant vous</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Aujourd'hui</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>Contrôles</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>Outils</translation>
+    </message>
+    <message>
+        <source>Add a tile</source>
+        <translation>Ajouter une tuile</translation>
+    </message>
+    <message>
+        <source>Calendar</source>
+        <translation>Calendrier</translation>
+    </message>
+    <message>
+        <source>Your events from the private iCal links of your calendars (Google Calendar: Settings → your calendar → Secret address in iCal format; Outlook and iCloud have one too). They stay on this computer; holidays come from Nager.Date.</source>
+        <translation>Vos événements, depuis les liens iCal privés de vos calendriers (Google Agenda : Paramètres → votre agenda → Adresse secrète au format iCal ; Outlook et iCloud en ont un aussi). Ils restent sur cet ordinateur ; les jours fériés viennent de Nager.Date.</translation>
+    </message>
+    <message>
+        <source>Calendar links</source>
+        <translation>Liens de calendrier</translation>
+    </message>
+    <message>
+        <source>One link per line.</source>
+        <translation>Un lien par ligne.</translation>
+    </message>
+    <message>
+        <source>Holidays of</source>
+        <translation>Jours fériés de</translation>
+    </message>
+    <message>
+        <source>A two-letter country code, like MA or FR. Empty for none.</source>
+        <translation>Un code pays à deux lettres, comme MA ou FR. Vide pour aucun.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -1849,6 +2126,10 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>WhatsApp is open with the text — review it and press Send.</source>
         <translation>WhatsApp est ouvert avec le texte — relisez-le et appuyez sur Envoyer.</translation>
+    </message>
+    <message>
+        <source>Dashboard</source>
+        <translation>Tableau de bord</translation>
     </message>
 </context>
 <context>
@@ -1960,6 +2241,18 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Looking at the sky…</source>
         <translation>Je regarde le ciel…</translation>
+    </message>
+    <message>
+        <source>All day</source>
+        <translation>Toute la journée</translation>
+    </message>
+    <message>
+        <source>Nothing that day.</source>
+        <translation>Rien ce jour-là.</translation>
+    </message>
+    <message>
+        <source>Nothing that day. Add your calendar's private link in Settings → Widgets → Calendar.</source>
+        <translation>Rien ce jour-là. Ajoutez le lien privé de votre calendrier dans Réglages → Widgets → Calendrier.</translation>
     </message>
 </context>
 <context>
