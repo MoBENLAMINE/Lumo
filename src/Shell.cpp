@@ -281,6 +281,21 @@ void Shell::setupShortcuts() {
     toggle->setProperty("componentDisplayName", QStringLiteral("Lumo"));
     KGlobalAccel::setGlobalShortcut(toggle, QKeySequence(Qt::META | Qt::ALT | Qt::Key_I));
     connect(toggle, &QAction::triggered, this, &Shell::toggleRequested);
+
+    // Answer the top request without reaching for the mouse.
+    auto *allow = new QAction(tr("Allow Lumo's top request"), this);
+    allow->setObjectName(QStringLiteral("allow-request"));
+    allow->setProperty("componentName", QStringLiteral("lumo"));
+    allow->setProperty("componentDisplayName", QStringLiteral("Lumo"));
+    KGlobalAccel::setGlobalShortcut(allow, QKeySequence(Qt::META | Qt::ALT | Qt::Key_Y));
+    connect(allow, &QAction::triggered, this, &Shell::allowTopRequested);
+
+    auto *deny = new QAction(tr("Deny Lumo's top request"), this);
+    deny->setObjectName(QStringLiteral("deny-request"));
+    deny->setProperty("componentName", QStringLiteral("lumo"));
+    deny->setProperty("componentDisplayName", QStringLiteral("Lumo"));
+    KGlobalAccel::setGlobalShortcut(deny, QKeySequence(Qt::META | Qt::ALT | Qt::Key_D));
+    connect(deny, &QAction::triggered, this, &Shell::denyTopRequested);
 }
 
 bool Shell::autostart() const { return QFile::exists(autostartFile()); }

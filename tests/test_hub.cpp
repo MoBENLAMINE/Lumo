@@ -1,6 +1,7 @@
 // End to end: the real lumo-hook binary talking to HookServer + AgentHub.
 #include <QElapsedTimer>
 #include <QJsonArray>
+#include <QLocalSocket>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
@@ -150,6 +151,34 @@ private slots:
         QVERIFY(QTest::qWaitFor([&] { return m_hub->requests()->count() == 0; }, 3000));
     }
 
+    // Agents that can't take a decision from Lumo (Gemini…) only notify: the
+    // hook is gone at once, and the card must still stay up for a while.
+    void noticeOutlivesTheHook() {
+        QProcess hook;
+        hook.start(hookPath(), {QStringLiteral("--agent"), QStringLiteral("gemini"), QStringLiteral("PermissionRequest")});
+        hook.write(QJsonDocument(bash(QStringLiteral("g1"))).toJson(QJsonDocument::Compact));
+        hook.closeWriteChannel();
+        QVERIFY(hook.waitForFinished(2000));
+        QVERIFY(QTest::qWaitFor([&] { return m_hub->requests()->count() == 1; }, 3000));
+        QTest::qWait(500);
+        QCOMPARE(m_hub->requests()->count(), 1);
+        QCOMPARE(m_hub->requests()->row(0).value(QStringLiteral("kind")).toString(), QStringLiteral("notice"));
+        // Dismissing it is the same call as "answer in the terminal".
+        m_hub->replyInTerminal(m_hub->requests()->row(0).value(QStringLiteral("requestId")).toString());
+        QCOMPARE(m_hub->requests()->count(), 0);
+    }
+
+    void pidsAreForgotten() {
+        QProcess hook;
+        hook.start(hookPath(), {QStringLiteral("SessionStart")});
+        hook.write(R"({"session_id":"p1","hook_event_name":"SessionStart","cwd":"/tmp/p"})");
+        hook.closeWriteChannel();
+        QVERIFY(QTest::qWaitFor([&] { return !m_hub->sessionPids(QStringLiteral("p1")).isEmpty(); }, 3000));
+        m_hub->dismissSession(QStringLiteral("p1"));
+        QVERIFY(m_hub->sessionPids(QStringLiteral("p1")).isEmpty());
+        hook.waitForFinished();
+    }
+
     void sessionFlow() {
         const QString cwd = QStringLiteral("/home/me/Projets/coucou");
         auto ev = [&](const QString &name, QJsonObject extra) {
@@ -202,6 +231,45 @@ private slots:
         QCOMPARE(m_hub->sevenDay(), 7.5);
         QCOMPARE(m_hub->fiveHourReset(), 1793231400);
         hook.waitForFinished();
+    }
+
+    // Meta+Alt+Y / Meta+Alt+D act on the top request, and only on one a key can answer.
+    void shortcutAllowsThePermission() {
+        const auto out = run(QStringLiteral("PermissionRequest"), bash(QStringLiteral("k1")), [&](const QString &) { m_hub->allowTop(); });
+        QCOMPARE(decision(out).value(QStringLiteral("behavior")).toString(), QStringLiteral("allow"));
+        QCOMPARE(m_hub->requests()->count(), 0);
+    }
+
+    void shortcutSendsThePlanBack() {
+        QJsonObject p = bash(QStringLiteral("k2"));
+        p.insert(QStringLiteral("tool_name"), QStringLiteral("ExitPlanMode"));
+        p.insert(QStringLiteral("tool_input"), QJsonObject{{QStringLiteral("plan"), QStringLiteral("1. Do it")}});
+        const auto out = run(QStringLiteral("PermissionRequest"), p, [&](const QString &) { m_hub->denyTop(); });
+        QCOMPARE(decision(out).value(QStringLiteral("behavior")).toString(), QStringLiteral("deny"));
+        QVERIFY(decision(out).value(QStringLiteral("message")).toString().contains(QStringLiteral("keep planning")));
+    }
+
+    void shortcutLeavesQuestionsAlone() {
+        QJsonObject p = bash(QStringLiteral("k3"));
+        p.insert(QStringLiteral("tool_name"), QStringLiteral("AskUserQuestion"));
+        p.insert(QStringLiteral("tool_input"),
+                 QJsonObject{{QStringLiteral("questions"),
+                              QJsonArray{QJsonObject{{QStringLiteral("question"), QStringLiteral("Which?")},
+                                                     {QStringLiteral("options"), QJsonArray{QJsonObject{{QStringLiteral("label"), QStringLiteral("A")}}}}}}}});
+        QByteArray raw;
+        run(QStringLiteral("PermissionRequest"), p, [&](const QString &id) {
+            m_hub->allowTop();
+            m_hub->denyTop();
+            QCOMPARE(m_hub->requests()->count(), 1); // a question needs a choice, not a key
+            m_hub->replyInTerminal(id);
+        }, &raw);
+        QVERIFY(raw.trimmed().isEmpty());
+    }
+
+    void shortcutWithNothingPendingDoesNothing() {
+        m_hub->allowTop();
+        m_hub->denyTop();
+        QCOMPARE(m_hub->requests()->count(), 0);
     }
 
     void noAppMeansNoOpinion() {

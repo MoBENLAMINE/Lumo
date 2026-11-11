@@ -54,6 +54,10 @@ public:
     Q_INVOKABLE void answer(const QString &requestId, const QVariantMap &answers);
     // Leaves the decision to the agent's own terminal prompt.
     Q_INVOKABLE void replyInTerminal(const QString &requestId);
+    // The global shortcuts: answer the request at the top, if a key can answer it
+    // (a permission, or a plan: allow = approve, deny = keep planning).
+    Q_INVOKABLE void allowTop();
+    Q_INVOKABLE void denyTop();
     Q_INVOKABLE void dismissSession(const QString &sessionId);
     // The session's process chain, nearest first: its terminal or editor is in there.
     Q_INVOKABLE QVariantList sessionPids(const QString &sessionId) const { return m_pids.value(sessionId); }

@@ -33,6 +33,7 @@ constexpr int kArmMs = 200;          // Ctrl held this long, alone, starts recor
 constexpr int kMaxRecordMs = 10 * 60 * 1000;
 constexpr int kBars = 9;
 constexpr int kMaxHistory = 100;
+constexpr int kKeepDailyDays = 60;
 const QString kShortcutId = QStringLiteral("dictate");
 
 QString historyPath() {
@@ -41,9 +42,17 @@ QString historyPath() {
 
 int countWords(const QString &s) { return int(s.split(QRegularExpression(QStringLiteral("\\s+")), Qt::SkipEmptyParts).size()); }
 
+// The helpers' output is parsed: keep it in English whatever the desktop's language.
+QProcessEnvironment helperEnv() {
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert(QStringLiteral("LC_ALL"), QStringLiteral("C"));
+    return env;
+}
+
 // Runs a short helper command (wl-clipboard, pactl); returns stdout.
 QByteArray run(const QString &program, const QStringList &args, const QByteArray &input = {}, bool *ok = nullptr) {
     QProcess p;
+    p.setProcessEnvironment(helperEnv());
     p.start(program, args);
     if (!p.waitForStarted(500)) {
         if (ok) *ok = false;
@@ -104,11 +113,23 @@ Dictation::~Dictation() {
 void Dictation::silenceSpeakers() {
     if (m_outputMuted) return;
     // Only if it isn't muted already: we give back exactly what was there.
-    const QByteArray state = run(QStringLiteral("pactl"), {QStringLiteral("get-sink-mute"), QStringLiteral("@DEFAULT_SINK@")}).trimmed();
-    if (state.endsWith("yes") || state.endsWith("oui") || state.isEmpty()) return;
-    run(QStringLiteral("pactl"), {QStringLiteral("set-sink-mute"), QStringLiteral("@DEFAULT_SINK@"), QStringLiteral("1")});
-    m_outputMuted = true;
-    QSettings().setValue(QStringLiteral("dictation/outputMutedByLumo"), true);
+    // Asked without waiting, so the island never stalls on pactl.
+    auto *query = new QProcess(this);
+    query->setProcessEnvironment(helperEnv());
+    connect(query, &QProcess::finished, this, [this, query](int code, QProcess::ExitStatus status) {
+        query->deleteLater();
+        const QByteArray state = query->readAllStandardOutput().trimmed();
+        // "Mute: no" (LC_ALL=C); anything else (muted, no sink, an error) leaves the sound alone.
+        if (status != QProcess::NormalExit || code != 0 || !state.endsWith("no")) return;
+        if (!m_active || m_outputMuted) return; // you stopped talking meanwhile
+        QProcess::startDetached(QStringLiteral("pactl"), {QStringLiteral("set-sink-mute"), QStringLiteral("@DEFAULT_SINK@"), QStringLiteral("1")});
+        m_outputMuted = true;
+        QSettings().setValue(QStringLiteral("dictation/outputMutedByLumo"), true);
+    });
+    connect(query, &QProcess::errorOccurred, query, [query](QProcess::ProcessError e) {
+        if (e == QProcess::FailedToStart) query->deleteLater();
+    });
+    query->start(QStringLiteral("pactl"), {QStringLiteral("get-sink-mute"), QStringLiteral("@DEFAULT_SINK@")});
 }
 
 void Dictation::restoreSpeakers() {
@@ -530,6 +551,12 @@ void Dictation::record(const QString &text, double) {
     QSettings s;
     const QString day = QStringLiteral("dictation/daily/") + QDate::currentDate().toString(Qt::ISODate);
     s.setValue(day, s.value(day, 0).toInt() + words);
+    // Only the recent days count for anything; don't let lumo.conf grow forever.
+    s.beginGroup(QStringLiteral("dictation/daily"));
+    const QDate oldest = QDate::currentDate().addDays(-kKeepDailyDays);
+    for (const QString &key : s.childKeys())
+        if (const QDate d = QDate::fromString(key, Qt::ISODate); d.isValid() && d < oldest) s.remove(key);
+    s.endGroup();
     saveHistory();
     emit historyChanged();
 }

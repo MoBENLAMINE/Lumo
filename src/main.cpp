@@ -82,6 +82,8 @@ int main(int argc, char *argv[]) {
     HookInstaller installer;
     Sounds sounds;
     Shell shell;
+    QObject::connect(&shell, &Shell::allowTopRequested, &hub, &AgentHub::allowTop);
+    QObject::connect(&shell, &Shell::denyTopRequested, &hub, &AgentHub::denyTop);
     // Lumo's language: the one picked in Settings, or the desktop's. English
     // needs nothing: it is what the code is written in.
     QTranslator translator;

@@ -5,19 +5,58 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  DEPS: >-
+    base-devel cmake git curl bzip2 dbus
+    qt6-base qt6-declarative qt6-multimedia qt6-shadertools qt6-tools layer-shell-qt kglobalaccel kwindowsystem
+
 jobs:
   build:
     runs-on: ubuntu-latest
     container: archlinux:latest
     steps:
       - name: Install dependencies
-        run: |
-          pacman -Syu --noconfirm --needed base-devel cmake git curl bzip2 \
-            qt6-base qt6-declarative qt6-multimedia qt6-shadertools qt6-tools layer-shell-qt kglobalaccel kwindowsystem
+        run: pacman -Syu --noconfirm --needed $DEPS
       - uses: actions/checkout@v4
+      - name: Cache sherpa-onnx
+        uses: actions/cache@v4
+        with:
+          path: third_party
+          key: sherpa-${{ hashFiles('scripts/fetch-sherpa.sh') }}
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build -j"$(nproc)"
+      # Speech skips without the Parakeet model, music without a test player.
       - name: Test
-        run: ctest --test-dir build --output-on-failure -R "hub|vocabulary|beat|notifications|lyrics|calendar"
+        run: dbus-run-session -- ctest --test-dir build --output-on-failure
+      # Advisory for now: context properties (hub, chat…) read as unqualified access.
+      - name: QML lint
+        continue-on-error: true
+        run: /usr/lib/qt6/bin/qmllint -I build qml/*.qml
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm --needed $DEPS
+      - uses: actions/checkout@v4
+      - name: Cache sherpa-onnx
+        uses: actions/cache@v4
+        with:
+          path: third_party
+          key: sherpa-${{ hashFiles('scripts/fetch-sherpa.sh') }}
+      - name: Configure (ASan + UBSan)
+        run: >-
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+      # The hook relay, the socket server and the settings.json merge: the parts that touch untrusted input.
+      - name: Build
+        run: cmake --build build -j"$(nproc)" --target lumo-hook test_hub test_installer test_vocabulary
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build --output-on-failure -R "hub|installer|vocabulary"

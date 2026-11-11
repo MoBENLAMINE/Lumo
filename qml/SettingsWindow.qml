@@ -781,6 +781,20 @@ Window {
                             Keycap { text: "I" }
                         }
                         SettingRow {
+                            title: qsTr("Allow the top request")
+                            description: qsTr("Approves a plan too.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "Y" }
+                        }
+                        SettingRow {
+                            title: qsTr("Deny the top request")
+                            description: qsTr("Sends a plan back to keep planning.")
+                            Keycap { text: "Meta" }
+                            Keycap { text: "Alt" }
+                            Keycap { text: "D" }
+                        }
+                        SettingRow {
                             title: qsTr("Dictate")
                             description: dictation.keyMode === "evdev" ? qsTr("Hold, speak, let go. Tap twice for hands-free.") : qsTr("Set on the Dictation page.")
                             Keycap { text: dictation.keyLabel || qsTr("None") }

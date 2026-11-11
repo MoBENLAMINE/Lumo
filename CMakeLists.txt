@@ -29,8 +29,11 @@ find_package(KF6WindowSystem QUIET)
 qt_standard_project_setup(REQUIRES 6.5)
 include(GNUInstallDirs)
 
+option(LUMO_BUILD_TESTS "Build the tests (needs Qt6 Test)" ON)
+
 # The relay Claude Code runs on every hook: plain C, starts in about a millisecond.
-add_executable(lumo-hook hook/lumo-hook.c)
+# hook/protocol.h holds what it and the app must agree on.
+add_executable(lumo-hook hook/lumo-hook.c hook/protocol.h)
 target_compile_options(lumo-hook PRIVATE -O2 -Wall -Wextra)
 
 qt_add_executable(lumo
@@ -63,6 +66,7 @@ qt_add_executable(lumo
     src/Lyrics.cpp src/Lyrics.h
     src/Calendar.cpp src/Calendar.h
 )
+target_include_directories(lumo PRIVATE hook)
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
     BUILD_RPATH ${SHERPA_DIR}/lib
@@ -110,60 +114,73 @@ install(FILES ${SHERPA_DIR}/lib/libsherpa-onnx-c-api.so ${SHERPA_DIR}/lib/libonn
 configure_file(packaging/io.github.mobenlamine.lumo.desktop.in io.github.mobenlamine.lumo.desktop @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/io.github.mobenlamine.lumo.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
-# End-to-end tests: the real hook against the real server.
-enable_testing()
-find_package(Qt6 REQUIRED COMPONENTS Test)
-qt_add_executable(test_hub tests/test_hub.cpp
-    src/AgentHub.cpp src/HookServer.cpp src/MapListModel.cpp src/Diff.cpp)
-target_include_directories(test_hub PRIVATE src)
-target_compile_definitions(test_hub PRIVATE LUMO_HOOK_PATH="$<TARGET_FILE:lumo-hook>")
-target_link_libraries(test_hub PRIVATE Qt6::Core Qt6::Network Qt6::Test)
-add_dependencies(test_hub lumo-hook)
-add_test(NAME hub COMMAND test_hub)
-install(FILES packaging/io.github.mobenlamine.lumo.svg DESTINATION share/icons/hicolor/scalable/apps)
+install(FILES packaging/io.github.mobenlamine.lumo.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 
-qt_add_executable(test_speech tests/test_speech.cpp src/Speech.cpp)
-target_include_directories(test_speech PRIVATE src)
-target_link_libraries(test_speech PRIVATE Qt6::Core Qt6::Network Qt6::Test sherpa)
-set_target_properties(test_speech PROPERTIES BUILD_RPATH ${SHERPA_DIR}/lib)
-add_test(NAME speech COMMAND test_speech)
+if(LUMO_BUILD_TESTS)
+    enable_testing()
+    find_package(Qt6 REQUIRED COMPONENTS Test)
 
-qt_add_executable(test_vocabulary tests/test_vocabulary.cpp src/Vocabulary.cpp)
-target_include_directories(test_vocabulary PRIVATE src)
-target_link_libraries(test_vocabulary PRIVATE Qt6::Core Qt6::Test)
-add_test(NAME vocabulary COMMAND test_vocabulary)
+    # End-to-end tests: the real hook against the real server.
+    qt_add_executable(test_hub tests/test_hub.cpp
+        src/AgentHub.cpp src/HookServer.cpp src/MapListModel.cpp src/Diff.cpp)
+    target_include_directories(test_hub PRIVATE src hook)
+    target_compile_definitions(test_hub PRIVATE LUMO_HOOK_PATH="$<TARGET_FILE:lumo-hook>")
+    target_link_libraries(test_hub PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+    add_dependencies(test_hub lumo-hook)
+    add_test(NAME hub COMMAND test_hub)
 
-# Cloud sessions: the list parser and how the hub shows them (no network).
-qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/AgentHub.cpp src/Diff.cpp src/MapListModel.cpp)
-target_include_directories(test_cloud PRIVATE src)
-target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
-add_test(NAME cloud COMMAND test_cloud)
+    # settings.json merging, in a throwaway $HOME. Deploys the lumo-hook built next to it.
+    qt_add_executable(test_installer tests/test_installer.cpp src/HookInstaller.cpp src/Diff.cpp)
+    target_include_directories(test_installer PRIVATE src hook)
+    target_link_libraries(test_installer PRIVATE Qt6::Core Qt6::Test)
+    add_dependencies(test_installer lumo-hook)
+    add_test(NAME installer COMMAND test_installer)
 
-# The calendar: iCal links and how events repeat.
-qt_add_executable(test_calendar tests/test_calendar.cpp src/Calendar.cpp)
-target_include_directories(test_calendar PRIVATE src)
-target_link_libraries(test_calendar PRIVATE Qt6::Core Qt6::Network Qt6::Test)
-add_test(NAME calendar COMMAND test_calendar)
+    # Cloud sessions: the list parser and how the hub shows them (no network).
+    qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/AgentHub.cpp src/Diff.cpp src/MapListModel.cpp)
+    target_include_directories(test_cloud PRIVATE src hook)
+    target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+    add_test(NAME cloud COMMAND test_cloud)
 
-# Synced lyrics: the LRC reader and how song names are cleaned for the search.
-qt_add_executable(test_lyrics tests/test_lyrics.cpp src/Lyrics.cpp)
-target_include_directories(test_lyrics PRIVATE src)
-target_link_libraries(test_lyrics PRIVATE Qt6::Core Qt6::Network Qt6::Test)
-add_test(NAME lyrics COMMAND test_lyrics)
+    # The calendar: iCal links and how events repeat.
+    qt_add_executable(test_calendar tests/test_calendar.cpp src/Calendar.cpp)
+    target_include_directories(test_calendar PRIVATE src)
+    target_link_libraries(test_calendar PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+    add_test(NAME calendar COMMAND test_calendar)
 
-# Notifications as pills: how dbus-monitor's output is read.
-qt_add_executable(test_notifications tests/test_notifications.cpp src/Notifications.cpp)
-target_include_directories(test_notifications PRIVATE src)
-target_link_libraries(test_notifications PRIVATE Qt6::Core Qt6::Test)
-add_test(NAME notifications COMMAND test_notifications)
+    # Synced lyrics: the LRC reader and how song names are cleaned for the search.
+    qt_add_executable(test_lyrics tests/test_lyrics.cpp src/Lyrics.cpp)
+    target_include_directories(test_lyrics PRIVATE src)
+    target_link_libraries(test_lyrics PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+    add_test(NAME lyrics COMMAND test_lyrics)
 
-# The beat tracker, on synthetic songs.
-qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
-target_include_directories(test_beat PRIVATE src)
-target_link_libraries(test_beat PRIVATE Qt6::Core Qt6::Test)
-add_test(NAME beat COMMAND test_beat)
+    # Notifications as pills: how dbus-monitor's output is read.
+    qt_add_executable(test_notifications tests/test_notifications.cpp src/Notifications.cpp)
+    target_include_directories(test_notifications PRIVATE src)
+    target_link_libraries(test_notifications PRIVATE Qt6::Core Qt6::Test)
+    add_test(NAME notifications COMMAND test_notifications)
 
-# Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
-qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)
-target_include_directories(test_music PRIVATE src)
-target_link_libraries(test_music PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::DBus Qt6::Test)
+    # The beat tracker, on synthetic songs.
+    qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
+    target_include_directories(test_beat PRIVATE src)
+    target_link_libraries(test_beat PRIVATE Qt6::Core Qt6::Test)
+    add_test(NAME beat COMMAND test_beat)
+
+    # Needs the Parakeet model (skipped otherwise).
+    qt_add_executable(test_speech tests/test_speech.cpp src/Speech.cpp)
+    target_include_directories(test_speech PRIVATE src)
+    target_link_libraries(test_speech PRIVATE Qt6::Core Qt6::Network Qt6::Test sherpa)
+    set_target_properties(test_speech PROPERTIES BUILD_RPATH ${SHERPA_DIR}/lib)
+    add_test(NAME speech COMMAND test_speech)
+
+    qt_add_executable(test_vocabulary tests/test_vocabulary.cpp src/Vocabulary.cpp)
+    target_include_directories(test_vocabulary PRIVATE src)
+    target_link_libraries(test_vocabulary PRIVATE Qt6::Core Qt6::Test)
+    add_test(NAME vocabulary COMMAND test_vocabulary)
+
+    # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
+    qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)
+    target_include_directories(test_music PRIVATE src)
+    target_link_libraries(test_music PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::DBus Qt6::Test)
+    add_test(NAME music COMMAND test_music)
+endif()

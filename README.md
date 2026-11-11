@@ -164,6 +164,8 @@ Then start **Lumo** from your app menu.
 | Hold <kbd>Left Ctrl</kbd> | Dictate (two taps: hands-free) |
 | <kbd>Meta+Alt+N</kbd> | Open the chat |
 | <kbd>Meta+Alt+I</kbd> | Show or hide the island |
+| <kbd>Meta+Alt+Y</kbd> | Allow the top request (approves a plan) |
+| <kbd>Meta+Alt+D</kbd> | Deny the top request (sends a plan back) |
 
 ## Privacy
 
