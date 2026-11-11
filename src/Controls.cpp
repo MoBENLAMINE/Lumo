@@ -261,7 +261,7 @@ void Controls::readBrightness() {
              const QString service = QStringLiteral("org.kde.Solid.PowerManagement");
              const QString path = QStringLiteral("/org/kde/Solid/PowerManagement/Actions/BrightnessControl");
              const QString iface = QStringLiteral("org.kde.Solid.PowerManagement.Actions.BrightnessControl");
-             call(false, service, path, iface, QStringLiteral("brightnessMax"), {}, this, [=](const QDBusMessage &r) {
+             call(false, service, path, iface, QStringLiteral("brightnessMax"), {}, this, [=, this](const QDBusMessage &r) {
                  if (r.type() != QDBusMessage::ReplyMessage || r.arguments().isEmpty()) return;
                  m_brightnessMax = r.arguments().first().toInt();
                  call(false, service, path, iface, QStringLiteral("brightness"), {}, this, [this](const QDBusMessage &r) {

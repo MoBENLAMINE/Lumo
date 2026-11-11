@@ -18,6 +18,8 @@
 #include <QSettings>
 #include <QSystemTrayIcon>
 #include <QTimer>
+#include <QFileInfo>
+#include <QStandardPaths>
 
 #include <KGlobalAccel>
 #ifdef LUMO_HAVE_KWINDOWSYSTEM
@@ -30,7 +32,8 @@ QString autostartFile() { return QDir::homePath() + QStringLiteral("/.config/aut
 
 // Lumo, drawn small for the tray: the blocky terracotta body with its arms and
 // four legs, and the dark face screen with two eyes of light.
-QIcon lumoIcon() {
+// Lumo's icon in a color (the accent): the tray, the windows, the launcher.
+QIcon lumoIcon(const QColor &color = QColor(0xD9, 0x77, 0x57)) {
     QIcon icon;
     for (int size : {16, 22, 24, 32, 48, 64}) {
         QPixmap pm(size, size);
@@ -39,7 +42,7 @@ QIcon lumoIcon() {
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(Qt::NoPen);
         const qreal s = size;
-        const QColor body(0xD9, 0x77, 0x57), shade(0xB2, 0x5E, 0x40);
+        const QColor body = color, shade = color.darker(122);
         // legs and arms, behind the body
         p.setBrush(shade);
         for (qreal x : {0.22, 0.36, 0.55, 0.69}) p.drawRoundedRect(QRectF(s * x, s * 0.72, s * 0.09, s * 0.2), s * 0.03, s * 0.03);
@@ -47,7 +50,7 @@ QIcon lumoIcon() {
         p.drawRoundedRect(QRectF(s * 0.84, s * 0.45, s * 0.16, s * 0.15), s * 0.04, s * 0.04);
         // the body
         QLinearGradient g(0, 0, 0, s);
-        g.setColorAt(0, QColor(0xF0, 0x8F, 0x6E));
+        g.setColorAt(0, color.lighter(112));
         g.setColorAt(1, body);
         p.setBrush(g);
         p.drawRoundedRect(QRectF(s * 0.07, s * 0.04, s * 0.86, s * 0.76), s * 0.22, s * 0.22);
@@ -65,7 +68,84 @@ QIcon lumoIcon() {
 }
 }
 
-Shell::Shell(QObject *parent) : QObject(parent) {}
+// The launcher's icon, the same drawing as packaging/io.github.mobenlamine.lumo.svg,
+// in your accent color.
+QByteArray lumoSvg(const QColor &c) {
+    QByteArray svg = R"svg(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="LIGHT"/>
+      <stop offset=".55" stop-color="BODY"/>
+      <stop offset="1" stop-color="SHADE"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1D1D27"/>
+      <stop offset="1" stop-color="#0B0B10"/>
+    </linearGradient>
+  </defs>
+  <g fill="SHADE">
+    <rect x="27" y="96" width="11" height="22" rx="4"/>
+    <rect x="44" y="96" width="11" height="22" rx="4"/>
+    <rect x="73" y="96" width="11" height="22" rx="4"/>
+    <rect x="90" y="96" width="11" height="22" rx="4"/>
+  </g>
+  <g fill="ARM">
+    <rect x="2" y="62" width="18" height="18" rx="5"/>
+    <rect x="108" y="62" width="18" height="18" rx="5"/>
+  </g>
+  <rect x="9" y="7" width="110" height="98" rx="28" fill="url(#body)" stroke="#fff" stroke-opacity=".22" stroke-width="2.5"/>
+  <ellipse cx="37" cy="17" rx="17" ry="5" fill="#fff" opacity=".32" transform="rotate(-12 37 17)"/>
+  <rect x="20" y="33" width="88" height="52" rx="24" fill="url(#screen)"/>
+  <rect x="34" y="38" width="44" height="3.5" rx="1.75" fill="#fff" opacity=".08"/>
+  <g fill="#EEF8FF">
+    <ellipse cx="45" cy="58" rx="15" ry="18" opacity=".16"/>
+    <ellipse cx="83" cy="58" rx="15" ry="18" opacity=".16"/>
+    <rect x="38" y="46" width="14" height="24" rx="5"/>
+    <rect x="76" y="46" width="14" height="24" rx="5"/>
+    <rect x="58" y="74" width="12" height="3.5" rx="1.75" opacity=".85"/>
+  </g>
+</svg>
+)svg";
+    svg.replace("LIGHT", c.lighter(112).name().toLatin1());
+    svg.replace("BODY", c.name().toLatin1());
+    svg.replace("SHADE", c.darker(122).name().toLatin1());
+    svg.replace("ARM", c.darker(110).name().toLatin1());
+    return svg;
+}
+
+Shell::Shell(QObject *parent) : QObject(parent) {
+    m_iconSoon.setSingleShot(true);
+    m_iconSoon.setInterval(1500);
+    connect(&m_iconSoon, &QTimer::timeout, this, &Shell::writeLauncherIcon);
+}
+
+void Shell::setAccent(const QColor &color) {
+    if (!color.isValid() || color == m_accent) return;
+    m_accent = color;
+    const QIcon icon = lumoIcon(color);
+    QApplication::setWindowIcon(icon);
+    if (m_tray) m_tray->setIcon(icon);
+    m_iconSoon.start();   // the launcher's icon, once the color settles
+    emit accentChanged();
+}
+
+// Writes Lumo's icon, in the accent, where the launcher and the task manager
+// look first (~/.local/share/icons), and tells KDE its icons changed.
+void Shell::writeLauncherIcon() {
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/icons/hicolor/scalable/apps");
+    QDir().mkpath(dir);
+    QFile f(dir + QStringLiteral("/io.github.mobenlamine.lumo.svg"));
+    const QByteArray svg = lumoSvg(m_accent);
+    if (f.open(QIODevice::ReadOnly) && f.readAll() == svg) return;
+    f.close();
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) return;
+    f.write(svg);
+    f.close();
+    // A newer theme folder makes KDE drop its icon cache; ksycoca for the launcher.
+    QProcess::startDetached(QStringLiteral("touch"), {QFileInfo(dir).dir().absolutePath() + QStringLiteral("/..")});
+    QFile::remove(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) + QStringLiteral("/icon-cache.kcache"));
+    QProcess::startDetached(QStringLiteral("kbuildsycoca6"), {});
+}
 
 void Shell::attach(QQuickWindow *island) {
     m_island = island;
@@ -153,7 +233,7 @@ void Shell::setKeyboard(bool on) {
 }
 
 void Shell::setupTray() {
-    m_tray = new QSystemTrayIcon(lumoIcon(), this);
+    m_tray = new QSystemTrayIcon(lumoIcon(m_accent), this);
     m_tray->setToolTip(QStringLiteral("Lumo"));
     auto *menu = new QMenu();
     QAction *open = menu->addAction(QString(), this, &Shell::toggleRequested);
@@ -184,7 +264,7 @@ void Shell::setupTray() {
         if (r == QSystemTrayIcon::Trigger) emit toggleRequested();
     });
     m_tray->show();
-    QApplication::setWindowIcon(lumoIcon());
+    QApplication::setWindowIcon(lumoIcon(m_accent));
 }
 
 void Shell::setupShortcuts() {

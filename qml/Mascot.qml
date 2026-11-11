@@ -13,7 +13,7 @@ Item {
     id: mascot
 
     property real size: 32
-    property color color: "#D97757"
+    property color color: Ui.accent
     // idle | working | alert | happy | sad | waiting | dizzy
     property string mood: "idle"
     property bool alive: true

@@ -535,6 +535,10 @@ Drop a file here to ask about it.</source>
         <source>Leave (Esc)</source>
         <translation>خروج (Esc)</translation>
     </message>
+    <message>
+        <source>No lyrics found for this song</source>
+        <translation>لم يُعثر على كلمات لهذه الأغنية</translation>
+    </message>
 </context>
 <context>
     <name>HoldShortcut</name>
