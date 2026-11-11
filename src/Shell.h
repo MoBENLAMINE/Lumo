@@ -34,6 +34,8 @@ class Shell : public QObject {
     Q_PROPERTY(QString outfit READ outfit WRITE setOutfit NOTIFY outfitChanged)
     // Instinct's WhatsApp number, for "Send to Instinct" (empty: copy only).
     Q_PROPERTY(QString instinctNumber READ instinctNumber WRITE setInstinctNumber NOTIFY instinctNumberChanged)
+    // KWin blurs what's behind the island (the glass theme), where it can.
+    Q_PROPERTY(bool blur READ blur WRITE setBlur NOTIFY blurChanged)
 public:
     explicit Shell(QObject *parent = nullptr);
 
@@ -60,6 +62,8 @@ public:
     QString outfit() const;
     void setOutfit(const QString &outfit);
     QString instinctNumber() const;
+    bool blur() const { return m_blur; }
+    void setBlur(bool on);
     void setInstinctNumber(const QString &number);
 
     // The relay Instinct's own brief describes: there is no direct link between
@@ -82,6 +86,7 @@ public:
 
 signals:
     void farewellRequested();
+    void blurChanged();
     void autostartChanged();
     void alwaysShowChanged();
     void showUsageChanged();
@@ -100,6 +105,8 @@ signals:
 
 private:
     bool m_leaving = false;
+    bool m_blur = false;
+    void applyBlur();
     // On/off preferences, on by default.
     bool flag(const QString &key) const;
     void setFlag(const QString &key, bool on, void (Shell::*changed)());

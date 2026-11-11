@@ -10,7 +10,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: t.on ? Ui.accent : toggleHover.hovered ? "#3A3A44" : "#2E2E36"
+        color: t.on ? Ui.accent : toggleHover.hovered ? "#3A3A44" : Ui.track
         Behavior on color { ColorAnimation { duration: 150 } }
     }
     Rectangle {

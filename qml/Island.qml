@@ -70,6 +70,11 @@ Window {
         value: prefs.accentSource === "album" && music.playing && music.hasColor ? music.color : prefs.accent
     }
     Binding { target: Ui; property: "reduceMotion"; value: prefs.reduceMotion }
+    Binding { target: Ui; property: "theme"; value: prefs.theme }
+    Binding { target: Ui; property: "customBackground"; value: prefs.customBackground }
+    Binding { target: Ui; property: "surfaceOpacity"; value: prefs.opacity }
+    // glass: the desktop shows through the island, blurred by KWin
+    Binding { target: shell; property: "blur"; value: prefs.theme === "glass" }
 
     // ------------------------------------------------------------ notices
     // A short pill for what happens around you: the battery, a timer, a
@@ -483,6 +488,54 @@ Window {
                         : Qt.rgba(hub.headlineColor.r, hub.headlineColor.g, hub.headlineColor.b, 0.22)
             Behavior on border.color { ColorAnimation { duration: 300 } }
             transform: Translate { x: win.shakeX }
+            clip: Ui.theme === "starfall"
+
+            // Starfall: fine star dust and a violet glow drifting slowly
+            // around the open island (nothing moves while it is closed)
+            Item {
+                anchors.fill: parent
+                visible: Ui.theme === "starfall"
+                Rectangle {
+                    id: nebula
+                    width: parent.width * 0.9; height: width * 0.6
+                    radius: width / 2
+                    opacity: 0.22
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0; color: "transparent" }
+                        GradientStop { position: 0.5; color: "#7B5CFF" }
+                        GradientStop { position: 1; color: "transparent" }
+                    }
+                    y: parent.height * 0.3
+                    SequentialAnimation on x {
+                        running: Ui.theme === "starfall" && win.mode === "open" && !Ui.reduceMotion
+                        loops: Animation.Infinite
+                        NumberAnimation { from: -nebula.width * 0.4; to: body.width - nebula.width * 0.6; duration: 24000; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: -nebula.width * 0.4; duration: 24000; easing.type: Easing.InOutSine }
+                    }
+                }
+                Repeater {
+                    model: 46
+                    Rectangle {
+                        required property int index
+                        // scattered the same way every time: a fixed little sequence
+                        x: (index * 97 % 101) / 101 * body.width
+                        y: body.r + (index * 61 % 89) / 89 * Math.max(0, body.height - body.r)
+                        width: index % 7 === 0 ? 2 : 1.2
+                        height: width
+                        radius: width / 2
+                        color: index % 5 === 0 ? "#C9B8FF" : "white"
+                        opacity: 0.25 + (index % 4) * 0.15
+                        SequentialAnimation on opacity {
+                            running: Ui.theme === "starfall" && win.mode === "open" && !Ui.reduceMotion && index % 3 === 0
+                            loops: Animation.Infinite
+                            PauseAnimation { duration: (index * 137) % 2000 }
+                            NumberAnimation { to: 0.15; duration: 1400; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.8; duration: 1400; easing.type: Easing.InOutSine }
+                        }
+                    }
+                }
+            }
 
             TapHandler {
                 enabled: win.mode === "compact" || win.mode === "rest"

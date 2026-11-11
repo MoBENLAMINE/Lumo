@@ -20,6 +20,9 @@
 #include <QTimer>
 
 #include <KGlobalAccel>
+#ifdef LUMO_HAVE_KWINDOWSYSTEM
+#include <KWindowEffects>
+#endif
 #include <LayerShellQt/Window>
 
 namespace {
@@ -123,6 +126,22 @@ void Shell::setInputRect(const QRectF &rect) {
     if (r == m_lastMask) return;
     m_lastMask = r;
     m_island->setMask(QRegion(r));
+    if (m_blur) applyBlur();
+}
+
+void Shell::setBlur(bool on) {
+    if (on == m_blur) return;
+    m_blur = on;
+    applyBlur();
+    emit blurChanged();
+}
+
+// Only the island's own shape is blurred, not the window around it.
+void Shell::applyBlur() {
+#ifdef LUMO_HAVE_KWINDOWSYSTEM
+    if (!m_island) return;
+    KWindowEffects::enableBlurBehind(m_island, m_blur, QRegion(m_lastMask, QRegion::Rectangle));
+#endif
 }
 
 void Shell::setKeyboard(bool on) {

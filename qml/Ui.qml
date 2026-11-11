@@ -2,15 +2,40 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    readonly property color island: "#09090D"
+    // The theme (Prefs): dark, light, glass (the desktop shows through,
+    // blurred), custom (your background) or starfall (a night sky).
+    property string theme: "dark"
+    property color customBackground: "#101820"
+    property real surfaceOpacity: 1.0
+    readonly property bool light: theme === "light" || (theme === "custom" && customBackground.hslLightness > 0.6)
+    function alpha(c, a) { const k = Qt.lighter(c, 1.0); return Qt.rgba(k.r, k.g, k.b, a) }
+    readonly property real _a: theme === "glass" ? Math.min(surfaceOpacity, 0.6) : surfaceOpacity
+
+    readonly property color island: theme === "light" ? alpha("#F3F3F6", _a)
+                                  : theme === "custom" ? alpha(customBackground, _a)
+                                  : theme === "starfall" ? alpha("#0B0A1E", _a)
+                                  : theme === "glass" ? alpha("#0A0A10", _a)
+                                  : alpha("#09090D", _a)
     // the island and Settings get a little depth toward the bottom
-    readonly property color islandLow: "#111118"
-    readonly property color card: "#15151C"
-    readonly property color cardHover: "#1C1C25"
-    readonly property color line: "#262630"
-    readonly property color text: "#F3F3F7"
-    readonly property color dim: "#9C9CAA"
-    readonly property color faint: "#5E5E6C"
+    readonly property color islandLow: theme === "light" ? alpha("#E9E9EF", _a)
+                                     : theme === "custom" ? alpha(Qt.darker(customBackground, 1.15), _a)
+                                     : theme === "starfall" ? alpha("#16112E", _a)
+                                     : theme === "glass" ? alpha("#12121A", _a)
+                                     : alpha("#111118", _a)
+    readonly property color card: light ? "#FFFFFF"
+                                : theme === "glass" ? Qt.rgba(1, 1, 1, 0.07)
+                                : theme === "custom" ? Qt.lighter(customBackground, 1.35)
+                                : theme === "starfall" ? "#17142F" : "#15151C"
+    readonly property color cardHover: light ? "#F0F0F5"
+                                     : theme === "glass" ? Qt.rgba(1, 1, 1, 0.12)
+                                     : theme === "custom" ? Qt.lighter(customBackground, 1.6)
+                                     : theme === "starfall" ? "#211C40" : "#1C1C25"
+    readonly property color line: light ? "#E0E0E7" : theme === "glass" ? Qt.rgba(1, 1, 1, 0.12)
+                                 : theme === "starfall" ? "#2A2550" : "#262630"
+    readonly property color text: light ? "#15151B" : "#F3F3F7"
+    readonly property color dim: light ? "#5C5C6A" : "#9C9CAA"
+    readonly property color faint: light ? "#9494A2" : "#5E5E6C"
+    readonly property color track: light ? "#D6D6DE" : "#2E2E36"
     // Claude's terracotta by default: Lumo's body, and every accent. The island
     // sets it from Prefs (KDE's accent, the wallpaper's, the album's, your own).
     property color accent: "#D97757"

@@ -23,7 +23,7 @@ Window {
     readonly property color sidebar: Ui.island
     readonly property color groupBg: Ui.card
     readonly property color groupLine: Ui.line
-    readonly property color track: "#2E2E36"
+    readonly property color track: Ui.track
     readonly property color accentSoft: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.14)
     readonly property int contentMax: 680
     // what the resting pill can show
@@ -800,6 +800,42 @@ Window {
 
                     Group {
                         title: qsTr("Look")
+                        SettingRow {
+                            title: qsTr("Theme")
+                            description: qsTr("The island and Settings: dark, light, glass (the desktop shows through, blurred), your own background, or Starfall, a night sky.")
+                            LumoCombo {
+                                readonly property var choices: [
+                                    { id: "dark", label: qsTr("Dark") }, { id: "light", label: qsTr("Light") },
+                                    { id: "glass", label: qsTr("Glass") }, { id: "custom", label: qsTr("Custom") },
+                                    { id: "starfall", label: qsTr("Starfall") }
+                                ]
+                                model: choices.map(c => c.label)
+                                currentIndex: Math.max(0, choices.findIndex(c => c.id === prefs.theme))
+                                onActivated: (i) => prefs.theme = choices[i].id
+                                Layout.maximumWidth: 200
+                            }
+                        }
+                        SettingRow {
+                            visible: prefs.theme === "custom"
+                            title: qsTr("Background")
+                            description: qsTr("Any color, as #RRGGBB. Text turns dark on a light one.")
+                            Rectangle { implicitWidth: 24; implicitHeight: 24; radius: 12; color: prefs.customBackground; border.color: Ui.line }
+                            LumoField {
+                                text: prefs.customBackground
+                                implicitWidth: 110
+                                onEditingFinished: if (/^#[0-9a-fA-F]{6}$/.test(text)) prefs.customBackground = text
+                            }
+                        }
+                        SettingRow {
+                            visible: prefs.theme !== "light"
+                            title: prefs.theme === "glass" ? qsTr("Glass") : qsTr("Opacity")
+                            description: qsTr("How much of the desktop shows through.")
+                            LumoSlider {
+                                from: 0.5; to: 1; stepSize: 0.05
+                                value: prefs.opacity
+                                onMoved: prefs.opacity = value
+                            }
+                        }
                         SettingRow {
                             title: qsTr("Accent color")
                             description: qsTr("Lumo's color: Claude's terracotta, KDE's accent, your wallpaper's, the album art's while music plays, or your own.")

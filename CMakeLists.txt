@@ -23,6 +23,8 @@ set_target_properties(sherpa PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${SHERPA_DIR}/include)
 find_package(LayerShellQt REQUIRED)
 find_package(KF6GlobalAccel REQUIRED)
+# KWin's blur behind the glass theme; without it, glass is only see-through.
+find_package(KF6WindowSystem QUIET)
 
 qt_standard_project_setup(REQUIRES 6.5)
 include(GNUInstallDirs)
@@ -67,6 +69,10 @@ set_target_properties(lumo PROPERTIES
     INSTALL_RPATH "$ORIGIN/../lib/lumo")
 
 target_compile_definitions(lumo PRIVATE LUMO_VERSION="${PROJECT_VERSION}")
+if(KF6WindowSystem_FOUND)
+    target_link_libraries(lumo PRIVATE KF6::WindowSystem)
+    target_compile_definitions(lumo PRIVATE LUMO_HAVE_KWINDOWSYSTEM)
+endif()
 
 # Translations (i18n/lumo_<language>.ts), built into the app when Qt's
 # Linguist tools are installed; without them Lumo is in English only.
