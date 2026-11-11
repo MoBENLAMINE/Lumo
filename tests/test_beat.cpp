@@ -94,6 +94,18 @@ private slots:
         QVERIFY2(std::abs(late - 20) <= 1, qPrintable(QString::number(late)));
         QVERIFY(onTime(beats, 120, 6) > 0.85);
     }
+    void bandsFollowTheMusic()
+    {
+        BeatTracker tracker(Rate);
+        run(tracker, song(120, 4, Rate));
+        // the kicks and the bass line live in the low bands
+        QVERIFY(tracker.bands()[0] > 0.05 || tracker.bands()[1] > 0.05);
+        for (int b = 0; b < BeatTracker::Bands; ++b)
+            QVERIFY(tracker.bands()[b] >= 0 && tracker.bands()[b] <= 1);
+        run(tracker, QVector<qint16>(Rate * 3, 0));
+        for (int b = 0; b < BeatTracker::Bands; ++b)
+            QVERIFY2(tracker.bands()[b] < 0.02, qPrintable(QString::number(tracker.bands()[b])));
+    }
     void silenceHasNoBeat()
     {
         BeatTracker tracker(Rate);

@@ -7,6 +7,12 @@
 #include <QDBusReply>
 #include <QDateTime>
 #include <QTimer>
+#include <QImage>
+#include <QImageReader>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+
+#include "Vivid.h"
 
 #include <algorithm>
 
@@ -159,7 +165,54 @@ void Music::load(const QString &service) {
     }
     m_identity = readProperty(service, QStringLiteral("org.mpris.MediaPlayer2"), QStringLiteral("Identity")).toString();
     if (m_title.isEmpty()) m_title = m_identity;
+    if (!m_canSeek || m_hasLoop) m_fakeLoop = false;
+    watchLoop();
+    updateColor();
     emit changed();
+}
+
+// "Repeat this track" for players without one: shortly before the end, back
+// to the start. Checked twice a second, and only while that is on and playing.
+void Music::watchLoop() {
+    const bool needed = m_fakeLoop && playing() && m_length > 3000;
+    if (!needed) { if (m_loopWatch) m_loopWatch->stop(); return; }
+    if (!m_loopWatch) {
+        m_loopWatch = new QTimer(this);
+        m_loopWatch->setInterval(500);
+        connect(m_loopWatch, &QTimer::timeout, this, [this] {
+            if (m_fakeLoop && playing() && m_length > 3000 && position() >= m_length - 900) seek(0);
+        });
+    }
+    m_loopWatch->start();
+}
+
+// The cover's color, once per cover: from the file, or downloaded (small).
+void Music::updateColor() {
+    if (m_art == m_colorFor) return;
+    m_colorFor = m_art;
+    const QUrl url(m_art);
+    auto apply = [this](const QImage &img) {
+        const QColor c = Vivid::color(img);
+        if (c == m_color) return;
+        m_color = c;
+        emit colorChanged();
+    };
+    if (m_art.isEmpty()) { apply({}); return; }
+    if (url.isLocalFile()) {
+        QImageReader reader(url.toLocalFile());
+        reader.setScaledSize(QSize(48, 48));
+        apply(reader.read());
+        return;
+    }
+    if (url.scheme() != QLatin1String("https") && url.scheme() != QLatin1String("http")) return;
+    if (!m_net) m_net = new QNetworkAccessManager(this);
+    QNetworkReply *reply = m_net->get(QNetworkRequest(url));
+    const QString wanted = m_art;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, wanted, apply] {
+        reply->deleteLater();
+        if (wanted != m_art || reply->error() != QNetworkReply::NoError) return;
+        apply(QImage::fromData(reply->readAll()));
+    });
 }
 
 qint64 Music::position() const {
@@ -190,7 +243,13 @@ void Music::toggleShuffle() {
 }
 
 void Music::cycleLoop() {
-    if (!m_hasLoop) return;
+    if (!m_hasLoop) {
+        if (!m_canSeek) return;
+        m_fakeLoop = !m_fakeLoop;
+        watchLoop();
+        emit changed();
+        return;
+    }
     m_loop = m_loop == QLatin1String("None") ? QStringLiteral("Playlist")
            : m_loop == QLatin1String("Playlist") ? QStringLiteral("Track") : QStringLiteral("None");
     setPlayerProperty(QStringLiteral("LoopStatus"), m_loop);

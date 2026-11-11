@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QProcess>
 #include <QTimer>
+#include <QVariantList>
 #include <QVector>
 
 // Finds the beat in mono 16-bit audio, fed in any chunk size. Pure: time is
@@ -29,6 +30,11 @@ public:
 
     double bpm() const { return m_period > 0 ? 60.0 / m_period : 0; }
     double level() const { return m_level; }   // 0..1, smoothed loudness
+    // Six bands, bass to treble, each 0..1 against its own recent peak:
+    // what the music card's visualizer draws.
+    static constexpr int Bands = 6;
+    const double *bands() const { return m_band; }
+    qint64 frames() const { return m_frames; }
     double time() const { return double(m_samples) / m_rate; }
     void reset();
 
@@ -41,6 +47,11 @@ private:
     double m_alpha;                 // one-pole low-pass for the bass band
     double m_low = 0;
     double m_sumBass = 0, m_sumAll = 0;
+    // the visualizer's bands: a ladder of one-pole low-passes, each band the
+    // difference between two rungs
+    double m_rungAlpha[Bands - 1] = {}, m_rung[Bands - 1] = {};
+    double m_bandSum[Bands] = {}, m_band[Bands] = {}, m_bandPeak[Bands] = {};
+    qint64 m_frames = 0;
     int m_inFrame = 0;
     qint64 m_samples = 0;
 
@@ -68,6 +79,8 @@ class Beat : public QObject {
     Q_PROPERTY(bool listening READ listening NOTIFY listeningChanged)
     Q_PROPERTY(double bpm READ bpm NOTIFY tempoChanged)
     Q_PROPERTY(double level READ level NOTIFY tempoChanged)
+    // the visualizer: six levels, bass to treble, about 30 times a second
+    Q_PROPERTY(QVariantList bands READ bands NOTIFY bandsChanged)
 public:
     explicit Beat(QObject *parent = nullptr);
     ~Beat() override;
@@ -77,11 +90,13 @@ public:
     bool listening() const { return m_listening; }
     double bpm() const;
     double level() const { return m_tracker.level(); }
+    QVariantList bands() const { return m_bands; }
 
 signals:
     void activeChanged();
     void listeningChanged();
     void tempoChanged();
+    void bandsChanged();
     // index counts the beats since dancing started; period is the time to
     // the next beat in ms, so a move can last exactly one beat.
     void beat(int index, double strength, int period);
@@ -102,5 +117,7 @@ private:
     QTimer m_retry;
     QElapsedTimer m_sinceReal, m_sinceBeat;
     bool m_heardOnce = false;
+    QVariantList m_bands;
+    QElapsedTimer m_bandsAt;
     int m_index = 0;
 };

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Window
+import QtQuick.Dialogs
 
 // Lumo's settings: a sidebar of pages, each page a stack of grouped cards.
 Window {
@@ -25,11 +26,21 @@ Window {
     readonly property color track: "#2E2E36"
     readonly property color accentSoft: Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.14)
     readonly property int contentMax: 680
+    // what the resting pill can show
+    readonly property var pillChoices: [
+        { id: "", label: qsTr("Nothing") }, { id: "weather", label: qsTr("Weather") },
+        { id: "battery", label: qsTr("Battery") }, { id: "cpu", label: qsTr("CPU") },
+        { id: "memory", label: qsTr("Memory") }, { id: "network", label: qsTr("Network") },
+        { id: "date", label: qsTr("Date") }, { id: "timer", label: qsTr("Timer") },
+        { id: "music", label: qsTr("Music") }, { id: "clock", label: qsTr("Clock") }
+    ]
 
     // 24×24 stroke icons, one per page.
     readonly property var pages: [
         { title: qsTr("General"), subtitle: qsTr("How Lumo looks, sounds and behaves."),
           icon: "M4 8h9 M17 8h3 M4 16h3 M11 16h9 M13 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M7 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" },
+        { title: qsTr("Widgets"), subtitle: qsTr("Lumo's look, the resting pill, the weather, notifications and the battery."),
+          icon: "M4 5h7v7h-7z M13 5h7v4h-7z M13 11h7v8h-7z M4 14h7v5h-7z" },
         { title: qsTr("Dictation"), subtitle: qsTr("Hold a key, speak, let go — offline, on this computer."),
           icon: "M12 4a3 3 0 0 0 -3 3v5a3 3 0 0 0 6 0v-5a3 3 0 0 0 -3 -3z M6 11a6 6 0 0 0 12 0 M12 17v3 M9 20h6" },
         { title: qsTr("Claude Code"), subtitle: qsTr("Follow your sessions and answer them from the island."),
@@ -98,30 +109,6 @@ Window {
     Shortcut { sequence: StandardKey.Find; onActivated: { searchField.forceActiveFocus(); searchField.selectAll() } }
 
     // ------------------------------------------------------------ building blocks
-
-    component Toggle: Item {
-        id: t
-        property bool on: false
-        signal toggled(bool on)
-        implicitWidth: 42
-        implicitHeight: 24
-        Rectangle {
-            anchors.fill: parent
-            radius: height / 2
-            color: t.on ? Ui.accent : toggleHover.hovered ? "#3A3A44" : settings.track
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
-        Rectangle {
-            width: 18; height: 18; radius: 9; y: 3
-            x: t.on ? t.width - width - 3 : 3
-            color: "white"
-            scale: toggleTap.pressed ? 0.9 : 1
-            Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-            Behavior on scale { NumberAnimation { duration: 90 } }
-        }
-        HoverHandler { id: toggleHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { id: toggleTap; onTapped: t.toggled(!t.on) }
-    }
 
     component LumoSlider: Slider {
         id: s
@@ -544,7 +531,7 @@ Window {
                         }
                     }
                     HoverHandler { id: footerHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: settings.page = 2 }
+                    TapHandler { onTapped: settings.page = 3 }
                 }
             }
         }
@@ -713,6 +700,11 @@ Window {
                             }
                         }
                         SettingRow {
+                            title: qsTr("Hide during fullscreen apps")
+                            description: qsTr("While a game or a video fills the screen, the island steps aside. Requests from your agents still come through.")
+                            Toggle { on: prefs.hideOnFullscreen; onToggled: (v) => prefs.hideOnFullscreen = v }
+                        }
+                        SettingRow {
                             title: qsTr("Show Claude usage")
                             description: qsTr("Your 5-hour and weekly limits, read from your Claude account every 5 minutes.")
                             Toggle { on: shell.showUsage; onToggled: (v) => shell.showUsage = v }
@@ -730,6 +722,16 @@ Window {
                             title: qsTr("Lumo dances while music plays")
                             description: qsTr("On the beat: Lumo listens to what your computer plays to find it, in memory only. Nothing is recorded.")
                             Toggle { on: shell.dance; onToggled: (v) => shell.dance = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Visualizer")
+                            description: qsTr("On the Music page, a soft light swells up with the music, bass to treble.")
+                            Toggle { on: prefs.visualizer; onToggled: (v) => prefs.visualizer = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Album colors")
+                            description: qsTr("The player takes the colors of the album art.")
+                            Toggle { on: prefs.albumColors; onToggled: (v) => prefs.albumColors = v }
                         }
                     }
 
@@ -794,9 +796,147 @@ Window {
                     }
                 }
 
-                // ------------------------------------------------ Dictation
+                // ------------------------------------------------ Widgets
                 Page {
                     index: 1
+
+                    Group {
+                        title: qsTr("Look")
+                        SettingRow {
+                            title: qsTr("Accent color")
+                            description: qsTr("Lumo's color: Claude's terracotta, KDE's accent, your wallpaper's, the album art's while music plays, or your own.")
+                            LumoCombo {
+                                readonly property var choices: [
+                                    { id: "claude", label: qsTr("Claude") }, { id: "kde", label: qsTr("KDE accent") },
+                                    { id: "wallpaper", label: qsTr("Wallpaper") }, { id: "album", label: qsTr("Album art") },
+                                    { id: "custom", label: qsTr("Custom") }
+                                ]
+                                model: choices.map(c => c.label)
+                                currentIndex: Math.max(0, choices.findIndex(c => c.id === prefs.accentSource))
+                                onActivated: (i) => prefs.accentSource = choices[i].id
+                                Layout.maximumWidth: 200
+                            }
+                        }
+                        SettingRow {
+                            visible: prefs.accentSource === "custom"
+                            title: qsTr("Your color")
+                            description: qsTr("Any color, as #RRGGBB.")
+                            Rectangle { implicitWidth: 24; implicitHeight: 24; radius: 12; color: prefs.customAccent }
+                            LumoField {
+                                text: prefs.customAccent
+                                implicitWidth: 110
+                                onEditingFinished: if (/^#[0-9a-fA-F]{6}$/.test(text)) prefs.customAccent = text
+                            }
+                        }
+                        SettingRow {
+                            title: qsTr("Reduce motion")
+                            description: qsTr("Calms every animation: no dancing, no bursts of light, no flips.")
+                            Toggle { on: prefs.reduceMotion; onToggled: (v) => prefs.reduceMotion = v }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Resting pill")
+                        footer: qsTr("CPU, memory and network are read every 5 seconds only while the pill shows them.")
+                        SettingRow {
+                            title: qsTr("Clock")
+                            Toggle { on: prefs.pillClock; onToggled: (v) => prefs.pillClock = v }
+                        }
+                        Repeater {
+                            model: 2
+                            SettingRow {
+                                required property int index
+                                title: index === 0 ? qsTr("First item") : qsTr("Second item")
+                                LumoCombo {
+                                    readonly property var choices: settings.pillChoices
+                                    model: choices.map(c => c.label)
+                                    currentIndex: Math.max(0, choices.findIndex(c => c.id === (prefs.pillItems[index] || "")))
+                                    onActivated: (i) => {
+                                        const list = [prefs.pillItems[0] || "", prefs.pillItems[1] || ""]
+                                        list[index] = choices[i].id
+                                        prefs.pillItems = list.filter(x => x)
+                                    }
+                                    Layout.maximumWidth: 200
+                                }
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Weather")
+                        footer: qsTr("From Open-Meteo, free and without an account, for the city you type: Lumo never looks you up by your address.")
+                        SettingRow {
+                            title: qsTr("Show the weather")
+                            Toggle { on: weather.enabled; onToggled: (v) => weather.enabled = v }
+                        }
+                        SettingRow {
+                            title: qsTr("City")
+                            description: weather.city || qsTr("Add the country to pick between places with the same name, like Paris, Texas.")
+                            LumoField {
+                                id: cityField
+                                placeholderText: qsTr("Casablanca")
+                                implicitWidth: 180
+                                onAccepted: weather.setCity(text)
+                            }
+                            ActionButton { text: qsTr("Find"); onClicked: weather.setCity(cityField.text) }
+                            Connections {
+                                target: weather
+                                function onCityResult(found, name) { cityField.text = ""; cityField.placeholderText = found ? name : qsTr("Not found") }
+                            }
+                        }
+                        SettingRow {
+                            title: qsTr("Fahrenheit")
+                            Toggle { on: weather.fahrenheit; onToggled: (v) => weather.fahrenheit = v }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Notifications")
+                        SettingRow {
+                            title: qsTr("Show notifications as pills")
+                            description: qsTr("Your apps' notifications also show up in the island. Plasma keeps its own; Lumo only reads them, on this computer.")
+                            Toggle { on: notifications.enabled; onToggled: (v) => notifications.enabled = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Do Not Disturb")
+                            description: qsTr("Quiets the pills. Battery warnings still show.")
+                            Toggle { on: notifications.doNotDisturb; onToggled: (v) => notifications.doNotDisturb = v }
+                        }
+                    }
+
+                    Group {
+                        visible: power.hasBattery
+                        title: qsTr("Battery")
+                        SettingRow {
+                            title: qsTr("Battery pills")
+                            description: qsTr("A pill when you plug in or unplug, and once when the battery runs low.")
+                            Toggle { on: power.batteryPills; onToggled: (v) => power.batteryPills = v }
+                        }
+                        SettingRow {
+                            title: qsTr("Low battery at")
+                            LumoCombo {
+                                readonly property var levels: [5, 10, 15, 20, 25, 30, 40, 50]
+                                model: levels.map(l => l + "%")
+                                currentIndex: Math.max(0, levels.indexOf(power.lowThreshold))
+                                onActivated: (i) => power.lowThreshold = levels[i]
+                                Layout.maximumWidth: 100
+                            }
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("System")
+                        SettingRow {
+                            title: qsTr("Show my public IP")
+                            description: qsTr("On the System page, asked from api.ipify.org at most every 10 minutes while it shows.")
+                            Toggle { on: systemStats.showPublicIp; onToggled: (v) => systemStats.showPublicIp = v }
+                        }
+                    }
+                }
+
+                // ------------------------------------------------ Dictation
+                Page {
+                    index: 2
 
                     Group {
                         title: qsTr("Dictation")
@@ -1211,7 +1351,7 @@ Window {
 
                 // ------------------------------------------------ Claude Code
                 Page {
-                    index: 2
+                    index: 3
 
                     Group {
                         title: qsTr("Connection")
@@ -1277,7 +1417,7 @@ Window {
 
                 // ------------------------------------------------ Chat
                 Page {
-                    index: 3
+                    index: 4
 
                     Group {
                         title: qsTr("Assistant")
@@ -1337,7 +1477,7 @@ Window {
 
                 // ------------------------------------------------ About
                 Page {
-                    index: 4
+                    index: 5
 
                     Rectangle {
                         Layout.fillWidth: true
@@ -1404,6 +1544,38 @@ Window {
                         SettingRow {
                             title: qsTr("Hook socket")
                             description: "$XDG_RUNTIME_DIR/lumo.sock"
+                        }
+                    }
+
+                    Group {
+                        title: qsTr("Backup")
+                        SettingRow {
+                            title: qsTr("Export settings")
+                            description: qsTr("Every setting in one file, to keep or to bring to another computer.")
+                            ActionButton { text: qsTr("Export…"); onClicked: exportDialog.open() }
+                        }
+                        SettingRow {
+                            title: qsTr("Import settings")
+                            ActionButton { text: qsTr("Import…"); onClicked: importDialog.open() }
+                        }
+                        SettingRow {
+                            title: qsTr("Report a problem")
+                            description: qsTr("Copies a short report: Lumo's version, your system and its plain settings, with your names taken out. Nothing is sent: you read it, then paste it where you choose.")
+                            ActionButton { text: qsTr("Copy report"); onClicked: { prefs.copyProblemReport(); text = qsTr("Copied") } }
+                        }
+                        FileDialog {
+                            id: exportDialog
+                            fileMode: FileDialog.SaveFile
+                            defaultSuffix: "ini"
+                            currentFile: "file:///" + "lumo-settings.ini"
+                            nameFilters: [qsTr("Lumo settings (*.ini)")]
+                            onAccepted: prefs.exportSettings(selectedFile)
+                        }
+                        FileDialog {
+                            id: importDialog
+                            fileMode: FileDialog.OpenFile
+                            nameFilters: [qsTr("Lumo settings (*.ini)")]
+                            onAccepted: prefs.importSettings(selectedFile)
                         }
                     }
 

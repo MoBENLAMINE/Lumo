@@ -18,12 +18,16 @@ BeatTracker::BeatTracker(int sampleRate)
     : m_rate(sampleRate), m_frameSize(sampleRate >= 22050 ? 512 : 256)
 {
     m_alpha = 1.0 - std::exp(-2.0 * M_PI * 150.0 / m_rate);   // bass: below ~150 Hz
+    const double cutoffs[Bands - 1] = {90, 250, 650, 1600, 3600};
+    for (int i = 0; i < Bands - 1; ++i) m_rungAlpha[i] = 1.0 - std::exp(-2.0 * M_PI * cutoffs[i] / m_rate);
     reset();
 }
 
 void BeatTracker::reset()
 {
     m_low = m_sumBass = m_sumAll = 0;
+    for (int b = 0; b < Bands; ++b) { m_bandSum[b] = m_band[b] = m_bandPeak[b] = 0; if (b < Bands - 1) m_rung[b] = 0; }
+    m_frames = 0;
     m_inFrame = 0;
     m_samples = 0;
     m_prevEnergy = 0;
@@ -45,6 +49,14 @@ QList<BeatTracker::Event> BeatTracker::feed(const qint16 *samples, int count)
         m_low += m_alpha * (x - m_low);
         m_sumBass += m_low * m_low;
         m_sumAll += x * x;
+        double below = 0;
+        for (int b = 0; b < Bands - 1; ++b) {
+            m_rung[b] += m_rungAlpha[b] * (x - m_rung[b]);
+            const double band = m_rung[b] - below;
+            m_bandSum[b] += band * band;
+            below = m_rung[b];
+        }
+        m_bandSum[Bands - 1] += (x - below) * (x - below);
         ++m_samples;
         if (++m_inFrame == m_frameSize)
             frame(out);
@@ -59,6 +71,17 @@ void BeatTracker::frame(QList<Event> &out)
     m_sumBass = m_sumAll = 0;
     m_inFrame = 0;
     const double t = time();
+
+    // The visualizer: each band against its own recent peak, quick to rise,
+    // slow to fall, so it breathes with the music instead of flickering.
+    ++m_frames;
+    for (int b = 0; b < Bands; ++b) {
+        const double e = std::sqrt(m_bandSum[b] / m_frameSize);
+        m_bandSum[b] = 0;
+        m_bandPeak[b] = std::max({e, m_bandPeak[b] * 0.998, 1e-4});
+        const double v = rms > 0.002 ? std::min(1.0, e / m_bandPeak[b]) : 0.0;
+        m_band[b] += (v > m_band[b] ? 0.6 : 0.12) * (v - m_band[b]);
+    }
 
     // Loudness, relative to the loudest moment lately.
     m_peak = std::max(rms, m_peak * 0.9995);
@@ -229,6 +252,8 @@ void Beat::stop()
     }
     m_pending.clear();
     m_tracker.reset();
+    m_bands.clear();
+    emit bandsChanged();
     setListening(false);
 }
 
@@ -308,6 +333,13 @@ void Beat::onAudio()
     }
     if (!events.isEmpty())
         emit tempoChanged();
+    // the visualizer, at most ~30 times a second
+    if (!m_bandsAt.isValid() || m_bandsAt.elapsed() >= 33) {
+        m_bandsAt.restart();
+        m_bands.clear();
+        for (int b = 0; b < BeatTracker::Bands; ++b) m_bands.append(m_tracker.bands()[b]);
+        emit bandsChanged();
+    }
 }
 
 void Beat::setListening(bool on)

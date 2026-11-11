@@ -19,6 +19,30 @@ Window {
     color: "transparent"
     title: "Lumo"
 
+    // A running timer, stopwatch or focus session, counting in the pill;
+    // a click opens the Tools page.
+    component TimerBubble: Rectangle {
+        visible: timers.anyRunning
+        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+        width: bubbleRow.implicitWidth + 14
+        height: 22
+        radius: 11
+        color: timers.bubbleKind === "focus" && timers.onBreak ? Qt.rgba(Ui.good.r, Ui.good.g, Ui.good.b, 0.2)
+                                                                : Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.2)
+        Row {
+            id: bubbleRow
+            anchors.centerIn: parent
+            spacing: 4
+            Icon {
+                anchors.verticalCenter: parent.verticalCenter
+                path: timers.bubbleKind === "focus" ? Ui.icons.focus : timers.bubbleKind === "stopwatch" ? Ui.icons.stopwatch : Ui.icons.timer
+                size: 12; tint: Ui.text
+            }
+            Text { anchors.verticalCenter: parent.verticalCenter; text: timers.bubbleText; color: Ui.text; font.pixelSize: Ui.small }
+        }
+        TapHandler { onTapped: win.openIsland("tools", true) }
+    }
+
     // ------------------------------------------------------------ state
     property bool peek: false
     property bool hoverOpen: false
@@ -36,17 +60,99 @@ Window {
     readonly property bool resting: shell.alwaysShow
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
-    // Listen for the beat only while Lumo is out dancing.
-    Binding { target: beat; property: "active"; value: win.dancing && win.visible }
+    // Listen to the music only while Lumo dances to it or the visualizer shows.
+    readonly property bool visualizing: prefs.visualizer && music.playing && win.mode === "open" && win.tab === "media"
+    Binding { target: beat; property: "active"; value: (win.dancing || win.visualizing) && win.visible }
+    // Lumo's accent: Claude's, KDE's, the wallpaper's, yours, or the album's
+    // while music plays.
+    Binding {
+        target: Ui; property: "accent"
+        value: prefs.accentSource === "album" && music.playing && music.hasColor ? music.color : prefs.accent
+    }
+    Binding { target: Ui; property: "reduceMotion"; value: prefs.reduceMotion }
+
+    // ------------------------------------------------------------ notices
+    // A short pill for what happens around you: the battery, a timer, a
+    // desktop notification, a copied color. It steps aside for agents.
+    property var notice: null      // { icon, title, text, tint }
+    function showNotice(icon, title, text, tint, ms) {
+        notice = { icon: icon, title: title, text: text || "", tint: tint || Ui.accent }
+        noticeTimer.interval = ms || 4500
+        noticeTimer.restart()
+    }
+    Timer { id: noticeTimer; onTriggered: win.notice = null }
+    Connections {
+        target: power
+        function onPlugged(percent) { win.showNotice(Ui.icons.bolt, qsTr("Charging"), percent + "%", Ui.good) }
+        function onUnplugged(percent, minutesLeft) {
+            win.showNotice(Ui.icons.battery, qsTr("On battery"), percent + "%" + (minutesLeft > 0 ? "  ·  " + qsTr("%1 left").arg(Math.floor(minutesLeft / 60) + ":" + String(minutesLeft % 60).padStart(2, "0")) : ""), Ui.dim)
+        }
+        function onLow(percent) { win.showNotice(Ui.icons.battery, qsTr("Battery low"), percent + "%", Ui.bad, 8000); sounds.play("needs") }
+    }
+    Connections {
+        target: notifications
+        function onNotified(app, summary, body) {
+            if (win.dictating || win.hasRequests) return
+            win.showNotice(Ui.icons.bell, summary || app, body.replace(/<[^>]*>/g, "").replace(/\s+/g, " "), Ui.info, 5000)
+        }
+    }
+    Connections {
+        target: tools
+        function onNotice(text) { win.showNotice(Ui.icons.check, text, "", Ui.good, 2600) }
+    }
+    readonly property Timers timerObject: timers
+    Timers {
+        id: timers
+        onFinished: (kind, message) => {
+            sounds.play(kind === "timer" ? "finish" : "done")
+            win.showNotice(kind === "focus" ? Ui.icons.focus : Ui.icons.timer, message, "", Ui.accent, 7000)
+        }
+    }
+    // what the resting pill shows besides Lumo
+    readonly property var restItems: prefs.longPill ? prefs.longPillItems
+                                   : (prefs.pillClock ? ["clock"] : []).concat(prefs.pillItems)
+    Binding {
+        target: systemStats; property: "light"
+        value: win.mode === "rest" && win.restItems.some(i => i === "cpu" || i === "memory" || i === "network")
+    }
+    onRestItemsChanged: if (restItems.indexOf("weather") >= 0) weather.want()
+    property date clockNow: new Date()
+    Timer {
+        // the clock in the pill: once a minute, on the minute, only while shown
+        running: win.mode === "rest" && win.restItems.some(i => i === "clock" || i === "date")
+        repeat: true
+        triggeredOnStart: true
+        interval: 60000 - (Date.now() % 60000) + 50
+        onTriggered: { win.clockNow = new Date(); interval = 60000 - (Date.now() % 60000) + 50 }
+    }
+    // { icon, text } for an item of the resting pill
+    function pillItem(name) {
+        switch (name) {
+        case "clock": return { icon: "", text: clockNow.toLocaleTimeString(Qt.locale(), Ui.timeFormat()) }
+        case "date": return { icon: "", text: clockNow.toLocaleDateString(Qt.locale(), "ddd d MMM") }
+        case "weather": return weather.ready ? { icon: Ui.icons[weather.icon(weather.code, weather.day)], text: weather.temperature + "°" } : null
+        case "battery": return power.hasBattery ? { icon: power.charging ? Ui.icons.bolt : Ui.icons.battery, text: power.percent + "%" } : null
+        case "cpu": return { icon: Ui.icons.cpu, text: Math.round(systemStats.cpu) + "%" }
+        case "memory": return { icon: Ui.icons.memory, text: Math.round(systemStats.memory) + "%" }
+        case "network": return { icon: Ui.icons.down, text: systemStats.rate(systemStats.download) }
+        case "music": return music.playing && music.title ? { icon: Ui.icons.music, text: music.title } : null
+        case "timer": return timers.anyRunning ? { icon: Ui.icons.timer, text: timers.bubbleText } : null
+        }
+        return null
+    }
+    // hide while a game or a video is fullscreen (requests still come through)
+    readonly property bool fullscreenApp: prefs.hideOnFullscreen && activeWindow.fullscreen && !hasRequests && !dictating
     // What Lumo wears: your pick, or the season's (headphones while music plays).
     readonly property string outfit: Ui.outfitFor(shell.outfit, music.playing && shell.showMusic)
     property bool showWardrobe: false
     function openWardrobe() { showWardrobe = true; openIsland("agents", true) }
     readonly property string mode: leaving ? "hidden"
                                  : farewell ? "greeting"
+                                 : fullscreenApp ? "hidden"
                                  : dictating ? "dictation"
                                  : (hoverOpen || pinned || hasRequests) ? "open"
                                  : greeting ? "greeting"
+                                 : notice ? "notice"
                                  : (activeMood || callingYou || (peek && !resting)) ? "compact"
                                  : resting ? "rest" : "hidden"
     // The window only takes the pointer inside the island (its input region),
@@ -60,6 +166,9 @@ Window {
         hoverOpen = true
         if (tab === "chat") focusChat()
     }
+    // filled in by the fullscreen player and the control centers
+    function openFullscreenPlayer() {}
+    function openControl(name) {}
     function closeIsland() {
         showWardrobe = false
         pinned = false
@@ -283,16 +392,18 @@ Window {
                                    : mode === "greeting" ? 340
                                    : mode === "compact" ? Math.max(232, Math.min(470, compactRow.implicitWidth + 30))
                                    : mode === "dictation" ? Math.max(200, Math.min(520, dictationBar.implicitWidth + 32))
-                                   : mode === "rest" ? Math.max(232, Math.min(470, restRow.implicitWidth + 30))
+                                   : mode === "rest" ? Math.max(232, Math.min(prefs.longPill ? 660 : 470, restRow.implicitWidth + 30))
+                                   : mode === "notice" ? Math.max(232, Math.min(520, noticeRow.implicitWidth + 30))
                                    : 160
     readonly property real targetH: mode === "open" ? Math.min(win.maxOpenH, openCol.implicitHeight + 28)
                                    : mode === "greeting" ? 148
                                    : mode === "compact" || mode === "dictation" ? Ui.compactHeight
-                                   : mode === "rest" ? Ui.compactHeight : 0
+                                   : mode === "rest" || mode === "notice" ? Ui.compactHeight : 0
     property real bodyW: targetW
     property real bodyH: targetH
-    Behavior on bodyW { SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
-    Behavior on bodyH { SpringAnimation { spring: 3.0; damping: 0.32; epsilon: 0.3 } }
+    // the island springs to its new size; with reduce motion it simply eases there
+    Behavior on bodyW { enabled: !Ui.reduceMotion; SpringAnimation { spring: 3.4; damping: 0.3; epsilon: 0.3 } }
+    Behavior on bodyH { enabled: !Ui.reduceMotion; SpringAnimation { spring: 3.0; damping: 0.32; epsilon: 0.3 } }
     onBodyWChanged: updateMask()
     onBodyHChanged: updateMask()
 
@@ -315,9 +426,17 @@ Window {
         DropArea {
             id: dropArea
             anchors.fill: parent
-            onEntered: (drag) => { drag.accept(Qt.CopyAction); win.openIsland("chat", true) }
+            // Into the chat when it's open; anywhere else, onto the shelf.
+            onEntered: (drag) => {
+                drag.accept(Qt.CopyAction)
+                win.openIsland(win.mode === "open" && win.tab === "chat" ? "chat" : "tools", true)
+            }
             onDropped: (drop) => {
-                for (const u of drop.urls) chat.attach(u)
+                if (win.tab === "chat") {
+                    for (const u of drop.urls) chat.attach(u)
+                } else {
+                    tools.addToShelf(drop.urls, drop.hasText ? drop.text : "")
+                }
                 drop.accept(Qt.CopyAction)
                 sounds.play("pop")
                 mascot.poke()
@@ -405,9 +524,9 @@ Window {
                         color: index % 3 === 0 ? Ui.accent : index % 3 === 1 ? Ui.glow : "white"
                         x: cx; y: cy
                         opacity: 0
-                        Connections { target: win; function onGreetBurstChanged() { starFly.restart() } }
+                        Connections { target: win; function onGreetBurstChanged() { if (!Ui.reduceMotion) starFly.restart() } }
                         // goodbye: the light gathers back into Lumo
-                        Connections { target: win; function onByeBurstChanged() { starFly.stop(); starIn.restart() } }
+                        Connections { target: win; function onByeBurstChanged() { starFly.stop(); if (!Ui.reduceMotion) starIn.restart() } }
                         SequentialAnimation {
                             id: starIn
                             PauseAnimation { duration: (star.index % 6) * 25 }
@@ -547,7 +666,48 @@ Window {
                         size: 16
                         stroke: 2.4
                     }
+                    TimerBubble {}
                 }
+            }
+
+            // ---------------- notice
+            Item {
+                anchors.fill: parent
+                opacity: win.mode === "notice" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { OpacityAnimator { duration: win.mode === "notice" ? 200 : 90 } }
+                Row {
+                    id: noticeRow
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 1
+                    spacing: 9
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 24; height: 24; radius: 12
+                        color: win.notice ? Qt.rgba(win.notice.tint.r, win.notice.tint.g, win.notice.tint.b, 0.22) : "transparent"
+                        Icon { anchors.centerIn: parent; path: win.notice ? win.notice.icon : ""; size: 14; tint: win.notice ? win.notice.tint : Ui.text }
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: win.notice ? win.notice.title : ""
+                        color: Ui.text
+                        font.pixelSize: Ui.body
+                        font.weight: Font.DemiBold
+                        width: Math.min(implicitWidth, 200)
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: text.length > 0
+                        text: win.notice ? win.notice.text : ""
+                        color: Ui.dim
+                        font.pixelSize: Ui.body
+                        width: Math.min(implicitWidth, 240)
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+                }
+                TapHandler { onTapped: win.notice = null }
             }
 
             // ---------------- rest
@@ -576,7 +736,7 @@ Window {
                     }
                     // music playing: cover and track instead of the name
                     Rectangle {
-                        visible: win.musicShown
+                        visible: win.musicShown && !prefs.longPill
                         anchors.verticalCenter: parent.verticalCenter
                         width: 20; height: 20; radius: 5
                         color: Ui.line
@@ -584,7 +744,7 @@ Window {
                         Image { anchors.fill: parent; source: win.musicShown ? music.artUrl : ""; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize: Qt.size(40, 40) }
                     }
                     Text {
-                        visible: win.musicShown
+                        visible: win.musicShown && !prefs.longPill
                         anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(implicitWidth, 260)
                         elide: Text.ElideRight
@@ -594,7 +754,7 @@ Window {
                         font.pixelSize: Ui.body
                     }
                     Text {
-                        visible: !win.musicShown
+                        visible: !win.musicShown && !prefs.longPill
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Lumo"
                         color: Ui.text
@@ -602,7 +762,7 @@ Window {
                         font.weight: Font.DemiBold
                     }
                     Text {
-                        visible: !win.musicShown
+                        visible: !win.musicShown && !prefs.longPill
                         anchors.verticalCenter: parent.verticalCenter
                         text: win.mood === "waiting" ? qsTr("Waiting for you")
                             : hub.sessions.count ? (hub.sessions.count === 1 ? qsTr("1 session") : qsTr("%1 sessions").arg(hub.sessions.count))
@@ -610,6 +770,30 @@ Window {
                         color: win.mood === "waiting" ? Ui.warn : Ui.dim
                         font.pixelSize: Ui.body
                     }
+                    // the clock and the small items you picked
+                    Repeater {
+                        model: win.mode === "rest" || win.mode === "hidden" ? win.restItems : []
+                        Row {
+                            required property string modelData
+                            readonly property var item: win.pillItem(modelData)
+                            visible: item !== null
+                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                            spacing: 4
+                            Rectangle { width: 1; height: 14; color: Ui.line; anchors.verticalCenter: parent.verticalCenter }
+                            Item { width: 2; height: 1 }
+                            Icon { visible: parent.item && parent.item.icon.length > 0; path: parent.item ? parent.item.icon : ""; size: 13; tint: Ui.dim; anchors.verticalCenter: parent.verticalCenter }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: parent.item ? parent.item.text : ""
+                                width: Math.min(implicitWidth, 180)
+                                elide: Text.ElideRight
+                                color: modelData === "clock" ? Ui.text : Ui.dim
+                                font.pixelSize: Ui.body
+                                font.weight: modelData === "clock" ? Font.DemiBold : Font.Normal
+                            }
+                        }
+                    }
+                    TimerBubble { visible: timers.anyRunning && win.restItems.indexOf("timer") < 0 }
                     Text {
                         visible: hub.hasUsage && shell.showUsage
                         anchors.verticalCenter: parent.verticalCenter
@@ -699,72 +883,6 @@ Window {
                             }
                         }
 
-                        // tabs
-                        Rectangle {
-                            implicitWidth: tabs.implicitWidth + 6
-                            implicitHeight: 30
-                            radius: 15
-                            color: Ui.card
-                            Rectangle { // sliding highlight
-                                id: tabHighlight
-                                property Item target: null
-                                y: 3; height: 24; radius: 12
-                                color: Ui.line
-                                x: target ? target.x + 3 : 3
-                                width: target ? target.width : 0
-                                Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                                Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                            }
-                            Row {
-                                id: tabs
-                                x: 3
-                                anchors.verticalCenter: parent.verticalCenter
-                                Repeater {
-                                    model: [{ id: "agents", label: qsTr("Agents") }, { id: "chat", label: qsTr("Chat") }]
-                                    Item {
-                                        id: tabItem
-                                        required property var modelData
-                                        readonly property bool current: win.tab === modelData.id
-                                        readonly property int count: modelData.id === "agents" ? hub.sessions.count : 0
-                                        width: tabRow.implicitWidth + 24
-                                        height: 24
-                                        onCurrentChanged: if (current) tabHighlight.target = tabItem
-                                        Component.onCompleted: if (current) tabHighlight.target = tabItem
-                                        Row {
-                                            id: tabRow
-                                            anchors.centerIn: parent
-                                            spacing: 6
-                                            Text {
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: tabItem.modelData.label
-                                                color: tabItem.current || tabHover.hovered ? Ui.text : Ui.dim
-                                                font.pixelSize: Ui.body
-                                                font.weight: tabItem.current ? Font.DemiBold : Font.Normal
-                                            }
-                                            Rectangle {
-                                                visible: tabItem.count > 0
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                width: Math.max(18, countText.implicitWidth + 10)
-                                                height: 16
-                                                radius: 8
-                                                color: tabItem.current ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.25) : Ui.line
-                                                Text {
-                                                    id: countText
-                                                    anchors.centerIn: parent
-                                                    text: tabItem.count
-                                                    color: tabItem.current ? Ui.accent : Ui.dim
-                                                    font.pixelSize: 10
-                                                    font.weight: Font.DemiBold
-                                                }
-                                            }
-                                        }
-                                        HoverHandler { id: tabHover; cursorShape: Qt.PointingHandCursor }
-                                        TapHandler { onTapped: win.tab = tabItem.modelData.id }
-                                    }
-                                }
-                            }
-                        }
-
                         Row {
                             spacing: 6
                             visible: hub.hasUsage && shell.showUsage
@@ -797,6 +915,87 @@ Window {
                                 icon: Ui.icons.gear
                                 tip: qsTr("Settings")
                                 onClicked: shell.settingsRequested()
+                            }
+                        }
+                    }
+
+                    // ---- the pages: icons, and the name of the one you're on
+                    Rectangle {
+                        id: rail
+                        Layout.fillWidth: true
+                        implicitHeight: 34
+                        radius: 17
+                        color: Ui.card
+                        readonly property var pages: [
+                            { id: "agents", icon: Ui.icons.agents, label: qsTr("Agents") },
+                            { id: "chat", icon: Ui.icons.chat, label: qsTr("Chat") },
+                            { id: "media", icon: Ui.icons.music, label: qsTr("Music") },
+                            { id: "today", icon: Ui.icons.today, label: qsTr("Today") },
+                            { id: "controls", icon: Ui.icons.sliders, label: qsTr("Controls") },
+                            { id: "system", icon: Ui.icons.system, label: qsTr("System") },
+                            { id: "tools", icon: Ui.icons.tools, label: qsTr("Tools") }
+                        ]
+                        // the one you're on is wide enough for its name; the others share the rest
+                        readonly property real slot: (width - 6 - currentWidth) / (pages.length - 1)
+                        readonly property real currentWidth: Math.min(width * 0.36, currentLabel.implicitWidth + 58)
+                        Text { id: currentLabel; visible: false; font.pixelSize: Ui.body; font.weight: Font.DemiBold; text: (rail.pages.find(p => p.id === win.tab) || {}).label || "" }
+                        Row {
+                            x: 3; y: 3
+                            Repeater {
+                                model: rail.pages
+                                Rectangle {
+                                    id: railItem
+                                    required property var modelData
+                                    required property int index
+                                    readonly property bool current: win.tab === modelData.id
+                                    readonly property int count: modelData.id === "agents" ? hub.sessions.count : modelData.id === "tools" ? tools.shelf.length : 0
+                                    width: current ? rail.currentWidth : rail.slot
+                                    height: 28
+                                    radius: 14
+                                    color: current ? Ui.line : railHover.hovered ? Ui.cardHover : "transparent"
+                                    Behavior on width { enabled: !Ui.reduceMotion; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 6
+                                        Icon { anchors.verticalCenter: parent.verticalCenter; path: railItem.modelData.icon; size: 16; tint: railItem.current || railHover.hovered ? Ui.text : Ui.dim }
+                                        Text {
+                                            visible: railItem.current
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: railItem.modelData.label
+                                            color: Ui.text
+                                            font.pixelSize: Ui.body
+                                            font.weight: Font.DemiBold
+                                        }
+                                        Rectangle {
+                                            visible: railItem.count > 0 && railItem.modelData.id === "agents"
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: Math.max(16, railCount.implicitWidth + 8); height: 15; radius: 7.5
+                                            color: railItem.current ? Qt.rgba(Ui.accent.r, Ui.accent.g, Ui.accent.b, 0.25) : Ui.line
+                                            Text { id: railCount; anchors.centerIn: parent; text: railItem.count; color: railItem.current ? Ui.accent : Ui.dim; font.pixelSize: 10; font.weight: Font.DemiBold }
+                                        }
+                                    }
+                                    HoverHandler { id: railHover; cursorShape: Qt.PointingHandCursor }
+                                    TapHandler { onTapped: win.tab = railItem.modelData.id }
+                                    // the name, for the pages showing only an icon
+                                    Rectangle {
+                                        visible: railHover.hovered && !railItem.current
+                                        z: 10
+                                        anchors.top: parent.bottom; anchors.topMargin: 6
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        width: railTip.implicitWidth + 14; height: railTip.implicitHeight + 8
+                                        radius: 6
+                                        color: "#1E1E26"
+                                        Text { id: railTip; anchors.centerIn: parent; text: railItem.modelData.label; color: Ui.text; font.pixelSize: 11 }
+                                    }
+                                }
+                            }
+                        }
+                        // the wheel moves a page at a time
+                        WheelHandler {
+                            onWheel: (e) => {
+                                const ids = rail.pages.map(p => p.id)
+                                const i = ids.indexOf(win.tab)
+                                win.tab = ids[Math.max(0, Math.min(ids.length - 1, i + (e.angleDelta.y < 0 || e.angleDelta.x < 0 ? 1 : -1)))]
                             }
                         }
                     }
@@ -877,7 +1076,7 @@ Window {
                                         text: qsTr("Review…")
                                         primary: true
                                         tint: Ui.accent
-                                        onClicked: { installer.prepare(true, true, true); settings.page = 2; shell.settingsRequested() }
+                                        onClicked: { installer.prepare(true, true, true); settings.page = 3; shell.settingsRequested() }
                                     }
                                 }
                             }
@@ -946,7 +1145,7 @@ Window {
                                     text: qsTr("Connect Claude Code…")
                                     primary: true
                                     tint: Ui.accent
-                                    onClicked: { settings.page = 2; shell.settingsRequested() }
+                                    onClicked: { settings.page = 3; shell.settingsRequested() }
                                 }
                             }
                     }
@@ -959,6 +1158,32 @@ Window {
                         visible: win.tab === "chat"
                         Layout.fillWidth: true
                         Layout.preferredHeight: implicitHeight
+                    }
+
+                    // ---- the other pages: each one works only while it shows
+                    Flickable {
+                        id: pageScroll
+                        visible: ["media", "today", "controls", "system", "tools"].indexOf(win.tab) >= 0
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(pageLoader.item ? pageLoader.item.implicitHeight : 0, win.maxOpenH - 110)
+                        contentHeight: pageLoader.item ? pageLoader.item.implicitHeight : 0
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        ScrollBar.vertical: ScrollBar { policy: pageScroll.contentHeight > pageScroll.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff }
+                        Loader {
+                            id: pageLoader
+                            width: pageScroll.width
+                            // a page that isn't shown isn't even there: nothing of it runs
+                            active: pageScroll.visible && win.mode === "open"
+                            sourceComponent: win.tab === "media" ? mediaPage : win.tab === "today" ? todayPage
+                                           : win.tab === "controls" ? controlsPage : win.tab === "system" ? systemPage
+                                           : win.tab === "tools" ? toolsPage : null
+                        }
+                        Component { id: mediaPage; MediaPage { live: true; onFullscreenRequested: win.openFullscreenPlayer() } }
+                        Component { id: todayPage; TodayPage { live: true } }
+                        Component { id: controlsPage; ControlsPage { live: true; onOpenPage: (name) => win.openControl(name) } }
+                        Component { id: systemPage; SystemPage { live: true } }
+                        Component { id: toolsPage; ToolsPage { live: true; timers: win.timerObject } }
                     }
                 }
             }
@@ -989,7 +1214,7 @@ Window {
                     radius: width / 2
                     color: ["#3DD68C", "#FFD866", "#D97757", "#8FE3FF"][index % 4]
                     opacity: 0
-                    Connections { target: win; function onBurstChanged() { fly.restart() } }
+                    Connections { target: win; function onBurstChanged() { if (!Ui.reduceMotion) fly.restart() } }
                     ParallelAnimation {
                         id: fly
                         NumberAnimation { target: dot; property: "x"; from: -dot.width / 2; to: Math.cos(dot.angle) * dot.reach * 1.6 - dot.width / 2; duration: 760; easing.type: Easing.OutCubic }

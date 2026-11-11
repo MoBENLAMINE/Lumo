@@ -51,6 +51,13 @@ qt_add_executable(lumo
     src/CloudSessions.cpp src/CloudSessions.h
     src/Music.cpp src/Music.h
     src/Beat.cpp src/Beat.h
+    src/SystemStats.cpp src/SystemStats.h
+    src/Controls.cpp src/Controls.h
+    src/Power.cpp src/Power.h
+    src/Tools.cpp src/Tools.h
+    src/Weather.cpp src/Weather.h
+    src/Notifications.cpp src/Notifications.h
+    src/Prefs.cpp src/Prefs.h src/Vivid.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -68,7 +75,8 @@ if(Qt6LinguistTools_FOUND AND LUMO_TS)
 elseif(LUMO_TS)
     message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
 endif()
-set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap)
+set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap
+    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).
@@ -123,6 +131,12 @@ target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
 
+# Notifications as pills: how dbus-monitor's output is read.
+qt_add_executable(test_notifications tests/test_notifications.cpp src/Notifications.cpp)
+target_include_directories(test_notifications PRIVATE src)
+target_link_libraries(test_notifications PRIVATE Qt6::Core Qt6::Test)
+add_test(NAME notifications COMMAND test_notifications)
+
 # The beat tracker, on synthetic songs.
 qt_add_executable(test_beat tests/test_beat.cpp src/Beat.cpp)
 target_include_directories(test_beat PRIVATE src)
@@ -132,4 +146,4 @@ add_test(NAME beat COMMAND test_beat)
 # Needs an MPRIS player named org.mpris.MediaPlayer2.lumotest (skipped otherwise).
 qt_add_executable(test_music tests/test_music.cpp src/Music.cpp)
 target_include_directories(test_music PRIVATE src)
-target_link_libraries(test_music PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
+target_link_libraries(test_music PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::DBus Qt6::Test)

@@ -1,0 +1,117 @@
+#pragma once
+
+#include <QObject>
+#include <QTimer>
+#include <QVariantList>
+
+class QProcess;
+class QDBusMessage;
+
+// The quick controls of the island's Controls page, the way KDE's own applets
+// reach them: sound through pactl (PipeWire's pulse layer), brightness through
+// PowerDevil, Wi-Fi through NetworkManager, Bluetooth through BlueZ and the
+// power mode through power-profiles-daemon.
+//
+// Nothing is read until the page opens (`live`); while it is open a single
+// `pactl subscribe` reports changes, and it is stopped when the page closes.
+class Controls : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(bool live READ live WRITE setLive NOTIFY liveChanged)
+    // sound
+    Q_PROPERTY(bool hasAudio READ hasAudio NOTIFY audioChanged)
+    Q_PROPERTY(int volume READ volume NOTIFY audioChanged)             // 0..150 %
+    Q_PROPERTY(bool muted READ muted NOTIFY audioChanged)
+    Q_PROPERTY(int micVolume READ micVolume NOTIFY audioChanged)
+    Q_PROPERTY(bool micMuted READ micMuted NOTIFY audioChanged)
+    Q_PROPERTY(QVariantList outputs READ outputs NOTIFY audioChanged)  // [{ name, label, current }]
+    Q_PROPERTY(QVariantList inputs READ inputs NOTIFY audioChanged)
+    Q_PROPERTY(QVariantList apps READ apps NOTIFY audioChanged)        // [{ id, name, volume, muted }]
+    // brightness
+    Q_PROPERTY(bool hasBrightness READ hasBrightness NOTIFY brightnessChanged)
+    Q_PROPERTY(int brightness READ brightness NOTIFY brightnessChanged) // 0..100 %
+    // radios and power
+    Q_PROPERTY(bool hasWifi READ hasWifi NOTIFY radiosChanged)
+    Q_PROPERTY(bool wifi READ wifi NOTIFY radiosChanged)
+    Q_PROPERTY(bool hasBluetooth READ hasBluetooth NOTIFY radiosChanged)
+    Q_PROPERTY(bool bluetooth READ bluetooth NOTIFY radiosChanged)
+    Q_PROPERTY(bool hasPowerProfiles READ hasPowerProfiles NOTIFY radiosChanged)
+    Q_PROPERTY(QString powerProfile READ powerProfile NOTIFY radiosChanged) // power-saver | balanced | performance
+    Q_PROPERTY(QStringList powerProfiles READ powerProfiles NOTIFY radiosChanged)
+public:
+    explicit Controls(QObject *parent = nullptr);
+    ~Controls() override;
+
+    bool live() const { return m_live; }
+    void setLive(bool on);
+
+    bool hasAudio() const { return !m_sink.isEmpty(); }
+    int volume() const { return m_volume; }
+    bool muted() const { return m_muted; }
+    int micVolume() const { return m_micVolume; }
+    bool micMuted() const { return m_micMuted; }
+    QVariantList outputs() const { return m_outputs; }
+    QVariantList inputs() const { return m_inputs; }
+    QVariantList apps() const { return m_apps; }
+
+    bool hasBrightness() const { return m_brightnessMax > 0; }
+    int brightness() const;
+
+    bool hasWifi() const { return m_hasWifi; }
+    bool wifi() const { return m_wifi; }
+    bool hasBluetooth() const { return !m_adapter.isEmpty(); }
+    bool bluetooth() const { return m_bluetooth; }
+    bool hasPowerProfiles() const { return !m_profiles.isEmpty(); }
+    QString powerProfile() const { return m_profile; }
+    QStringList powerProfiles() const { return m_profiles; }
+
+    Q_INVOKABLE void setVolume(int percent);
+    Q_INVOKABLE void toggleMute();
+    Q_INVOKABLE void setMicVolume(int percent);
+    Q_INVOKABLE void toggleMicMute();
+    Q_INVOKABLE void setOutput(const QString &name);
+    Q_INVOKABLE void setInput(const QString &name);
+    Q_INVOKABLE void setAppVolume(int id, int percent);
+    Q_INVOKABLE void toggleAppMute(int id);
+    Q_INVOKABLE void setBrightness(int percent);
+    Q_INVOKABLE void setWifi(bool on);
+    Q_INVOKABLE void setBluetooth(bool on);
+    Q_INVOKABLE void setPowerProfile(const QString &profile);
+    // Reads everything once (the page calls it as it opens).
+    Q_INVOKABLE void refresh();
+
+signals:
+    void liveChanged();
+    void audioChanged();
+    void brightnessChanged();
+    void radiosChanged();
+
+private slots:
+    void onRadioChanged(const QDBusMessage &message);
+
+private:
+    void pactl(const QStringList &args);
+    void readAudio();
+    void readBrightness();
+    void readRadios();
+    void startSubscribe();
+    void stopSubscribe();
+
+    bool m_live = false;
+    QProcess *m_subscribe = nullptr;
+    QTimer m_soon;   // gathers a burst of pactl events into one read
+    int m_reading = 0;
+
+    QString m_sink, m_source;
+    int m_volume = 0, m_micVolume = 0;
+    bool m_muted = false, m_micMuted = false;
+    QVariantList m_outputs, m_inputs, m_apps;
+
+    // brightness: Plasma 6's ScreenBrightness, or PowerDevil's older interface
+    QString m_display;   // a ScreenBrightness display object path, if any
+    int m_brightnessRaw = 0, m_brightnessMax = 0;
+
+    bool m_hasWifi = false, m_wifi = false, m_bluetooth = false;
+    QString m_adapter;   // BlueZ adapter object path
+    QString m_profilesService, m_profilesPath, m_profile;
+    QStringList m_profiles;
+};

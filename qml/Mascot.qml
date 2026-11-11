@@ -42,7 +42,7 @@ Item {
 
     Connections {
         // Not tied to `alive`: the small Lumo in the resting pill is still but dances.
-        target: mascot.dancing && typeof beat !== "undefined" ? beat : null
+        target: mascot.dancing && !Ui.reduceMotion && typeof beat !== "undefined" ? beat : null
         function onBeat(index, strength, period) { mascot.danceBeat(index, strength, period) }
     }
     onDancingChanged: if (!dancing) settle()
@@ -727,7 +727,7 @@ Item {
         // ------------------------------------------------------------ motion
         // breathing
         SequentialAnimation on scale {
-            running: mascot.alive && mascot.face !== "dizzy"
+            running: mascot.alive && mascot.face !== "dizzy" && !Ui.reduceMotion
             loops: Animation.Infinite
             NumberAnimation { to: 1.035; duration: 1400; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1.0; duration: 1400; easing.type: Easing.InOutSine }

@@ -3,7 +3,11 @@
 #include <QDBusMessage>
 #include <QElapsedTimer>
 #include <QObject>
+#include <QColor>
 #include <QStringList>
+
+class QNetworkAccessManager;
+class QTimer;
 
 // What's playing, from any MPRIS player (Spotify, Firefox, Chromium, VLC,
 // Elisa…), with play/pause, previous, next and seek, and shuffle, repeat and
@@ -27,6 +31,9 @@ class Music : public QObject {
     Q_PROPERTY(QString loop READ loop NOTIFY changed)
     Q_PROPERTY(bool hasVolume READ hasVolume NOTIFY changed)
     Q_PROPERTY(double volume READ volume NOTIFY changed)
+    // The cover's most vivid color, to tint the music card; invalid until known.
+    Q_PROPERTY(QColor color READ color NOTIFY colorChanged)
+    Q_PROPERTY(bool hasColor READ hasColor NOTIFY colorChanged)
 public:
     explicit Music(QObject *parent = nullptr);
 
@@ -40,8 +47,12 @@ public:
     bool canSeek() const { return m_canSeek; }
     bool hasShuffle() const { return m_hasShuffle; }
     bool shuffle() const { return m_shuffle; }
-    bool hasLoop() const { return m_hasLoop; }
-    QString loop() const { return m_loop; }
+    // Players that offer no repeat (YouTube in a Firefox-based browser) still
+    // get "repeat this track": Lumo seeks back to the start as it ends.
+    bool hasLoop() const { return m_hasLoop || m_canSeek; }
+    QString loop() const { return m_hasLoop ? m_loop : (m_fakeLoop ? QStringLiteral("Track") : QStringLiteral("None")); }
+    QColor color() const { return m_color; }
+    bool hasColor() const { return m_color.isValid(); }
     bool hasVolume() const { return m_hasVolume; }
     double volume() const { return m_volume; }
 
@@ -58,6 +69,7 @@ public:
 
 signals:
     void changed();
+    void colorChanged();
 
 private slots:
     void onPropertiesChanged(const QDBusMessage &message);
@@ -84,6 +96,13 @@ private:
     bool m_canSeek = false;
     bool m_hasShuffle = false, m_shuffle = false, m_hasLoop = false, m_hasVolume = false;
     QString m_loop;
+    bool m_fakeLoop = false;
+    QTimer *m_loopWatch = nullptr;
+    QString m_colorFor;
+    QColor m_color;
+    QNetworkAccessManager *m_net = nullptr;
+    void updateColor();
+    void watchLoop();
     double m_volume = 1;
     QElapsedTimer m_since, m_seekedAt;
 };
