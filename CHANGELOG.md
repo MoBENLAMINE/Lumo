@@ -31,7 +31,7 @@
   tempo and moves on every beat — a nod, a sway, a side step, a hop, a pumping arm, now and then a twirl —
   changing move every two bars, bigger on the hard beats. Without `parec` or `pw-record` it keeps a steady
   tempo instead.
-- Lumo speaks 16 languages: Settings → General → Language (System follows your desktop), switched live.
+- Lumo speaks English, French and Arabic: Settings → General → Language (System follows your desktop), switched live.
 - Settings can be searched: a field in the sidebar (or Ctrl+F) finds any setting and takes you to it.
 - A new README: the launch greeting as an animated hero, Lumo's moods and outfits, and the features grouped
   by what they do for you.

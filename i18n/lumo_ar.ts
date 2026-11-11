@@ -243,6 +243,113 @@ Drop a file here to ask about it.</source>
     </message>
 </context>
 <context>
+    <name>ControlsPage</name>
+    <message>
+        <source>Power saver</source>
+        <translation>توفير الطاقة</translation>
+    </message>
+    <message>
+        <source>Performance</source>
+        <translation>الأداء</translation>
+    </message>
+    <message>
+        <source>Balanced</source>
+        <translation>متوازن</translation>
+    </message>
+    <message>
+        <source>Wi-Fi</source>
+        <translation>Wi-Fi</translation>
+    </message>
+    <message>
+        <source>No Wi-Fi</source>
+        <translation>لا Wi-Fi</translation>
+    </message>
+    <message>
+        <source>On</source>
+        <translation>مفعّل</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>متوقف</translation>
+    </message>
+    <message>
+        <source>Bluetooth</source>
+        <translation>بلوتوث</translation>
+    </message>
+    <message>
+        <source>No adapter</source>
+        <translation>لا محوّل</translation>
+    </message>
+    <message>
+        <source>Microphone</source>
+        <translation>الميكروفون</translation>
+    </message>
+    <message>
+        <source>Muted</source>
+        <translation>مكتوم</translation>
+    </message>
+    <message>
+        <source>Keep awake</source>
+        <translation>إبقاء اليقظة</translation>
+    </message>
+    <message>
+        <source>Screen stays on</source>
+        <translation>تبقى الشاشة مضاءة</translation>
+    </message>
+    <message>
+        <source>Do Not Disturb</source>
+        <translation>عدم الإزعاج</translation>
+    </message>
+    <message>
+        <source>Pills are quiet</source>
+        <translation>الحبوب صامتة</translation>
+    </message>
+    <message>
+        <source>Power mode</source>
+        <translation>وضع الطاقة</translation>
+    </message>
+    <message>
+        <source>Not available</source>
+        <translation>غير متاح</translation>
+    </message>
+    <message>
+        <source>No sound server or screen brightness here.</source>
+        <translation>لا يوجد هنا خادم صوت ولا سطوع شاشة.</translation>
+    </message>
+    <message>
+        <source>1 app playing sound</source>
+        <translation>تطبيق واحد يشغّل صوتًا</translation>
+    </message>
+    <message>
+        <source>%1 apps playing sound</source>
+        <translation>%1 تطبيقات تشغّل صوتًا</translation>
+    </message>
+    <message>
+        <source>Mixer</source>
+        <translation>المازج</translation>
+    </message>
+    <message>
+        <source>Charging</source>
+        <translation>يشحن</translation>
+    </message>
+    <message>
+        <source>Plugged in</source>
+        <translation>موصول</translation>
+    </message>
+    <message>
+        <source>Full in %1</source>
+        <translation>يمتلئ خلال %1</translation>
+    </message>
+    <message>
+        <source>%1 left</source>
+        <translation>متبقٍ %1</translation>
+    </message>
+    <message>
+        <source>Health %1%</source>
+        <translation>الصحة %1%</translation>
+    </message>
+</context>
+<context>
     <name>Dictation</name>
     <message>
         <source>Copied — press Ctrl+V (%1)</source>
@@ -455,6 +562,42 @@ Drop a file here to ask about it.</source>
         <source>See you soon!</source>
         <translation>إلى اللقاء!</translation>
     </message>
+    <message>
+        <source>Charging</source>
+        <translation>يشحن</translation>
+    </message>
+    <message>
+        <source>On battery</source>
+        <translation>على البطارية</translation>
+    </message>
+    <message>
+        <source>%1 left</source>
+        <translation>متبقٍ %1</translation>
+    </message>
+    <message>
+        <source>Battery low</source>
+        <translation>البطارية منخفضة</translation>
+    </message>
+    <message>
+        <source>Music</source>
+        <translation>الموسيقى</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>اليوم</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>عناصر التحكم</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>النظام</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>الأدوات</translation>
+    </message>
 </context>
 <context>
     <name>KeyboardRemote</name>
@@ -465,6 +608,40 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Keyboard access was refused.</source>
         <translation>رُفض الوصول إلى لوحة المفاتيح.</translation>
+    </message>
+</context>
+<context>
+    <name>MediaPage</name>
+    <message>
+        <source>Nothing playing</source>
+        <translation>لا شيء يُشغَّل</translation>
+    </message>
+    <message>
+        <source>Shuffle</source>
+        <translation>عشوائي</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>السابق</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>التالي</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>تكرار</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>ملء الشاشة</translation>
+    </message>
+</context>
+<context>
+    <name>Power</name>
+    <message>
+        <source>Keep awake is on</source>
+        <translation>إبقاء اليقظة مفعّل</translation>
     </message>
 </context>
 <context>
@@ -1386,6 +1563,250 @@ Drop a file here to ask about it.</source>
         <source>Replace a sound by dropping a WAV named hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send or reply in ~/.config/lumo/sounds/.</source>
         <translation>استبدل صوتًا بوضع ملف WAV باسم hello, greet, bye, finish, needs, error, poke, ouch, giggle, dizzy, snore, yawn, love, wink, pop, send أو reply في ~/.config/lumo/sounds/.</translation>
     </message>
+    <message>
+        <source>Nothing</source>
+        <translation>لا شيء</translation>
+    </message>
+    <message>
+        <source>Weather</source>
+        <translation>الطقس</translation>
+    </message>
+    <message>
+        <source>Battery</source>
+        <translation>البطارية</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>المعالج</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation>الذاكرة</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>الشبكة</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>التاريخ</translation>
+    </message>
+    <message>
+        <source>Timer</source>
+        <translation>المؤقت</translation>
+    </message>
+    <message>
+        <source>Clock</source>
+        <translation>الساعة</translation>
+    </message>
+    <message>
+        <source>Widgets</source>
+        <translation>الأدوات المصغّرة</translation>
+    </message>
+    <message>
+        <source>Lumo's look, the resting pill, the weather, notifications and the battery.</source>
+        <translation>مظهر Lumo، والحبة في وضع الراحة، والطقس، والإشعارات، والبطارية.</translation>
+    </message>
+    <message>
+        <source>Hide during fullscreen apps</source>
+        <translation>الإخفاء أثناء التطبيقات بملء الشاشة</translation>
+    </message>
+    <message>
+        <source>While a game or a video fills the screen, the island steps aside. Requests from your agents still come through.</source>
+        <translation>حين تملأ لعبة أو فيديو الشاشة، تتنحى الجزيرة. طلبات وكلائك تصل رغم ذلك.</translation>
+    </message>
+    <message>
+        <source>Visualizer</source>
+        <translation>المؤثر المرئي</translation>
+    </message>
+    <message>
+        <source>On the Music page, a soft light swells up with the music, bass to treble.</source>
+        <translation>في صفحة الموسيقى، يرتفع ضوء ناعم مع الموسيقى، من الجهير إلى الحاد.</translation>
+    </message>
+    <message>
+        <source>Album colors</source>
+        <translation>ألوان الألبوم</translation>
+    </message>
+    <message>
+        <source>The player takes the colors of the album art.</source>
+        <translation>يأخذ المشغل ألوان الغلاف.</translation>
+    </message>
+    <message>
+        <source>Look</source>
+        <translation>المظهر</translation>
+    </message>
+    <message>
+        <source>Accent color</source>
+        <translation>لون التمييز</translation>
+    </message>
+    <message>
+        <source>Lumo's color: Claude's terracotta, KDE's accent, your wallpaper's, the album art's while music plays, or your own.</source>
+        <translation>لون Lumo: الطين المحروق لـ Claude، أو لون تمييز KDE، أو لون خلفيتك، أو لون الغلاف أثناء الموسيقى، أو لونك الخاص.</translation>
+    </message>
+    <message>
+        <source>KDE accent</source>
+        <translation>لون تمييز KDE</translation>
+    </message>
+    <message>
+        <source>Wallpaper</source>
+        <translation>الخلفية</translation>
+    </message>
+    <message>
+        <source>Album art</source>
+        <translation>غلاف الألبوم</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>مخصص</translation>
+    </message>
+    <message>
+        <source>Your color</source>
+        <translation>لونك</translation>
+    </message>
+    <message>
+        <source>Any color, as #RRGGBB.</source>
+        <translation>أي لون، بصيغة #RRGGBB.</translation>
+    </message>
+    <message>
+        <source>Reduce motion</source>
+        <translation>تقليل الحركة</translation>
+    </message>
+    <message>
+        <source>Calms every animation: no dancing, no bursts of light, no flips.</source>
+        <translation>يهدّئ كل الرسوم المتحركة: لا رقص، ولا ومضات ضوء، ولا انقلاب.</translation>
+    </message>
+    <message>
+        <source>Resting pill</source>
+        <translation>الحبة في وضع الراحة</translation>
+    </message>
+    <message>
+        <source>CPU, memory and network are read every 5 seconds only while the pill shows them.</source>
+        <translation>تُقرأ بيانات المعالج والذاكرة والشبكة كل 5 ثوانٍ فقط حين تعرضها الحبة.</translation>
+    </message>
+    <message>
+        <source>First item</source>
+        <translation>العنصر الأول</translation>
+    </message>
+    <message>
+        <source>Second item</source>
+        <translation>العنصر الثاني</translation>
+    </message>
+    <message>
+        <source>From Open-Meteo, free and without an account, for the city you type: Lumo never looks you up by your address.</source>
+        <translation>من Open-Meteo، مجانًا وبلا حساب، للمدينة التي تكتبها: لا يحدد Lumo موقعك أبدًا من عنوانك.</translation>
+    </message>
+    <message>
+        <source>Show the weather</source>
+        <translation>إظهار الطقس</translation>
+    </message>
+    <message>
+        <source>City</source>
+        <translation>المدينة</translation>
+    </message>
+    <message>
+        <source>Add the country to pick between places with the same name, like Paris, Texas.</source>
+        <translation>أضف البلد لتختار بين أماكن بالاسم نفسه، مثل Paris, Texas.</translation>
+    </message>
+    <message>
+        <source>Casablanca</source>
+        <translation>الدار البيضاء</translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation>بحث</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>غير موجودة</translation>
+    </message>
+    <message>
+        <source>Fahrenheit</source>
+        <translation>فهرنهايت</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>الإشعارات</translation>
+    </message>
+    <message>
+        <source>Show notifications as pills</source>
+        <translation>إظهار الإشعارات كحبوب</translation>
+    </message>
+    <message>
+        <source>Your apps' notifications also show up in the island. Plasma keeps its own; Lumo only reads them, on this computer.</source>
+        <translation>تظهر إشعارات تطبيقاتك أيضًا في الجزيرة. يحتفظ Plasma بإشعاراته؛ ويكتفي Lumo بقراءتها على هذا الحاسوب.</translation>
+    </message>
+    <message>
+        <source>Do Not Disturb</source>
+        <translation>عدم الإزعاج</translation>
+    </message>
+    <message>
+        <source>Quiets the pills. Battery warnings still show.</source>
+        <translation>يُسكت الحبوب. تظهر تنبيهات البطارية رغم ذلك.</translation>
+    </message>
+    <message>
+        <source>Battery pills</source>
+        <translation>حبوب البطارية</translation>
+    </message>
+    <message>
+        <source>A pill when you plug in or unplug, and once when the battery runs low.</source>
+        <translation>حبة عند الوصل أو الفصل، ومرة حين تنخفض البطارية.</translation>
+    </message>
+    <message>
+        <source>Low battery at</source>
+        <translation>البطارية منخفضة عند</translation>
+    </message>
+    <message>
+        <source>Show my public IP</source>
+        <translation>إظهار عنواني العام</translation>
+    </message>
+    <message>
+        <source>On the System page, asked from api.ipify.org at most every 10 minutes while it shows.</source>
+        <translation>في صفحة النظام، يُطلب من api.ipify.org مرة كل 10 دقائق على الأكثر أثناء عرضها.</translation>
+    </message>
+    <message>
+        <source>Backup</source>
+        <translation>النسخ الاحتياطي</translation>
+    </message>
+    <message>
+        <source>Export settings</source>
+        <translation>تصدير الإعدادات</translation>
+    </message>
+    <message>
+        <source>Every setting in one file, to keep or to bring to another computer.</source>
+        <translation>كل الإعدادات في ملف واحد، للاحتفاظ به أو نقله إلى حاسوب آخر.</translation>
+    </message>
+    <message>
+        <source>Export…</source>
+        <translation>تصدير…</translation>
+    </message>
+    <message>
+        <source>Import settings</source>
+        <translation>استيراد الإعدادات</translation>
+    </message>
+    <message>
+        <source>Import…</source>
+        <translation>استيراد…</translation>
+    </message>
+    <message>
+        <source>Report a problem</source>
+        <translation>الإبلاغ عن مشكلة</translation>
+    </message>
+    <message>
+        <source>Copies a short report: Lumo's version, your system and its plain settings, with your names taken out. Nothing is sent: you read it, then paste it where you choose.</source>
+        <translation>ينسخ تقريرًا قصيرًا: إصدار Lumo ونظامك وإعداداته البسيطة، دون أسمائك. لا يُرسل شيء: تقرؤه ثم تلصقه حيث تشاء.</translation>
+    </message>
+    <message>
+        <source>Copy report</source>
+        <translation>نسخ التقرير</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>نُسخ</translation>
+    </message>
+    <message>
+        <source>Lumo settings (*.ini)</source>
+        <translation>إعدادات Lumo (*.ini)</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -1447,6 +1868,248 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Couldn't unpack the model.</source>
         <translation>تعذّر فك ضغط النموذج.</translation>
+    </message>
+</context>
+<context>
+    <name>SystemPage</name>
+    <message>
+        <source>CPU</source>
+        <translation>المعالج</translation>
+    </message>
+    <message>
+        <source>GPU · %1</source>
+        <translation>GPU · %1</translation>
+    </message>
+    <message>
+        <source>GPU</source>
+        <translation>GPU</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation>الذاكرة</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>الشبكة</translation>
+    </message>
+    <message>
+        <source>Local %1</source>
+        <translation>محلي %1</translation>
+    </message>
+    <message>
+        <source>Public %1</source>
+        <translation>عام %1</translation>
+    </message>
+    <message>
+        <source>Busiest programs</source>
+        <translation>أكثر البرامج نشاطًا</translation>
+    </message>
+    <message>
+        <source>Up %1</source>
+        <translation>يعمل منذ %1</translation>
+    </message>
+    <message>
+        <source>Measuring…</source>
+        <translation>جارٍ القياس…</translation>
+    </message>
+</context>
+<context>
+    <name>SystemStats</name>
+    <message>
+        <source>%1 d %2 h</source>
+        <translation>%1 ي %2 س</translation>
+    </message>
+    <message>
+        <source>%1 h %2 min</source>
+        <translation>%1 س %2 د</translation>
+    </message>
+    <message>
+        <source>%1 min</source>
+        <translation>%1 د</translation>
+    </message>
+    <message>
+        <source>/s</source>
+        <translation>/ث</translation>
+    </message>
+</context>
+<context>
+    <name>Timers</name>
+    <message>
+        <source>Time's up</source>
+        <translation>انتهى الوقت</translation>
+    </message>
+    <message>
+        <source>Focus done: %1 rounds</source>
+        <translation>انتهى التركيز: %1 جولات</translation>
+    </message>
+    <message>
+        <source>Break time</source>
+        <translation>وقت الاستراحة</translation>
+    </message>
+    <message>
+        <source>Back to focus: round %1 of %2</source>
+        <translation>عودة إلى التركيز: الجولة %1 من %2</translation>
+    </message>
+</context>
+<context>
+    <name>TodayPage</name>
+    <message>
+        <source>H %1  L %2</source>
+        <translation>العليا %1  الدنيا %2</translation>
+    </message>
+    <message>
+        <source>Looking at the sky…</source>
+        <translation>أنظر إلى السماء…</translation>
+    </message>
+</context>
+<context>
+    <name>Tools</name>
+    <message>
+        <source>Copied the file</source>
+        <translation>نُسخ الملف</translation>
+    </message>
+    <message>
+        <source>Copied the text</source>
+        <translation>نُسخ النص</translation>
+    </message>
+    <message>
+        <source>%1 copied</source>
+        <translation>نُسخ %1</translation>
+    </message>
+    <message>
+        <source>Screenshot on the shelf</source>
+        <translation>لقطة الشاشة على الرف</translation>
+    </message>
+</context>
+<context>
+    <name>ToolsPage</name>
+    <message>
+        <source>Hold to confirm</source>
+        <translation>اضغط مطوّلًا للتأكيد</translation>
+    </message>
+    <message>
+        <source>Timer</source>
+        <translation>المؤقت</translation>
+    </message>
+    <message>
+        <source>Stopwatch</source>
+        <translation>ساعة الإيقاف</translation>
+    </message>
+    <message>
+        <source>Focus</source>
+        <translation>التركيز</translation>
+    </message>
+    <message>
+        <source>%1 min</source>
+        <translation>%1 د</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>إيقاف مؤقت</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>ابدأ</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>إعادة ضبط</translation>
+    </message>
+    <message>
+        <source>Lap</source>
+        <translation>لفة</translation>
+    </message>
+    <message>
+        <source>Lap %1</source>
+        <translation>لفة %1</translation>
+    </message>
+    <message>
+        <source>%1 min focus, %2 min break, %3 rounds</source>
+        <translation>%1 د تركيز، %2 د استراحة، %3 جولات</translation>
+    </message>
+    <message>
+        <source>Break</source>
+        <translation>استراحة</translation>
+    </message>
+    <message>
+        <source>round %1 of %2</source>
+        <translation>الجولة %1 من %2</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>استئناف</translation>
+    </message>
+    <message>
+        <source>Start focus</source>
+        <translation>ابدأ التركيز</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>إيقاف</translation>
+    </message>
+    <message>
+        <source>Color picker</source>
+        <translation>منتقي الألوان</translation>
+    </message>
+    <message>
+        <source>Copies the hex code</source>
+        <translation>ينسخ الرمز السداسي</translation>
+    </message>
+    <message>
+        <source>Screenshot</source>
+        <translation>لقطة شاشة</translation>
+    </message>
+    <message>
+        <source>Pick a region</source>
+        <translation>اختر منطقة</translation>
+    </message>
+    <message>
+        <source>Keep awake</source>
+        <translation>إبقاء اليقظة</translation>
+    </message>
+    <message>
+        <source>On</source>
+        <translation>مفعّل</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>متوقف</translation>
+    </message>
+    <message>
+        <source>Shelf</source>
+        <translation>الرف</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>مسح</translation>
+    </message>
+    <message>
+        <source>Drop files or text on the island to keep them here. Drag them out again to drop them anywhere, or click one to copy it.</source>
+        <translation>أفلت ملفات أو نصًا على الجزيرة لتحتفظ بها هنا. اسحبها للخارج لإفلاتها في أي مكان، أو انقر لنسخها.</translation>
+    </message>
+    <message>
+        <source>Keep after restart</source>
+        <translation>الاحتفاظ بعد إعادة التشغيل</translation>
+    </message>
+    <message>
+        <source>Lock</source>
+        <translation>قفل</translation>
+    </message>
+    <message>
+        <source>Sleep</source>
+        <translation>سكون</translation>
+    </message>
+    <message>
+        <source>Log out</source>
+        <translation>تسجيل الخروج</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>إعادة التشغيل</translation>
+    </message>
+    <message>
+        <source>Shut down</source>
+        <translation>إيقاف التشغيل</translation>
     </message>
 </context>
 <context>
@@ -1513,6 +2176,62 @@ Drop a file here to ask about it.</source>
     <message>
         <source>%1% used · resets %2</source>
         <translation>%1% مستخدم · يُعاد %2</translation>
+    </message>
+</context>
+<context>
+    <name>Weather</name>
+    <message>
+        <source>Type your city in Settings → Widgets → Weather.</source>
+        <translation>اكتب مدينتك في الإعدادات ← الأدوات المصغّرة ← الطقس.</translation>
+    </message>
+    <message>
+        <source>The weather can't be reached right now.</source>
+        <translation>لا يمكن الوصول إلى الطقس الآن.</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <comment>the sky</comment>
+        <translation>صافٍ</translation>
+    </message>
+    <message>
+        <source>Mostly clear</source>
+        <translation>صافٍ غالبًا</translation>
+    </message>
+    <message>
+        <source>Partly cloudy</source>
+        <translation>غائم جزئيًا</translation>
+    </message>
+    <message>
+        <source>Cloudy</source>
+        <translation>غائم</translation>
+    </message>
+    <message>
+        <source>Fog</source>
+        <translation>ضباب</translation>
+    </message>
+    <message>
+        <source>Drizzle</source>
+        <translation>رذاذ</translation>
+    </message>
+    <message>
+        <source>Light rain</source>
+        <translation>مطر خفيف</translation>
+    </message>
+    <message>
+        <source>Rain</source>
+        <translation>مطر</translation>
+    </message>
+    <message>
+        <source>Heavy rain</source>
+        <translation>مطر غزير</translation>
+    </message>
+    <message>
+        <source>Snow</source>
+        <translation>ثلج</translation>
+    </message>
+    <message>
+        <source>Thunderstorm</source>
+        <translation>عاصفة رعدية</translation>
     </message>
 </context>
 </TS>

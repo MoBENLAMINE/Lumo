@@ -36,7 +36,7 @@ void Weather::setFahrenheit(bool on) {
 void Weather::want() {
     if (!enabled() || m_busy) return;
     if (QSettings().value(QStringLiteral("weather/lat")).isNull()) {
-        m_status = tr("Type your city in Settings → General → Weather.");
+        m_status = tr("Type your city in Settings → Widgets → Weather.");
         emit changed();
         return;
     }
@@ -154,7 +154,7 @@ void Weather::fetch() {
 
 QString Weather::describe(int code) const {
     switch (code) {
-    case 0: return tr("Clear");
+    case 0: return tr("Clear", "the sky");
     case 1: return tr("Mostly clear");
     case 2: return tr("Partly cloudy");
     case 3: return tr("Cloudy");

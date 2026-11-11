@@ -655,14 +655,7 @@ Window {
                                 // Each language in its own words.
                                 readonly property var languages: [
                                     { id: "", name: qsTr("System") }, { id: "en", name: "English" },
-                                    { id: "fr", name: "Français" }, { id: "es", name: "Español" },
-                                    { id: "de", name: "Deutsch" }, { id: "pt_BR", name: "Português (Brasil)" },
-                                    { id: "ar", name: "العربية" }, { id: "tr", name: "Türkçe" },
-                                    { id: "ru", name: "Русский" }, { id: "hi", name: "हिन्दी" },
-                                    { id: "bn", name: "বাংলা" }, { id: "id", name: "Bahasa Indonesia" },
-                                    { id: "th", name: "ไทย" }, { id: "zh_CN", name: "简体中文" },
-                                    { id: "zh_TW", name: "繁體中文" }, { id: "ja", name: "日本語" },
-                                    { id: "ko", name: "한국어" }
+                                    { id: "fr", name: "Français" }, { id: "ar", name: "العربية" }
                                 ]
                                 model: languages.map(l => l.name)
                                 currentIndex: Math.max(0, languages.findIndex(l => l.id === shell.language))
