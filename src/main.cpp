@@ -20,6 +20,7 @@
 #include "Music.h"
 #include "Beat.h"
 #include "Controls.h"
+#include "Lyrics.h"
 #include "Notifications.h"
 #include "Power.h"
 #include "Prefs.h"
@@ -104,6 +105,7 @@ int main(int argc, char *argv[]) {
     Weather weather;
     Notifications notifications;
     Prefs prefs;
+    Lyrics lyrics;
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/Dictation"), &dictation, QDBusConnection::ExportScriptableSlots);
 
     QObject::connect(&server, &HookServer::hookEvent, &hub, &AgentHub::onHookEvent);
@@ -141,6 +143,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty(QStringLiteral("weather"), &weather);
     engine.rootContext()->setContextProperty(QStringLiteral("notifications"), &notifications);
     engine.rootContext()->setContextProperty(QStringLiteral("prefs"), &prefs);
+    engine.rootContext()->setContextProperty(QStringLiteral("lyrics"), &lyrics);
     engine.rootContext()->setContextProperty(QStringLiteral("cloud"), &cloud);
     engine.loadFromModule("Lumo", "Island");
     if (engine.rootObjects().isEmpty()) return 1;

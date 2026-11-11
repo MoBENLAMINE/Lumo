@@ -61,7 +61,7 @@ Window {
     readonly property bool musicShown: shell.showMusic && music.available && (music.playing || hub.sessions.count === 0)
     readonly property bool dancing: shell.dance && shell.showMusic && music.playing
     // Listen to the music only while Lumo dances to it or the visualizer shows.
-    readonly property bool visualizing: prefs.visualizer && music.playing && win.mode === "open" && win.tab === "media"
+    readonly property bool visualizing: prefs.visualizer && music.playing && ((win.mode === "open" && win.tab === "media") || fullscreenPlayer.visible)
     Binding { target: beat; property: "active"; value: (win.dancing || win.visualizing) && win.visible }
     // Lumo's accent: Claude's, KDE's, the wallpaper's, yours, or the album's
     // while music plays.
@@ -167,7 +167,7 @@ Window {
         if (tab === "chat") focusChat()
     }
     // filled in by the fullscreen player and the control centers
-    function openFullscreenPlayer() {}
+    function openFullscreenPlayer() { closeIsland(); fullscreenPlayer.open() }
     function openControl(name) {}
     function closeIsland() {
         showWardrobe = false
@@ -1231,6 +1231,8 @@ Window {
 
         Keys.onEscapePressed: win.closeIsland()
     }
+
+    FullscreenPlayer { id: fullscreenPlayer }
 
     SettingsWindow {
         id: settings

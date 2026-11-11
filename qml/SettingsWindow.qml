@@ -722,6 +722,11 @@ Window {
                             Toggle { on: prefs.visualizer; onToggled: (v) => prefs.visualizer = v }
                         }
                         SettingRow {
+                            title: qsTr("Synced lyrics")
+                            description: qsTr("In the fullscreen player (click the cover on the Music page). Looked up once per song on LRCLIB, and kept on this computer for the last 300 songs.")
+                            Toggle { on: lyrics.enabled; onToggled: (v) => lyrics.enabled = v }
+                        }
+                        SettingRow {
                             title: qsTr("Album colors")
                             description: qsTr("The player takes the colors of the album art.")
                             Toggle { on: prefs.albumColors; onToggled: (v) => prefs.albumColors = v }

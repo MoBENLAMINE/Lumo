@@ -58,6 +58,7 @@ qt_add_executable(lumo
     src/Weather.cpp src/Weather.h
     src/Notifications.cpp src/Notifications.h
     src/Prefs.cpp src/Prefs.h src/Vivid.h
+    src/Lyrics.cpp src/Lyrics.h
 )
 # Finds sherpa's libraries next to the build, and in lib/lumo once installed.
 set_target_properties(lumo PROPERTIES
@@ -76,7 +77,7 @@ elseif(LUMO_TS)
     message(WARNING "Qt Linguist tools not found: Lumo is built in English only (install qt6-tools).")
 endif()
 set(LUMO_QML Island Mascot Ui SessionCard RequestCard ChatPane DiffView UsageRing PillButton SettingsWindow DictationBar MusicCard Outfit Wardrobe InstinctButton Icon IconButton Keycap
-    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage)
+    Toggle Tile Level Sparkline Timers MediaPage TodayPage ControlsPage SystemPage ToolsPage FullscreenPlayer)
 set(LUMO_QML_FILES)
 foreach(name IN LISTS LUMO_QML)
     # Served from the module root so they all see the module's own qmldir (and the Ui singleton).
@@ -130,6 +131,12 @@ qt_add_executable(test_cloud tests/test_cloud.cpp src/CloudSessions.cpp src/Agen
 target_include_directories(test_cloud PRIVATE src)
 target_link_libraries(test_cloud PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME cloud COMMAND test_cloud)
+
+# Synced lyrics: the LRC reader and how song names are cleaned for the search.
+qt_add_executable(test_lyrics tests/test_lyrics.cpp src/Lyrics.cpp)
+target_include_directories(test_lyrics PRIVATE src)
+target_link_libraries(test_lyrics PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+add_test(NAME lyrics COMMAND test_lyrics)
 
 # Notifications as pills: how dbus-monitor's output is read.
 qt_add_executable(test_notifications tests/test_notifications.cpp src/Notifications.cpp)
