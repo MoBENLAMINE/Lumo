@@ -38,7 +38,8 @@ signals:
 
 private:
     static QString settingsPath();
-    QJsonObject read() const;
+    // ok=false when the file exists but can't be read or isn't a JSON object.
+    QJsonObject read(bool *ok = nullptr) const;
     bool deployHook();
 
     bool m_installed = false, m_coucou = false, m_legacy = false;

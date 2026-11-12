@@ -10,7 +10,10 @@ class TestMusic : public QObject {
     Q_OBJECT
 private slots:
     void followsThePlayer() {
-        if (!QDBusConnection::sessionBus().interface()->isServiceRegistered(QStringLiteral("org.mpris.MediaPlayer2.lumotest")))
+        // No session bus at all (CI containers): nothing to follow.
+        QDBusConnectionInterface *bus = QDBusConnection::sessionBus().interface();
+        if (!bus) QSKIP("no session D-Bus");
+        if (!bus->isServiceRegistered(QStringLiteral("org.mpris.MediaPlayer2.lumotest")))
             QSKIP("no test player running");
         Music music;
         QVERIFY(music.available());

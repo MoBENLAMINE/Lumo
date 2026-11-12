@@ -107,6 +107,9 @@ signals:
     void instinctNumberChanged();
     void toggleRequested();
     void chatRequested();
+    // The global shortcuts for the request at the top of the island.
+    void allowTopRequested();
+    void denyTopRequested();
     void settingsRequested();
     void dashboardRequested();
     void resurfaced();

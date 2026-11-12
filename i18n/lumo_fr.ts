@@ -577,6 +577,10 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>Done. New Claude Code sessions will show up in Lumo.</source>
         <translation>C'est fait. Les nouvelles sessions Claude Code apparaîtront dans Lumo.</translation>
     </message>
+    <message>
+        <source>~/.claude/settings.json isn't valid JSON, so Lumo won't touch it. Fix the file and try again.</source>
+        <translation>~/.claude/settings.json n'est pas un JSON valide, Lumo n'y touchera donc pas. Corrigez le fichier puis réessayez.</translation>
+    </message>
 </context>
 <context>
     <name>InstinctButton</name>
@@ -873,6 +877,22 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Send</source>
         <translation>Envoyer</translation>
+    </message>
+    <message>
+        <source>approve</source>
+        <translation>approuver</translation>
+    </message>
+    <message>
+        <source>allow</source>
+        <translation>autoriser</translation>
+    </message>
+    <message>
+        <source>keep planning</source>
+        <translation>continuer à planifier</translation>
+    </message>
+    <message>
+        <source>deny</source>
+        <translation>refuser</translation>
     </message>
 </context>
 <context>
@@ -2088,6 +2108,22 @@ Déposez un fichier ici pour poser une question dessus.</translation>
         <source>A two-letter country code, like MA or FR. Empty for none.</source>
         <translation>Un code pays à deux lettres, comme MA ou FR. Vide pour aucun.</translation>
     </message>
+    <message>
+        <source>Allow the top request</source>
+        <translation>Autoriser la demande du haut</translation>
+    </message>
+    <message>
+        <source>Approves a plan too.</source>
+        <translation>Approuve aussi un plan.</translation>
+    </message>
+    <message>
+        <source>Deny the top request</source>
+        <translation>Refuser la demande du haut</translation>
+    </message>
+    <message>
+        <source>Sends a plan back to keep planning.</source>
+        <translation>Renvoie un plan pour continuer à planifier.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -2134,6 +2170,14 @@ Déposez un fichier ici pour poser une question dessus.</translation>
     <message>
         <source>Dashboard</source>
         <translation>Tableau de bord</translation>
+    </message>
+    <message>
+        <source>Allow Lumo's top request</source>
+        <translation>Autoriser la demande en haut de Lumo</translation>
+    </message>
+    <message>
+        <source>Deny Lumo's top request</source>
+        <translation>Refuser la demande en haut de Lumo</translation>
     </message>
 </context>
 <context>

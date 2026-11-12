@@ -577,6 +577,10 @@ Drop a file here to ask about it.</source>
         <source>Done. New Claude Code sessions will show up in Lumo.</source>
         <translation>تم. ستظهر جلسات Claude Code الجديدة في Lumo.</translation>
     </message>
+    <message>
+        <source>~/.claude/settings.json isn't valid JSON, so Lumo won't touch it. Fix the file and try again.</source>
+        <translation>الملف ~/.claude/settings.json ليس JSON صالحًا، لذا لن يلمسه Lumo. أصلح الملف ثم حاول مجددًا.</translation>
+    </message>
 </context>
 <context>
     <name>InstinctButton</name>
@@ -873,6 +877,22 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Send</source>
         <translation>إرسال</translation>
+    </message>
+    <message>
+        <source>approve</source>
+        <translation>موافقة</translation>
+    </message>
+    <message>
+        <source>allow</source>
+        <translation>سماح</translation>
+    </message>
+    <message>
+        <source>keep planning</source>
+        <translation>مواصلة التخطيط</translation>
+    </message>
+    <message>
+        <source>deny</source>
+        <translation>رفض</translation>
     </message>
 </context>
 <context>
@@ -2088,6 +2108,22 @@ Drop a file here to ask about it.</source>
         <source>A two-letter country code, like MA or FR. Empty for none.</source>
         <translation>رمز بلد من حرفين، مثل MA أو FR. فارغ لعدم العرض.</translation>
     </message>
+    <message>
+        <source>Allow the top request</source>
+        <translation>السماح بالطلب العلوي</translation>
+    </message>
+    <message>
+        <source>Approves a plan too.</source>
+        <translation>يوافق على الخطة أيضًا.</translation>
+    </message>
+    <message>
+        <source>Deny the top request</source>
+        <translation>رفض الطلب العلوي</translation>
+    </message>
+    <message>
+        <source>Sends a plan back to keep planning.</source>
+        <translation>يعيد الخطة لمواصلة التخطيط.</translation>
+    </message>
 </context>
 <context>
     <name>Shell</name>
@@ -2134,6 +2170,14 @@ Drop a file here to ask about it.</source>
     <message>
         <source>Dashboard</source>
         <translation>لوحة المعلومات</translation>
+    </message>
+    <message>
+        <source>Allow Lumo's top request</source>
+        <translation>السماح بطلب Lumo العلوي</translation>
+    </message>
+    <message>
+        <source>Deny Lumo's top request</source>
+        <translation>رفض طلب Lumo العلوي</translation>
     </message>
 </context>
 <context>
