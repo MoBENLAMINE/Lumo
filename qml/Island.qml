@@ -911,11 +911,15 @@ Window {
                     y: 12
                     spacing: 12
 
-                    // header (above what follows, so its tooltips aren't covered)
+                    // header (above what follows, so its tooltips aren't covered).
+                    // The rail sits above it so its page names can show over the
+                    // header; while the pointer is on the header, the header goes on
+                    // top instead, so the usage and button tooltips aren't hidden.
                     RowLayout {
-                        z: 5
+                        z: headerHover.hovered ? 7 : 5
                         Layout.fillWidth: true
                         spacing: 10
+                        HoverHandler { id: headerHover }
 
                         Mascot {
                             id: mascot
