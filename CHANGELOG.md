@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Lumo could go silent for good: the sound server remembers each app's volume, and Lumo's own sounds could be left at zero or muted (for example from the mixer). Lumo's sounds no longer appear in its own mixer (they have their own volume in Settings → General), and Lumo puts its sound back to full if it ever finds it muted.
+
 - Ideas from Astraeus, written anew for KDE: pages in the island (Music, Today, Controls, System, Tools), a
   fullscreen player with synced lyrics, a calendar, Wi-Fi, Bluetooth and mixer control centers, the shelf, timers,
   battery and notification pills, a configurable resting pill and long pill, themes (light, glass, custom,

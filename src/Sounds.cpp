@@ -1,12 +1,18 @@
 #include "Sounds.h"
 
 #include <QAudioDevice>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMediaDevices>
+#include <QProcess>
 #include <QSettings>
 #include <QSoundEffect>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QUrl>
 #include <QtEndian>
 
@@ -194,4 +200,33 @@ void Sounds::play(const QString &name) {
     // The default output may have changed without a notice reaching us.
     followDefaultOutput();
     fx->play();
+    if (!m_healed) {
+        m_healed = true;
+        QTimer::singleShot(400, this, &Sounds::healStream); // the stream exists once playback started
+    }
+}
+
+void Sounds::healStream() {
+    auto *p = new QProcess(this);
+    connect(p, &QProcess::finished, this, [p] {
+        p->deleteLater();
+        const QJsonArray inputs = QJsonDocument::fromJson(p->readAllStandardOutput()).array();
+        for (const QJsonValue &v : inputs) {
+            const QJsonObject s = v.toObject();
+            const QJsonObject props = s.value(QStringLiteral("properties")).toObject();
+            if (props.value(QStringLiteral("application.process.id")).toVariant().toLongLong() != QCoreApplication::applicationPid())
+                continue;
+            const QString id = QString::number(s.value(QStringLiteral("index")).toInt());
+            int loudest = 0;
+            const QJsonObject vol = s.value(QStringLiteral("volume")).toObject();
+            for (auto it = vol.begin(); it != vol.end(); ++it)
+                loudest = std::max(loudest, it.value().toObject().value(QStringLiteral("value_percent")).toString().remove(QLatin1Char('%')).trimmed().toInt());
+            if (s.value(QStringLiteral("mute")).toBool())
+                QProcess::startDetached(QStringLiteral("pactl"), {QStringLiteral("set-sink-input-mute"), id, QStringLiteral("0")});
+            if (loudest < 5)
+                QProcess::startDetached(QStringLiteral("pactl"), {QStringLiteral("set-sink-input-volume"), id, QStringLiteral("100%")});
+        }
+    });
+    connect(p, &QProcess::errorOccurred, p, [p](QProcess::ProcessError e) { if (e == QProcess::FailedToStart) p->deleteLater(); });
+    p->start(QStringLiteral("pactl"), {QStringLiteral("-f"), QStringLiteral("json"), QStringLiteral("list"), QStringLiteral("sink-inputs")});
 }
