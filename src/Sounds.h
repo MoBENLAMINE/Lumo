@@ -38,9 +38,14 @@ signals:
 private:
     // Points every sound at the current default output.
     void followDefaultOutput();
+    // The sound server remembers each app's stream volume. If Lumo's was left at
+    // zero or muted (a mixer, a slip), every sound plays into silence: once per
+    // run, after the first sound, put it back to full.
+    void healStream();
 
     QHash<QString, QSoundEffect *> m_effects;
     QMediaDevices *m_devices = nullptr;
     bool m_muted = false;
+    bool m_healed = false;
     double m_volume = 0.6;
 };

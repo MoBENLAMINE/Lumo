@@ -1,5 +1,7 @@
 #include "Controls.h"
 
+#include <QCoreApplication>
+
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -134,6 +136,10 @@ void Controls::readAudio() {
         for (const QJsonValue &v : read->inputs.array()) {
             const QJsonObject s = v.toObject();
             const QJsonObject props = s.value(QStringLiteral("properties")).toObject();
+            // Lumo's own sounds have their own volume (Settings → General): keep them out of the
+            // mixer, so Lumo can't be muted from inside itself and stay silent for good.
+            if (props.value(QStringLiteral("application.process.id")).toVariant().toLongLong() == QCoreApplication::applicationPid())
+                continue;
             QString name = props.value(QStringLiteral("application.name")).toString();
             if (name.isEmpty()) name = props.value(QStringLiteral("media.name")).toString();
             m_apps.append(QVariantMap{{QStringLiteral("id"), s.value(QStringLiteral("index")).toInt()},
